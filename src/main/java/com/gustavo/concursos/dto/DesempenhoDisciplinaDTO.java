@@ -18,7 +18,8 @@ public record DesempenhoDisciplinaDTO(
         );
     }
 
-    static double percentual(long acertos, long total) {
+    // Publico porque o resultado do simulado tambem calcula percentual.
+    public static double percentual(long acertos, long total) {
         if (total == 0) {
             return 0.0;
         }

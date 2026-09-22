@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concursos Platform</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="topo" class="hidden">
+  <strong>Concursos Platform</strong>
+  <nav>
+    <button data-tela="questoes">Questões</button>
+    <button data-tela="erradas">Revisar erradas</button>
+    <button data-tela="simulado">Simulado</button>
+    <button data-tela="dashboard">Desempenho</button>
+  </nav>
+  <button id="sair" class="link">Sair</button>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <section id="tela-login">
+    <div class="card centro">
+      <h1>Concursos Platform</h1>
+      <p class="sub">Banco de questões para estudo de concursos</p>
+
+      <div id="campos-registro" class="hidden">
+        <label>Nome<input id="reg-nome" type="text" autocomplete="name"></label>
+      </div>
+      <label>E-mail<input id="login-email" type="email" autocomplete="email"></label>
+      <label>Senha<input id="login-senha" type="password" autocomplete="current-password"></label>
+
+      <button id="btn-entrar" class="primario">Entrar</button>
+      <p class="sub">
+        <span id="alternar-texto">Não tem conta?</span>
+        <button id="btn-alternar" class="link">Criar conta</button>
+      </p>
+      <p id="login-erro" class="erro"></p>
+    </div>
+  </section>
+
+  <!-- QUESTÕES -->
+  <section id="tela-questoes" class="hidden">
+    <div class="card filtros">
+      <label>Assunto<input id="f-assunto" type="text" placeholder="ex: morfologia"></label>
+      <label>Ano<input id="f-ano" type="number" placeholder="ex: 2013"></label>
+      <button id="btn-filtrar" class="primario">Filtrar</button>
+    </div>
+    <div id="lista-questoes"></div>
+  </section>
+
+  <!-- ERRADAS -->
+  <section id="tela-erradas" class="hidden">
+    <div class="card">
+      <h2>Questões para revisar</h2>
+      <p class="sub">Questões que você errou na última tentativa. Acertar de novo remove daqui.</p>
+    </div>
+    <div id="lista-erradas"></div>
+  </section>
+
+  <!-- SIMULADO -->
+  <section id="tela-simulado" class="hidden">
+    <div id="simulado-config" class="card">
+      <h2>Novo simulado</h2>
+      <label>Quantidade de questões<input id="s-quantidade" type="number" value="5" min="1" max="100"></label>
+      <label>Duração (minutos)<input id="s-duracao" type="number" value="30" min="1" max="600"></label>
+      <button id="btn-iniciar-simulado" class="primario">Iniciar</button>
+      <p id="simulado-erro" class="erro"></p>
+    </div>
+
+    <div id="simulado-andamento" class="hidden">
+      <div class="card barra-simulado">
+        <span id="cronometro" class="cronometro">--:--</span>
+        <span id="progresso-simulado" class="sub"></span>
+        <button id="btn-finalizar" class="perigo">Finalizar</button>
+      </div>
+      <div id="lista-simulado"></div>
+    </div>
+
+    <div id="simulado-resultado" class="hidden"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="tela-dashboard" class="hidden">
+    <div id="resumo-dashboard"></div>
+    <div id="disciplinas-dashboard"></div>
+    <div id="evolucao-dashboard"></div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

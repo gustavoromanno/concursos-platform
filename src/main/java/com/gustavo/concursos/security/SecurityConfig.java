@@ -49,8 +49,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // /auth/registrar e /auth/login sao publicos; o resto exige token valido.
+                        // /auth/registrar e /auth/login sao publicos; o resto da API exige token.
                         .requestMatchers("/auth/**").permitAll()
+                        // Arquivos do frontend precisam ser publicos, senao a propria
+                        // tela de login ficaria protegida por login.
+                        .requestMatchers("/", "/index.html", "/app.js", "/style.css", "/favicon.ico").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
