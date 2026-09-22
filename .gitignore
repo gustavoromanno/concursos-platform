@@ -1,4 +1,5 @@
 target/
 *.class
-.idea
+.idea/
 *.iml
+.vscode/
