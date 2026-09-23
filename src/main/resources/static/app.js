@@ -9,6 +9,35 @@ let cronometro = null;
 let disciplinas = [];   // catalogo carregado uma vez apos o login
 let marcados = new Set();  // ids das questoes marcadas pelo usuario
 let cadernos = [];         // cadernos do usuario, para o menu de salvar
+let perfilUsuario = null;  // nome e email de quem esta logado
+
+// ---------- tema claro / noturno ----------
+
+function temaAtual() {
+    return document.documentElement.getAttribute('data-tema') === 'escuro' ? 'escuro' : 'claro';
+}
+
+function aplicarTema(tema) {
+    if (tema === 'escuro') {
+        document.documentElement.setAttribute('data-tema', 'escuro');
+    } else {
+        document.documentElement.removeAttribute('data-tema');
+    }
+    localStorage.setItem('tema', tema);
+    // O ícone mostra para onde o clique leva, não o estado atual.
+    const botao = document.querySelector('#btn-tema');
+    if (botao) botao.textContent = tema === 'escuro' ? '☀️' : '🌙';
+}
+
+document.querySelector('#btn-tema').onclick = () => {
+    aplicarTema(temaAtual() === 'escuro' ? 'claro' : 'escuro');
+    // Redesenha o painel: os gráficos SVG pegam cor no momento em que são criados.
+    if (!document.querySelector('#tela-dashboard').classList.contains('hidden')) {
+        carregarDashboard();
+    }
+};
+
+aplicarTema(temaAtual());
 
 // ---------- infraestrutura ----------
 
@@ -96,6 +125,8 @@ function sair() {
     localStorage.removeItem('token');
     pararCronometro();
     simuladoAtual = null;
+    perfilUsuario = null;
+    $('#usuario-topo').textContent = '';
     $('#topo').classList.add('hidden');
     document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
     $('#tela-login').classList.remove('hidden');
@@ -107,7 +138,8 @@ async function entrarNoApp() {
     $('#tela-login').classList.add('hidden');
     $('#topo').classList.remove('hidden');
     await carregarCatalogo();
-    abrir('questoes');
+    atualizarSeloRevisao();
+    abrir('inicio');   // pagina inicial da plataforma
 }
 
 // ---------- catalogo (disciplinas e assuntos) ----------
@@ -142,6 +174,12 @@ async function carregarCatalogo() {
 // Marcadores e cadernos do usuario: carregados uma vez para os cards ja
 // nascerem com o estado certo.
 async function carregarEstadoPessoal() {
+    try {
+        perfilUsuario = await api('/perfil');
+        $('#usuario-topo').textContent = perfilUsuario.nome;
+    } catch {
+        perfilUsuario = null;
+    }
     try {
         marcados = new Set(await api('/marcadores/ids'));
     } catch {
@@ -191,9 +229,12 @@ function abrir(tela) {
     $('#tela-' + tela).classList.remove('hidden');
 
     if (tela === 'questoes') carregarQuestoes();
+    if (tela === 'inicio') carregarInicio();
+    if (tela === 'revisao') carregarRevisao();
     if (tela === 'erradas') carregarErradas();
     if (tela === 'cadernos') carregarCadernos();
     if (tela === 'marcadores') carregarMarcadores();
+    if (tela === 'concursos') carregarConcursos();
     if (tela === 'videoaulas') carregarVideoaulas();
     if (tela === 'dashboard') carregarDashboard();
 }
@@ -327,6 +368,10 @@ async function responderDireto(questao, alternativa, card) {
             ${resultado.explicacao ? ' ' + escapar(resultado.explicacao) : ''}
         </div>
     `));
+
+    // Depois de responder, libera estatística coletiva e comentários.
+    mostrarEstatisticasQuestao(questao.id, area);
+    montarComentarios(questao.id, area);
 
     // Errou: oferece videoaula do assunto daquela questao.
     if (!resultado.correta) {
@@ -703,90 +748,810 @@ async function carregarMarcadores() {
 }
 
 
-// ---------- engajamento (ofensiva, meta e mapa de estudo) ----------
 
-async function carregarEngajamento() {
-    const alvo = $('#engajamento-dashboard');
-    const mapaAlvo = $('#mapa-dashboard');
-    alvo.innerHTML = '';
-    mapaAlvo.innerHTML = '';
+
+
+
+// ---------- objetivo de estudo ----------
+
+const ROTULOS_ETAPA = { CONCLUIDO: 'Concluído', EM_ANDAMENTO: 'Em andamento', PREVISTO: 'Previsto' };
+
+// Cartão "Seu objetivo atual". Retorna null quando o usuário ainda não escolheu.
+async function cartaoObjetivo() {
+    let o;
+    try {
+        o = await api('/objetivo');
+    } catch {
+        return null;
+    }
+    if (!o) return null;   // 204: sem objetivo definido
+
+    const p = o.progresso;
+    const card = criar(`
+        <div class="card card-objetivo">
+            <div class="topo-objetivo">
+                <div>
+                    <span class="rotulo">SEU OBJETIVO ATUAL</span>
+                    <strong class="nome-objetivo">${escapar(o.concurso)}</strong>
+                    <span class="sub">${[o.orgao, o.banca, o.ano].filter(Boolean).map(escapar).join(' · ')}</span>
+                    ${o.cargo ? `<span class="sub">Cargo alvo: <strong>${escapar(o.cargo)}</strong>${o.nivel ? ' · ' + escapar(o.nivel) : ''}${o.vagas ? ' · ' + o.vagas + ' vagas' : ''}</span>` : ''}
+                </div>
+                <div class="progresso-objetivo">
+                    <div class="topo">
+                        <span class="sub">Progresso no conteúdo</span>
+                        <span>${p.percentual}%</span>
+                    </div>
+                    <div class="barra"><div style="width:${p.percentual}%"></div></div>
+                    <span class="sub">${p.topicosIniciados} de ${p.totalTopicos} tópicos iniciados</span>
+                    ${o.proximaEtapa ? `<span class="sub proxima-etapa">${escapar(o.proximaEtapa.nome)}${
+                        o.proximaEtapa.diasRestantes != null
+                            ? (o.proximaEtapa.diasRestantes >= 0
+                                ? ` em ${o.proximaEtapa.diasRestantes} dia${o.proximaEtapa.diasRestantes === 1 ? '' : 's'}`
+                                : ' — data já passou')
+                            : ''}</span>` : ''}
+                </div>
+            </div>
+            <div class="contadores-objetivo">
+                <span class="contador vaicair">${p.vaiCair} Vai cair</span>
+                <span class="contador revisar">${p.revisar} Revisar</span>
+                <span class="contador atencao">${p.atencao} Atenção</span>
+                <span class="contador dominado">${p.dominado} Dominado</span>
+            </div>
+            <div class="acoes-objetivo">
+                <button class="primario continuar">Continuar estudando →</button>
+                <button class="secundario ver-concurso">Ver concurso</button>
+                <button class="link trocar-objetivo">Trocar objetivo</button>
+            </div>
+        </div>
+    `);
+
+    card.querySelector('.continuar').onclick = () => abrir('questoes');
+    card.querySelector('.ver-concurso').onclick = () => { abrir('concursos'); abrirConcurso(o.concursoId); };
+    card.querySelector('.trocar-objetivo').onclick = () => abrir('concursos');
+    return card;
+}
+
+// Define o concurso/cargo alvo a partir da aba Concursos.
+async function definirObjetivo(concursoId, cargoId) {
+    try {
+        await api('/objetivo', {
+            method: 'PUT',
+            body: JSON.stringify({ concursoId, cargoId: cargoId || null })
+        });
+        abrir('inicio');
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+// ---------- concursos e provas ----------
+
+const SITUACOES = {
+    PREVISTO: 'Previsto',
+    INSCRICOES_ABERTAS: 'Inscrições abertas',
+    EM_ANDAMENTO: 'Em andamento',
+    ENCERRADO: 'Encerrado'
+};
+
+$('#btn-novo-concurso').onclick = async () => {
+    const form = $('#form-concurso');
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) {
+        // Preenche as bancas só ao abrir o formulário.
+        try {
+            const bancas = await api('/bancas');
+            const sel = $('#co-banca');
+            sel.innerHTML = '<option value="">Não informada</option>';
+            bancas.forEach(b => sel.appendChild(criar(`<option value="${b.id}">${escapar(b.nome)}</option>`)));
+        } catch { /* segue sem a lista */ }
+    }
+};
+
+$('#btn-salvar-concurso').onclick = async () => {
+    $('#concurso-erro').textContent = '';
+    try {
+        await api('/concursos', {
+            method: 'POST',
+            body: JSON.stringify({
+                nome: $('#co-nome').value.trim(),
+                orgao: $('#co-orgao').value.trim() || null,
+                ano: Number($('#co-ano').value),
+                bancaId: $('#co-banca').value ? Number($('#co-banca').value) : null,
+                situacao: $('#co-situacao').value,
+                vagas: $('#co-vagas').value ? Number($('#co-vagas').value) : null
+            })
+        });
+        ['#co-nome', '#co-orgao', '#co-vagas'].forEach(x => $(x).value = '');
+        $('#form-concurso').classList.add('hidden');
+        carregarConcursos();
+    } catch (e) {
+        $('#concurso-erro').textContent = e.message;
+    }
+};
+
+async function carregarConcursos() {
+    const alvo = $('#lista-concursos');
+    $('#prova-aberta').classList.add('hidden');
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
 
     try {
-        const e = await api('/engajamento');
-
-        const card = criar(`
-            <div class="card">
-                <h2>Constância</h2>
-                <div class="numeros">
-                    <div class="numero"><strong>${e.ofensivaAtual}</strong><span>${e.ofensivaAtual === 1 ? 'dia seguido' : 'dias seguidos'}</span></div>
-                    <div class="numero"><strong>${e.melhorOfensiva}</strong><span>melhor sequência</span></div>
-                    <div class="numero"><strong>${e.diasEstudadosNoMes}</strong><span>dias neste mês</span></div>
-                    <div class="numero"><strong>${e.totalDiasComEstudo}</strong><span>dias no total</span></div>
-                </div>
-                <div class="progresso-meta">
-                    <div class="topo">
-                        <span>${e.metaBatidaHoje ? 'Meta de hoje batida' : 'Meta de hoje'}</span>
-                        <span>${e.respondidasHoje}/${e.metaDiaria}</span>
-                    </div>
-                    <div class="barra"><div class="${e.metaBatidaHoje ? 'completa' : ''}" style="width:${Math.min(100, (e.respondidasHoje / e.metaDiaria) * 100)}%"></div></div>
-                    <div class="editor-meta">
-                        <label>Meta diária
-                            <input id="input-meta" type="number" min="1" max="500" value="${e.metaDiaria}">
-                        </label>
-                        <button id="btn-salvar-meta" class="acao">salvar</button>
-                    </div>
-                </div>
-            </div>
-        `);
-        alvo.appendChild(card);
-
-        $('#btn-salvar-meta').onclick = async () => {
-            try {
-                await api('/engajamento/meta', {
-                    method: 'PUT',
-                    body: JSON.stringify({ questoesPorDia: Number($('#input-meta').value) })
-                });
-                carregarEngajamento();
-            } catch (err) {
-                alert(err.message);
-            }
-        };
-
-        // Mapa de estudo: uma coluna por semana, uma linha por dia da semana.
-        const dias = await api('/engajamento/mapa?dias=182');
-        const mapa = criar('<div class="card"><h2>Mapa de estudo</h2><p class="sub">Últimos 6 meses. Quanto mais escuro, mais questões naquele dia.</p></div>');
-        const grade = criar('<div class="mapa-estudo"></div>');
-
-        // Preenche o começo para a primeira coluna alinhar com o dia da semana.
-        if (dias.length) {
-            const primeiro = new Date(dias[0].dia + 'T00:00:00').getDay();
-            for (let i = 0; i < primeiro; i++) {
-                grade.appendChild(criar('<div class="quadro vazio-quadro"></div>'));
-            }
+        const concursos = await api('/concursos');
+        alvo.innerHTML = '';
+        if (!concursos.length) {
+            alvo.appendChild(criar('<div class="vazio">Nenhum concurso cadastrado ainda.</div>'));
+            return;
         }
 
-        dias.forEach(d => {
-            const data = new Date(d.dia + 'T00:00:00').toLocaleDateString('pt-BR');
-            const quadro = criar(`<div class="quadro nivel-${d.nivel}" title="${data}: ${d.respondidas} ${d.respondidas === 1 ? 'questão' : 'questões'}"></div>`);
-            grade.appendChild(quadro);
+        concursos.forEach(c => {
+            const totalVagas = c.cargos.reduce((s, cg) => s + (cg.vagas || 0), 0) || c.vagas;
+            const linha = criar(`
+                <div class="linha-concurso">
+                    <div class="info-concurso">
+                        <strong>${escapar(c.nome)}</strong>
+                        <span class="sub">${[c.orgao, c.banca, c.ano].filter(Boolean).map(escapar).join(' · ')}${totalVagas ? ' · ' + totalVagas + ' vagas' : ''}${c.cargos.length ? ' · ' + c.cargos.length + (c.cargos.length === 1 ? ' cargo' : ' cargos') : ''}</span>
+                    </div>
+                    <span class="etiqueta-situacao ${c.situacao.toLowerCase()}">${SITUACOES[c.situacao] || c.situacao}</span>
+                    <button class="acao detalhar">ver detalhes</button>
+                </div>
+            `);
+            linha.querySelector('.detalhar').onclick = () => abrirConcurso(c.id);
+            alvo.appendChild(linha);
         });
-
-        mapa.appendChild(grade);
-        mapa.appendChild(criar(`
-            <div class="legenda-mapa">
-                <span class="sub">menos</span>
-                <div class="quadro nivel-0"></div>
-                <div class="quadro nivel-1"></div>
-                <div class="quadro nivel-2"></div>
-                <div class="quadro nivel-3"></div>
-                <div class="quadro nivel-4"></div>
-                <span class="sub">mais</span>
-            </div>
-        `));
-        mapaAlvo.appendChild(mapa);
     } catch (e) {
         alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
+}
+
+// Página do concurso: cronograma, cargos, conteúdo programático e provas.
+async function abrirConcurso(id) {
+    const alvo = $('#prova-aberta');
+    alvo.classList.remove('hidden');
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+
+    try {
+        const c = await api('/concursos/' + id);
+        alvo.innerHTML = '';
+
+        const totalVagas = c.cargos.reduce((s, cg) => s + (cg.vagas || 0), 0) || c.vagas;
+
+        const cabecalho = criar(`
+            <div class="card cabecalho-concurso">
+                <span class="etiqueta-situacao ${c.situacao.toLowerCase()}">${SITUACOES[c.situacao] || c.situacao}</span>
+                <h2>${escapar(c.nome)}</h2>
+                <p class="sub">${[c.orgao, c.banca, c.ano].filter(Boolean).map(escapar).join(' · ')}</p>
+                <div class="fichas-concurso">
+                    ${ficha('Vagas', totalVagas ?? '—')}
+                    ${ficha('Cargos', c.cargos.length || '—')}
+                    ${ficha('Inscrições até', c.inscricoesAte ? new Date(c.inscricoesAte + 'T00:00:00').toLocaleDateString('pt-BR') : '—')}
+                    ${ficha('Taxa', c.taxa ? 'R$ ' + Number(c.taxa).toFixed(2).replace('.', ',') : '—')}
+                </div>
+            </div>
+        `);
+        const voltar = criar('<button class="link">← Voltar para a lista</button>');
+        voltar.onclick = () => alvo.classList.add('hidden');
+        cabecalho.appendChild(voltar);
+        alvo.appendChild(cabecalho);
+
+        // Cronograma
+        if (c.etapas.length) {
+            const card = criar('<div class="card"><h2 class="titulo-icone"><span class="icone-titulo">◷</span> Cronograma</h2></div>');
+            const trilha = criar('<div class="trilha-etapas"></div>');
+            c.etapas.forEach(e => trilha.appendChild(criar(`
+                <div class="etapa ${e.status.toLowerCase()}">
+                    <span class="marca-etapa"></span>
+                    <div>
+                        <strong>${escapar(e.nome)}</strong>
+                        <span class="sub">${e.dataPrevista ? new Date(e.dataPrevista + 'T00:00:00').toLocaleDateString('pt-BR') : 'sem data'} · ${ROTULOS_ETAPA[e.status] || e.status}${
+                            e.diasRestantes != null && e.status !== 'CONCLUIDO'
+                                ? (e.diasRestantes >= 0 ? ` · faltam ${e.diasRestantes} dias` : ' · data passou')
+                                : ''}</span>
+                    </div>
+                </div>
+            `)));
+            card.appendChild(trilha);
+            alvo.appendChild(card);
+        }
+
+        // Cargos e conteúdo programático
+        if (c.cargos.length) {
+            const card = criar('<div class="card"><h2 class="titulo-icone"><span class="icone-titulo">▤</span> Cargos e conteúdo programático</h2></div>');
+            c.cargos.forEach(cg => {
+                const bloco = criar(`
+                    <div class="bloco-cargo">
+                        <div class="topo-cargo">
+                            <div>
+                                <strong>${escapar(cg.nome)}</strong>
+                                <span class="sub">${[cg.nivel, cg.vagas ? cg.vagas + ' vagas' : null,
+                                    cg.cadastroReserva ? cg.cadastroReserva + ' CR' : null,
+                                    cg.salario ? 'R$ ' + Number(cg.salario).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : null]
+                                    .filter(Boolean).map(escapar).join(' · ')}</span>
+                            </div>
+                            <button class="acao definir">definir como objetivo</button>
+                        </div>
+                        <div class="conteudo-cargo"></div>
+                    </div>
+                `);
+                bloco.querySelector('.definir').onclick = () => definirObjetivo(c.id, cg.id);
+
+                const lista = bloco.querySelector('.conteudo-cargo');
+                if (cg.conteudo.length) {
+                    cg.conteudo.forEach(d => lista.appendChild(criar(
+                        `<span class="chip-disciplina">${escapar(d.disciplina)}${d.totalTopicos ? ` <span class="qtd">${d.totalTopicos}</span>` : ''}</span>`
+                    )));
+                } else {
+                    lista.appendChild(criar('<span class="sub">Conteúdo programático não cadastrado.</span>'));
+                }
+                card.appendChild(bloco);
+            });
+            alvo.appendChild(card);
+        }
+
+        // Provas
+        if (c.provas.length) {
+            const card = criar('<div class="card"><h2 class="titulo-icone"><span class="icone-titulo">✎</span> Provas anteriores</h2></div>');
+            c.provas.forEach(p => {
+                const item = criar(`
+                    <button class="item-prova">
+                        <span>${escapar(p.cargo)}${p.nivel ? ' · ' + escapar(p.nivel) : ''}</span>
+                        <span class="sub">${p.totalQuestoes} ${p.totalQuestoes === 1 ? 'questão' : 'questões'} →</span>
+                    </button>
+                `);
+                item.onclick = () => abrirProva(p.id);
+                card.appendChild(item);
+            });
+            alvo.appendChild(card);
+        }
+
+        if (c.observacoes) {
+            alvo.appendChild(criar(`<div class="card"><h2>Observações</h2><p class="sub">${escapar(c.observacoes)}</p></div>`));
+        }
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+function ficha(rotulo, valor) {
+    return `<div class="ficha"><span class="rotulo">${rotulo}</span><strong>${valor}</strong></div>`;
+}
+
+async function abrirProva(id) {
+    const alvo = $('#prova-aberta');
+    alvo.classList.remove('hidden');
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+
+    try {
+        const prova = await api('/provas/' + id);
+        alvo.innerHTML = '';
+
+        const cabecalho = criar(`
+            <div class="card">
+                <h2>${escapar(prova.cargo)}</h2>
+                <p class="sub">${[prova.concurso, prova.orgao, prova.banca, prova.ano].filter(Boolean).map(escapar).join(' · ')} · ${prova.totalQuestoes} questões</p>
+            </div>
+        `);
+        const voltar = criar('<button class="link">← Voltar</button>');
+        voltar.onclick = () => carregarConcursos();
+        cabecalho.appendChild(voltar);
+        alvo.appendChild(cabecalho);
+
+        prova.questoes.forEach(item => {
+            const card = cardQuestao(item.questao, responderDireto);
+            card.querySelector('.cabecalho-questao').prepend(
+                criar(`<span class="numero-prova">${item.numero}</span>`));
+            alvo.appendChild(card);
+        });
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+// ---------- estatísticas coletivas e comentários ----------
+
+// Mostrado depois que o usuário responde: como os outros se saíram.
+async function mostrarEstatisticasQuestao(questaoId, area) {
+    try {
+        const e = await api(`/questoes/${questaoId}/estatisticas`);
+        if (e.totalRespostas === 0) return;
+
+        const bloco = criar(`
+            <div class="painel-comunidade">
+                <div class="topo-comunidade">
+                    <span class="rotulo">COMO A COMUNIDADE FOI</span>
+                    <span class="etiqueta-dificuldade">${escapar(e.dificuldade)}</span>
+                </div>
+                <p class="sub">${e.percentualAcerto}% de acerto em ${e.totalRespostas} ${e.totalRespostas === 1 ? 'resposta' : 'respostas'}.</p>
+            </div>
+        `);
+
+        e.distribuicao.forEach(f => bloco.appendChild(criar(`
+            <div class="fatia-alternativa">
+                <span class="letra ${f.correta ? 'certa' : ''}">${f.letra}</span>
+                <span class="mini-barra"><span class="${f.correta ? 'ok' : 'nok'}" style="width:${f.percentual}%"></span></span>
+                <span class="pct">${f.percentual}%</span>
+            </div>
+        `)));
+
+        area.appendChild(bloco);
+    } catch { /* estatística é complemento: falhar aqui não atrapalha a resposta */ }
+}
+
+// Caixa de comentários, carregada sob demanda.
+async function montarComentarios(questaoId, area) {
+    const painel = criar(`
+        <div class="painel-comentarios">
+            <button class="link abrir-comentarios">Ver comentários</button>
+            <div class="conteudo-comentarios hidden"></div>
+        </div>
+    `);
+    const botao = painel.querySelector('.abrir-comentarios');
+    const conteudo = painel.querySelector('.conteudo-comentarios');
+    let carregado = false;
+
+    botao.onclick = async () => {
+        conteudo.classList.toggle('hidden');
+        botao.textContent = conteudo.classList.contains('hidden') ? 'Ver comentários' : 'Ocultar comentários';
+        if (carregado) return;
+        carregado = true;
+        await recarregarComentarios(questaoId, conteudo);
+    };
+
+    area.appendChild(painel);
+}
+
+async function recarregarComentarios(questaoId, conteudo) {
+    conteudo.innerHTML = '<div class="sub">Carregando…</div>';
+    try {
+        const lista = await api(`/questoes/${questaoId}/comentarios`);
+        conteudo.innerHTML = '';
+
+        const form = criar(`
+            <div class="form-comentario">
+                <textarea placeholder="Escreva um comentário sobre esta questão…" rows="3"></textarea>
+                <button class="acao enviar">Comentar</button>
+            </div>
+        `);
+        const campo = form.querySelector('textarea');
+        form.querySelector('.enviar').onclick = async () => {
+            const texto = campo.value.trim();
+            if (!texto) return;
+            try {
+                await api(`/questoes/${questaoId}/comentarios`, {
+                    method: 'POST',
+                    body: JSON.stringify({ texto })
+                });
+                campo.value = '';
+                recarregarComentarios(questaoId, conteudo);
+            } catch (e) { alert(e.message); }
+        };
+        conteudo.appendChild(form);
+
+        if (!lista.length) {
+            conteudo.appendChild(criar('<div class="sub">Nenhum comentário ainda. Seja o primeiro.</div>'));
+            return;
+        }
+
+        lista.forEach(c => {
+            const item = criar(`
+                <div class="comentario">
+                    <div class="topo">
+                        <strong>${escapar(c.autor)}</strong>
+                        <span class="sub">${new Date(c.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                    </div>
+                    <p>${escapar(c.texto)}</p>
+                </div>
+            `);
+            if (c.meu) {
+                const apagar = criar('<button class="acao excluir">apagar</button>');
+                apagar.onclick = async () => {
+                    await api('/comentarios/' + c.id, { method: 'DELETE' });
+                    recarregarComentarios(questaoId, conteudo);
+                };
+                item.querySelector('.topo').appendChild(apagar);
+            }
+            conteudo.appendChild(item);
+        });
+    } catch (e) {
+        conteudo.innerHTML = `<div class="sub">${escapar(e.message)}</div>`;
+    }
+}
+
+// ---------- página inicial ----------
+
+// Números da plataforma. Todos vêm de endpoints que já existem: pegamos o
+// total de questões do cabeçalho da paginação e contamos o catálogo.
+async function numerosDaPlataforma() {
+    const [pagina, bancas, disciplinas] = await Promise.all([
+        api('/questoes?size=1'),
+        api('/bancas').catch(() => []),
+        api('/disciplinas').catch(() => [])
+    ]);
+
+    // Com a serialização VIA_DTO os metadados vêm dentro de "page";
+    // o fallback cobre o formato antigo.
+    const totalQuestoes = pagina.page?.totalElements ?? pagina.totalElements ?? 0;
+
+    const contarAssuntos = lista =>
+        lista.reduce((soma, a) => soma + 1 + contarAssuntos(a.subassuntos || []), 0);
+    const totalAssuntos = disciplinas.reduce((s, d) => s + contarAssuntos(d.assuntos || []), 0);
+
+    return {
+        questoes: totalQuestoes,
+        bancas: bancas.length,
+        disciplinas: disciplinas.length,
+        assuntos: totalAssuntos
+    };
+}
+
+// Uma questão de exemplo, sorteada entre as primeiras — sem gabarito.
+async function questaoDestaque() {
+    try {
+        const pagina = await api('/questoes?size=10');
+        const lista = pagina.content || [];
+        if (!lista.length) return null;
+        return lista[Math.floor(Math.random() * lista.length)];
+    } catch {
+        return null;
+    }
+}
+
+function recorte(texto, limite) {
+    const t = String(texto || '');
+    return t.length > limite ? t.slice(0, limite).trimEnd() + '…' : t;
+}
+
+async function carregarInicio() {
+    const alvo = $('#painel-inicio');
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+
+    try {
+        const nome = primeiroNome(perfilUsuario?.nome);
+        const [numeros, destaque, eng] = await Promise.all([
+            numerosDaPlataforma(),
+            questaoDestaque(),
+            api('/engajamento').catch(() => null)
+        ]);
+
+        alvo.innerHTML = '';
+
+        const hero = criar(`
+            <div class="hero">
+                <div class="selos-hero">
+                    <span class="selo-hero">${numeros.questoes.toLocaleString('pt-BR')} questões disponíveis</span>
+                    ${eng ? `<span class="selo-hero dourado">${eng.ofensivaAtual} ${eng.ofensivaAtual === 1 ? 'dia' : 'dias'} de ofensiva</span>` : ''}
+                </div>
+                <h1 class="titulo-hero">${saudacao()}, <span class="destaque-nome">${escapar(nome)}.</span></h1>
+                <p class="sub-hero">Continue de onde parou. Suas questões, simulados e cadernos estão esperando.</p>
+                <div class="acoes-hero">
+                    <button id="ir-questoes" class="primario">Resolver questões</button>
+                    <button id="ir-simulado" class="secundario">Criar simulado</button>
+                </div>
+            </div>
+        `);
+        const objetivo = await cartaoObjetivo();
+        if (objetivo) alvo.appendChild(objetivo);
+
+        alvo.appendChild(hero);
+
+        hero.querySelector('#ir-questoes').onclick = () => abrir('questoes');
+        hero.querySelector('#ir-simulado').onclick = () => abrir('simulado');
+
+        // Prévia de questão: mostra o formato sem revelar resposta.
+        if (destaque) {
+            const previa = criar(`
+                <div class="previa-questao">
+                    <div class="barra-janela">
+                        <span class="bolinha"></span><span class="bolinha"></span><span class="bolinha"></span>
+                        <span class="rotulo-janela">QUESTÃO #${destaque.id}</span>
+                    </div>
+                    <div class="corpo-previa">
+                        <span class="trilha-previa">${escapar(destaque.disciplina)}${destaque.assunto ? ' · ' + escapar(destaque.assunto) : ''}</span>
+                        <p class="enunciado-previa">(${escapar(destaque.banca)} — ${destaque.ano}) ${escapar(recorte(destaque.enunciado, 180))}</p>
+                        <div class="alternativas-previa"></div>
+                        <button class="link ver-questao">Resolver esta questão →</button>
+                    </div>
+                </div>
+            `);
+            const lista = previa.querySelector('.alternativas-previa');
+            destaque.alternativas.slice(0, 3).forEach((alt, i) => lista.appendChild(criar(
+                `<div class="alternativa-previa"><span class="marcador"></span>${String.fromCharCode(65 + i)}) ${escapar(recorte(alt.texto, 70))}</div>`
+            )));
+            previa.querySelector('.ver-questao').onclick = () => abrir('questoes');
+            alvo.appendChild(previa);
+        }
+
+        // Números da plataforma
+        const numerosBloco = criar('<div class="numeros-hero"></div>');
+        [
+            { valor: numeros.questoes.toLocaleString('pt-BR'), rotulo: 'Questões' },
+            { valor: numeros.bancas, rotulo: 'Bancas' },
+            { valor: numeros.disciplinas, rotulo: 'Disciplinas' },
+            { valor: numeros.assuntos, rotulo: 'Assuntos' }
+        ].forEach(n => numerosBloco.appendChild(criar(`
+            <div class="numero-hero">
+                <strong>${n.valor}</strong>
+                <span>${n.rotulo}</span>
+            </div>
+        `)));
+        alvo.appendChild(numerosBloco);
+
+        // Atalhos para as áreas principais
+        const atalhos = criar('<div class="grade-atalhos"></div>');
+        [
+            { tela: 'revisao', icone: '↻', titulo: 'Revisão de hoje', texto: 'Questões que voltam no intervalo certo.' },
+            { tela: 'erradas', icone: '✕', titulo: 'Revisar erradas', texto: 'O que você errou na última tentativa.' },
+            { tela: 'cadernos', icone: '▤', titulo: 'Seus cadernos', texto: 'Listas que você montou para estudar.' },
+            { tela: 'videoaulas', icone: '▶', titulo: 'Videoaulas', texto: 'Recomendadas pelos seus pontos fracos.' },
+            { tela: 'concursos', icone: '◷', titulo: 'Concursos e provas', texto: 'Resolva provas inteiras, na ordem original.' },
+            { tela: 'dashboard', icone: '◈', titulo: 'Seu desempenho', texto: 'Acertos, evolução e pontos fracos.' }
+        ].forEach(a => {
+            const card = criar(`
+                <button class="card-atalho">
+                    <span class="icone-atalho">${a.icone}</span>
+                    <strong>${a.titulo}</strong>
+                    <span class="sub">${a.texto}</span>
+                </button>
+            `);
+            card.onclick = () => abrir(a.tela);
+            atalhos.appendChild(card);
+        });
+        alvo.appendChild(atalhos);
+
+        // --- Tudo que você precisa ---
+        const recursos = criar(`
+            <div class="secao-inicio">
+                <h2 class="titulo-secao">Tudo que você precisa para estudar melhor</h2>
+                <p class="sub centralizado">Ferramentas pensadas para quem estuda para concurso.</p>
+                <div class="grade-recursos"></div>
+            </div>
+        `);
+        const gradeRecursos = recursos.querySelector('.grade-recursos');
+        [
+            { icone: '◈', titulo: 'Análise de desempenho', texto: 'Acertos por disciplina, por assunto e ao longo do tempo.' },
+            { icone: '▤', titulo: 'Banco de questões', texto: 'Filtros combináveis por disciplina, assunto, banca e ano.' },
+            { icone: '◷', titulo: 'Simulado cronometrado', texto: 'Monte a prova, controle o tempo e veja o resultado no fim.' },
+            { icone: '↻', titulo: 'Revisão espaçada', texto: 'Cada questão volta no intervalo certo para você fixar.' },
+            { icone: '▶', titulo: 'Videoaulas dirigidas', texto: 'Recomendadas a partir dos assuntos em que você mais erra.' },
+            { icone: '★', titulo: 'Cadernos e marcadores', texto: 'Organize as questões do seu jeito e retome quando quiser.' }
+        ].forEach(r => gradeRecursos.appendChild(criar(`
+            <div class="card-recurso">
+                <span class="icone-atalho">${r.icone}</span>
+                <strong>${r.titulo}</strong>
+                <span class="sub">${r.texto}</span>
+            </div>
+        `)));
+        alvo.appendChild(recursos);
+
+        // --- Como funciona ---
+        const passos = criar(`
+            <div class="secao-inicio">
+                <h2 class="titulo-secao">Como funciona</h2>
+                <div class="grade-passos"></div>
+            </div>
+        `);
+        const gradePassos = passos.querySelector('.grade-passos');
+        [
+            { n: '01', titulo: 'Defina sua meta', texto: 'Escolha quantas questões quer resolver por dia.' },
+            { n: '02', titulo: 'Resolva questões', texto: 'Filtre por assunto e receba a correção na hora.' },
+            { n: '03', titulo: 'Revise no tempo certo', texto: 'O que você erra volta; o que domina se afasta.' },
+            { n: '04', titulo: 'Acompanhe a evolução', texto: 'Veja onde melhorou e o que ainda está fraco.' }
+        ].forEach(p => gradePassos.appendChild(criar(`
+            <div class="passo">
+                <span class="numero-passo">${p.n}</span>
+                <strong>${p.titulo}</strong>
+                <span class="sub">${p.texto}</span>
+            </div>
+        `)));
+        alvo.appendChild(passos);
+
+        // --- Chamada final ---
+        const chamada = criar(`
+            <div class="chamada-final">
+                <h2>Continue estudando agora.</h2>
+                <p>Suas questões, simulados e revisões estão esperando.</p>
+                <button class="primario">Resolver questões</button>
+            </div>
+        `);
+        chamada.querySelector('button').onclick = () => abrir('questoes');
+        alvo.appendChild(chamada);
+
+        alvo.appendChild(criar(`
+            <footer class="rodape-inicio">
+                <span>Concursos Platform</span>
+                <span class="sub">Projeto pessoal em desenvolvimento · ${new Date().getFullYear()}</span>
+            </footer>
+        `));
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+// ---------- revisão espaçada ----------
+
+// Selo com a quantidade pendente, no menu.
+async function atualizarSeloRevisao() {
+    try {
+        const r = await api('/revisoes/resumo');
+        const selo = $('#selo-revisao');
+        selo.textContent = r.paraHoje;
+        selo.classList.toggle('hidden', r.paraHoje === 0);
+    } catch { /* silencioso: o selo é secundário */ }
+}
+
+async function carregarRevisao() {
+    const agenda = $('#agenda-revisao');
+    const alvo = $('#lista-revisao');
+    agenda.innerHTML = '';
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+
+    try {
+        const [resumo, questoes] = await Promise.all([
+            api('/revisoes/resumo'),
+            api('/revisoes/hoje')
+        ]);
+
+        if (resumo.proximosDias.length) {
+            const linha = criar('<div class="agenda-semana"></div>');
+            resumo.proximosDias.forEach(d => linha.appendChild(criar(`
+                <div class="dia-agenda">
+                    <strong>${d.total}</strong>
+                    <span>${new Date(d.dia + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                </div>
+            `)));
+            agenda.appendChild(criar('<p class="sub">Próximos dias:</p>'));
+            agenda.appendChild(linha);
+        }
+
+        alvo.innerHTML = '';
+        if (!questoes.length) {
+            alvo.appendChild(criar('<div class="vazio">Nada para revisar hoje. Responda questões e elas voltarão no momento certo.</div>'));
+            return;
+        }
+        questoes.forEach(q => alvo.appendChild(cardQuestao(q, async (questao, alt, card) => {
+            await responderDireto(questao, alt, card);
+            atualizarSeloRevisao();
+        })));
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+// ---------- componentes de gráfico (SVG puro, sem biblioteca) ----------
+
+// Rosca. O truque é stroke-dasharray: desenhamos o arco como um traço
+// cujo comprimento é a fatia que queremos, e o resto fica vazado.
+function rosca(fatias, centroTopo, centroBase, tamanho = 150) {
+    const raio = 54;
+    const circunferencia = 2 * Math.PI * raio;
+    const total = fatias.reduce((s, f) => s + f.valor, 0);
+
+    let offset = 0;
+    const arcos = fatias.filter(f => f.valor > 0).map(f => {
+        const comprimento = total ? (f.valor / total) * circunferencia : 0;
+        const arco = `<circle cx="70" cy="70" r="${raio}" fill="none"
+            stroke="${f.cor}" stroke-width="16" stroke-linecap="butt"
+            stroke-dasharray="${comprimento} ${circunferencia - comprimento}"
+            stroke-dashoffset="${-offset}"
+            transform="rotate(-90 70 70)"></circle>`;
+        offset += comprimento;
+        return arco;
+    }).join('');
+
+    const trilho = total === 0
+        ? `<circle cx="70" cy="70" r="${raio}" fill="none" stroke="var(--trilho)" stroke-width="16"></circle>`
+        : '';
+
+    return `
+        <svg viewBox="0 0 140 140" width="${tamanho}" height="${tamanho}" class="rosca">
+            ${trilho}${arcos}
+            <text x="70" y="66" text-anchor="middle" class="rosca-valor">${centroTopo}</text>
+            <text x="70" y="86" text-anchor="middle" class="rosca-rotulo">${centroBase}</text>
+        </svg>`;
+}
+
+// Anel de progresso pequeno, usado na meta diária.
+function anelProgresso(percentual, tamanho = 46) {
+    const raio = 20;
+    const circunferencia = 2 * Math.PI * raio;
+    const preenchido = Math.min(100, percentual) / 100 * circunferencia;
+    return `
+        <svg viewBox="0 0 50 50" width="${tamanho}" height="${tamanho}">
+            <circle cx="25" cy="25" r="${raio}" fill="none" stroke="var(--trilho)" stroke-width="5"></circle>
+            <circle cx="25" cy="25" r="${raio}" fill="none" stroke="var(--primario)" stroke-width="5"
+                stroke-linecap="round"
+                stroke-dasharray="${preenchido} ${circunferencia - preenchido}"
+                transform="rotate(-90 25 25)"></circle>
+            <text x="25" y="29" text-anchor="middle" class="anel-texto">${Math.round(percentual)}%</text>
+        </svg>`;
+}
+
+// Gráfico de linha da evolução. Eixo Y é o percentual de acerto (0 a 100).
+function graficoLinha(pontos) {
+    if (!pontos.length) return '<div class="vazio">Sem dados ainda.</div>';
+
+    const largura = 620, altura = 200, margemX = 34, margemY = 20;
+    const areaL = largura - margemX * 2;
+    const areaA = altura - margemY * 2;
+
+    const x = i => margemX + (pontos.length === 1 ? areaL / 2 : (i / (pontos.length - 1)) * areaL);
+    const y = v => margemY + areaA - (v / 100) * areaA;
+
+    const linha = pontos.map((p, i) => `${x(i)},${y(p.percentualAcerto)}`).join(' ');
+    const area = `${margemX},${margemY + areaA} ${linha} ${x(pontos.length - 1)},${margemY + areaA}`;
+
+    const grade = [0, 25, 50, 75, 100].map(v => `
+        <line x1="${margemX}" y1="${y(v)}" x2="${largura - margemX}" y2="${y(v)}" class="grade"></line>
+        <text x="${margemX - 8}" y="${y(v) + 4}" text-anchor="end" class="eixo">${v}</text>
+    `).join('');
+
+    const bolinhas = pontos.map((p, i) => `
+        <circle cx="${x(i)}" cy="${y(p.percentualAcerto)}" r="4" class="ponto">
+            <title>${new Date(p.dia + 'T00:00:00').toLocaleDateString('pt-BR')}: ${p.percentualAcerto}% (${p.acertos}/${p.respondidas})</title>
+        </circle>`).join('');
+
+    // Mostra no máximo 6 rótulos de data para não embolar.
+    const passo = Math.max(1, Math.ceil(pontos.length / 6));
+    const datas = pontos.map((p, i) => i % passo === 0 || i === pontos.length - 1
+        ? `<text x="${x(i)}" y="${altura - 2}" text-anchor="middle" class="eixo">${new Date(p.dia + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</text>`
+        : '').join('');
+
+    return `
+        <svg viewBox="0 0 ${largura} ${altura}" class="gr-linha">
+            ${grade}
+            <polygon points="${area}" class="area-linha"></polygon>
+            <polyline points="${linha}" class="traco"></polyline>
+            ${bolinhas}${datas}
+        </svg>`;
+}
+
+
+// Radar de competências: um eixo por disciplina, distância do centro = % de acerto.
+// Precisa de ao menos 3 eixos para formar um polígono legível.
+function radar(itens, tamanho = 260) {
+    if (itens.length < 3) return null;
+
+    const centro = tamanho / 2;
+    const raio = centro - 42;
+    const passo = (2 * Math.PI) / itens.length;
+
+    // -90° para o primeiro eixo apontar para cima.
+    const ponto = (indice, proporcao) => {
+        const angulo = indice * passo - Math.PI / 2;
+        return [
+            centro + Math.cos(angulo) * raio * proporcao,
+            centro + Math.sin(angulo) * raio * proporcao
+        ];
+    };
+
+    // Teias de fundo em 25%, 50%, 75% e 100%.
+    const teias = [0.25, 0.5, 0.75, 1].map(p => {
+        const pontos = itens.map((_, i) => ponto(i, p).join(',')).join(' ');
+        return `<polygon points="${pontos}" class="teia"></polygon>`;
+    }).join('');
+
+    const eixos = itens.map((_, i) => {
+        const [x, y] = ponto(i, 1);
+        return `<line x1="${centro}" y1="${centro}" x2="${x}" y2="${y}" class="eixo-radar"></line>`;
+    }).join('');
+
+    const area = itens.map((it, i) => ponto(i, Math.max(it.valor, 0) / 100).join(',')).join(' ');
+
+    const marcas = itens.map((it, i) => {
+        const [x, y] = ponto(i, Math.max(it.valor, 0) / 100);
+        return `<circle cx="${x}" cy="${y}" r="3.5" class="marca-radar"><title>${escapar(it.rotulo)}: ${it.valor}%</title></circle>`;
+    }).join('');
+
+    const rotulos = itens.map((it, i) => {
+        const [x, y] = ponto(i, 1.18);
+        const ancora = Math.abs(x - centro) < 12 ? 'middle' : (x > centro ? 'start' : 'end');
+        const nome = it.rotulo.length > 16 ? it.rotulo.slice(0, 15) + '…' : it.rotulo;
+        return `<text x="${x}" y="${y + 4}" text-anchor="${ancora}" class="rotulo-radar">${escapar(nome)}</text>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${tamanho} ${tamanho}" class="radar">
+        ${teias}${eixos}
+        <polygon points="${area}" class="area-radar"></polygon>
+        ${marcas}${rotulos}
+    </svg>`;
 }
 
 // ---------- dashboard ----------
@@ -803,60 +1568,262 @@ function linhaBarra(rotulo, acertos, total, percentual, sufixo = '') {
     `);
 }
 
-async function carregarDashboard() {
-    const resumo = $('#resumo-dashboard');
-    const disc = $('#disciplinas-dashboard');
-    const assuntos = $('#assuntos-dashboard');
-    const evolucao = $('#evolucao-dashboard');
-    resumo.innerHTML = '<div class="vazio">Carregando…</div>';
-    disc.innerHTML = assuntos.innerHTML = evolucao.innerHTML = '';
+// Bom dia até 12h, boa tarde até 18h, boa noite depois disso.
+function saudacao() {
+    const h = new Date().getHours();
+    if (h < 12) return 'Bom dia';
+    if (h < 18) return 'Boa tarde';
+    return 'Boa noite';
+}
 
-    carregarEngajamento();
+// Primeiro nome, para a saudação não ficar longa demais.
+function primeiroNome(nome) {
+    return String(nome || '').trim().split(/\s+/)[0] || 'estudante';
+}
+
+async function carregarDashboard() {
+    const alvo = $('#painel-dashboard');
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
 
     try {
-        const d = await api('/estatisticas');
+        // Busca tudo em paralelo: a tela só depende do conjunto completo.
+        const [perfil, eng, stats, assuntos, serie, mapaDias, videos] = await Promise.all([
+            perfilUsuario ? Promise.resolve(perfilUsuario) : api('/perfil'),
+            api('/engajamento'),
+            api('/estatisticas'),
+            api('/estatisticas/assuntos'),
+            api('/estatisticas/evolucao?dias=30'),
+            api('/engajamento/mapa?dias=182'),
+            api('/videoaulas/sugestoes?limite=3').catch(() => [])
+        ]);
 
-        resumo.innerHTML = '';
-        resumo.appendChild(criar(`
+        alvo.innerHTML = '';
+        alvo.appendChild(criar(`<h1 class="saudacao">${saudacao()}, ${escapar(primeiroNome(perfil.nome))}!</h1>`));
+
+        const grade = criar('<div class="grade-painel"></div>');
+        const principal = criar('<div class="coluna-principal"></div>');
+        const lateral = criar('<div class="coluna-lateral"></div>');
+
+        const cardObjetivo = await cartaoObjetivo();
+        if (cardObjetivo) principal.appendChild(cardObjetivo);
+
+        // --- meta diária ---
+        const pctMeta = eng.metaDiaria ? (eng.respondidasHoje / eng.metaDiaria) * 100 : 0;
+        const faltam = Math.max(0, eng.metaDiaria - eng.respondidasHoje);
+        const metaCard = criar(`
+            <div class="card card-meta">
+                ${anelProgresso(pctMeta)}
+                <div class="meta-info">
+                    <span class="rotulo">META DIÁRIA</span>
+                    <div class="meta-numeros">
+                        <strong>${eng.respondidasHoje}</strong> / 
+                        <input id="input-meta" type="number" min="1" max="500" value="${eng.metaDiaria}">
+                        <span class="sub">questões</span>
+                    </div>
+                    <span class="sub">${faltam === 0
+                        ? 'Meta batida hoje. Bom trabalho.'
+                        : `Faltam ${faltam} ${faltam === 1 ? 'questão' : 'questões'} para bater a meta`}</span>
+                </div>
+                <button id="btn-resolver" class="primario btn-resolver">Resolver →</button>
+            </div>
+        `);
+        principal.appendChild(metaCard);
+
+        // Salvar a meta ao sair do campo evita um botão extra na interface.
+        metaCard.querySelector('#input-meta').onchange = async (ev) => {
+            try {
+                await api('/engajamento/meta', {
+                    method: 'PUT',
+                    body: JSON.stringify({ questoesPorDia: Number(ev.target.value) })
+                });
+                carregarDashboard();
+            } catch (err) { alert(err.message); }
+        };
+        metaCard.querySelector('#btn-resolver').onclick = () => abrir('questoes');
+
+        // --- quatro indicadores ---
+        const indicadores = [
+            { rotulo: 'RESOLVIDAS', valor: stats.totalRespondidas, icone: '📘', cor: 'roxo' },
+            { rotulo: 'DISCIPLINAS', valor: stats.porDisciplina.length, icone: '🎓', cor: 'roxo' },
+            { rotulo: 'ACERTOS', valor: stats.totalAcertos, icone: '✓', cor: 'verde' },
+            { rotulo: 'ERROS', valor: stats.totalErros, icone: '✕', cor: 'vermelho' }
+        ];
+        const linhaIndicadores = criar('<div class="grade-indicadores"></div>');
+        indicadores.forEach(i => linhaIndicadores.appendChild(criar(`
+            <div class="card card-indicador">
+                <div class="topo-indicador">
+                    <span class="rotulo">${i.rotulo}</span>
+                    <span class="icone ${i.cor}">${i.icone}</span>
+                </div>
+                <strong>${i.valor}</strong>
+            </div>
+        `)));
+        principal.appendChild(linhaIndicadores);
+
+        // --- roscas: acertos e disciplinas ---
+        const duplaRoscas = criar('<div class="grade-dupla"></div>');
+
+        duplaRoscas.appendChild(criar(`
             <div class="card">
-                <h2>Desempenho geral</h2>
-                <div class="numeros">
-                    <div class="numero"><strong>${d.percentualAcertoGeral}%</strong><span>aproveitamento</span></div>
-                    <div class="numero"><strong>${d.totalRespondidas}</strong><span>respondidas</span></div>
-                    <div class="numero"><strong>${d.totalAcertos}</strong><span>acertos</span></div>
-                    <div class="numero"><strong>${d.totalErros}</strong><span>erros</span></div>
+                <h2 class="titulo-icone"><span class="icone-titulo">%</span> Acertos</h2>
+                <div class="centro-rosca">
+                    ${rosca(
+                        [{ valor: stats.totalAcertos, cor: 'var(--acerto)' },
+                         { valor: stats.totalErros, cor: 'var(--erro)' }],
+                        stats.percentualAcertoGeral + '%', 'ACERTO'
+                    )}
+                </div>
+                <p class="sub centralizado">Sua taxa de acerto em ${stats.totalRespondidas} ${stats.totalRespondidas === 1 ? 'questão respondida' : 'questões respondidas'}.</p>
+                <div class="etiquetas">
+                    <span class="etiqueta verde">✓ ${stats.totalAcertos} certas</span>
+                    <span class="etiqueta vermelha">✕ ${stats.totalErros} erradas</span>
                 </div>
             </div>
         `));
 
-        if (d.porDisciplina.length) {
-            const card = criar('<div class="card"><h2>Por disciplina</h2></div>');
-            d.porDisciplina.forEach(x =>
-                card.appendChild(linhaBarra(x.disciplina, x.acertos, x.respondidas, x.percentualAcerto)));
-            disc.appendChild(card);
+        const cardDisciplinas = criar(`
+            <div class="card">
+                <h2 class="titulo-icone"><span class="icone-titulo">◷</span> Desempenho por disciplina</h2>
+                <div class="centro-rosca">
+                    ${rosca(
+                        stats.porDisciplina.map((d, i) => ({ valor: d.respondidas, cor: paleta(i) })),
+                        stats.porDisciplina.length, 'DISCIPLINAS'
+                    )}
+                </div>
+                <div class="lista-disciplinas"></div>
+            </div>
+        `);
+        const listaDisc = cardDisciplinas.querySelector('.lista-disciplinas');
+        stats.porDisciplina.forEach((d, i) => listaDisc.appendChild(criar(`
+            <div class="item-disciplina">
+                <span class="ponto-cor" style="background:${paleta(i)}"></span>
+                <span class="nome">${escapar(d.disciplina)}</span>
+                <span class="mini-barra"><span style="width:${d.percentualAcerto}%"></span></span>
+                <span class="qtd">${d.respondidas}</span>
+            </div>
+        `)));
+        duplaRoscas.appendChild(cardDisciplinas);
+        principal.appendChild(duplaRoscas);
+
+        // Radar por assunto quando há variedade; senão, por disciplina.
+        const baseRadar = assuntos.length >= 3
+            ? assuntos.slice(0, 8).map(a => ({ rotulo: a.assunto, valor: a.percentualAcerto }))
+            : stats.porDisciplina.map(d => ({ rotulo: d.disciplina, valor: d.percentualAcerto }));
+
+        const svgRadar = radar(baseRadar);
+        if (svgRadar) {
+            principal.appendChild(criar(`
+                <div class="card">
+                    <h2 class="titulo-icone"><span class="icone-titulo">◈</span> Radar de competências</h2>
+                    <p class="sub">Taxa de acerto por ${assuntos.length >= 3 ? 'assunto' : 'disciplina'}. Quanto mais para fora, melhor.</p>
+                    <div class="centro-rosca">${svgRadar}</div>
+                </div>
+            `));
         }
 
-        // Pontos fracos: a API ja devolve do pior para o melhor.
-        const porAssunto = await api('/estatisticas/assuntos');
-        if (porAssunto.length) {
-            const card = criar('<div class="card"><h2>Por assunto</h2><p class="sub">Do que você mais erra para o que mais acerta.</p></div>');
-            porAssunto.forEach(x =>
-                card.appendChild(linhaBarra(x.assunto, x.acertos, x.respondidas, x.percentualAcerto, x.disciplina)));
-            assuntos.appendChild(card);
+        // --- evolução ---
+        principal.appendChild(criar(`
+            <div class="card">
+                <h2 class="titulo-icone"><span class="icone-titulo">↗</span> Sua evolução</h2>
+                <p class="sub">Taxa de acerto por dia, nos últimos 30 dias.</p>
+                ${graficoLinha(serie)}
+            </div>
+        `));
+
+        // --- mapa de estudo ---
+        const cardMapa = criar(`
+            <div class="card">
+                <h2 class="titulo-icone"><span class="icone-titulo">▦</span> Mapa de estudo</h2>
+                <p class="sub">Últimos 6 meses. Quanto mais escuro, mais questões naquele dia.</p>
+            </div>
+        `);
+        const gradeMapa = criar('<div class="mapa-estudo"></div>');
+        if (mapaDias.length) {
+            const primeiro = new Date(mapaDias[0].dia + 'T00:00:00').getDay();
+            for (let i = 0; i < primeiro; i++) gradeMapa.appendChild(criar('<div class="quadro vazio-quadro"></div>'));
+        }
+        mapaDias.forEach(d => {
+            const data = new Date(d.dia + 'T00:00:00').toLocaleDateString('pt-BR');
+            gradeMapa.appendChild(criar(`<div class="quadro nivel-${d.nivel}" title="${data}: ${d.respondidas} ${d.respondidas === 1 ? 'questão' : 'questões'}"></div>`));
+        });
+        cardMapa.appendChild(gradeMapa);
+        cardMapa.appendChild(criar(`
+            <div class="legenda-mapa">
+                <span class="sub">menos</span>
+                <div class="quadro nivel-0"></div><div class="quadro nivel-1"></div>
+                <div class="quadro nivel-2"></div><div class="quadro nivel-3"></div>
+                <div class="quadro nivel-4"></div>
+                <span class="sub">mais</span>
+            </div>
+        `));
+        principal.appendChild(cardMapa);
+
+        // --- lateral: constância ---
+        lateral.appendChild(criar(`
+            <div class="card card-destaque">
+                <span class="rotulo claro">OFENSIVA</span>
+                <strong class="numero-grande">${eng.ofensivaAtual}</strong>
+                <span class="sub claro">${eng.ofensivaAtual === 1 ? 'dia seguido' : 'dias seguidos'} batendo a meta</span>
+                <div class="separador"></div>
+                <div class="mini-numeros">
+                    <div><strong>${eng.melhorOfensiva}</strong><span>recorde</span></div>
+                    <div><strong>${eng.diasEstudadosNoMes}</strong><span>no mês</span></div>
+                    <div><strong>${eng.totalDiasComEstudo}</strong><span>no total</span></div>
+                </div>
+            </div>
+        `));
+
+        // --- lateral: pontos fracos ---
+        if (assuntos.length) {
+            const card = criar('<div class="card"><h2>Pontos fracos</h2><p class="sub">Assuntos em que você mais erra.</p></div>');
+            assuntos.slice(0, 5).forEach(a => card.appendChild(criar(`
+                <div class="item-fraco">
+                    <div class="topo">
+                        <span>${escapar(a.assunto)}</span>
+                        <span class="${a.percentualAcerto < 60 ? 'ruim' : ''}">${a.percentualAcerto}%</span>
+                    </div>
+                    <span class="sub">${escapar(a.disciplina)} · ${a.acertos}/${a.respondidas}</span>
+                </div>
+            `)));
+            const ir = criar('<button class="link">Revisar questões erradas →</button>');
+            ir.onclick = () => abrir('erradas');
+            card.appendChild(ir);
+            lateral.appendChild(card);
         }
 
-        const serie = await api('/estatisticas/evolucao?dias=30');
-        if (serie.length) {
-            const card = criar('<div class="card"><h2>Últimos 30 dias</h2></div>');
-            serie.forEach(p => card.appendChild(linhaBarra(
-                new Date(p.dia + 'T00:00:00').toLocaleDateString('pt-BR'),
-                p.acertos, p.respondidas, p.percentualAcerto
-            )));
-            evolucao.appendChild(card);
+        // --- lateral: videoaulas recomendadas ---
+        if (videos.length) {
+            const card = criar('<div class="card"><h2>Recomendado para você</h2><p class="sub">Com base nos seus erros.</p></div>');
+            videos.forEach(v => {
+                const item = criar(`
+                    <div class="item-video">
+                        <img src="${escapar(v.thumbnail)}" alt="">
+                        <div>
+                            <strong>${escapar(v.titulo)}</strong>
+                            <span class="sub">${escapar(v.disciplina)}${v.assunto ? ' · ' + escapar(v.assunto) : ''}</span>
+                        </div>
+                    </div>`);
+                item.onclick = () => abrirVideo(v);
+                card.appendChild(item);
+            });
+            lateral.appendChild(card);
         }
+
+        grade.appendChild(principal);
+        grade.appendChild(lateral);
+        alvo.appendChild(grade);
     } catch (e) {
-        resumo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
+}
+
+// Cores das fatias, reaproveitadas na legenda.
+function paleta(i) {
+    // Lê as cores do tema ativo, para as fatias acompanharem claro/noturno.
+    const raiz = getComputedStyle(document.documentElement);
+    const v = nome => raiz.getPropertyValue(nome).trim();
+    const cores = [v('--verde'), v('--verde-2'), v('--dourado'), v('--suave'), v('--mapa-2'), v('--erro')];
+    return cores[i % cores.length];
 }
 
 // ---------- inicio ----------
