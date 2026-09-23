@@ -1,0 +1,20 @@
+# Blueprint do Render. Com este arquivo no repositório, o serviço pode ser
+# criado a partir dele em vez de configurado na mão pelo painel.
+services:
+  - type: web
+    name: concursos-platform
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      # Gerado automaticamente pelo Render, sem precisar digitar.
+      - key: JWT_SECRET
+        generateValue: true
+      # Os três abaixo precisam ser preenchidos no painel (dados do Neon).
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false

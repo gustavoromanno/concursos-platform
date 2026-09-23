@@ -2,6 +2,7 @@ package com.gustavo.concursos.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,10 +30,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Nao declaramos mais um DaoAuthenticationProvider como bean.
-    // Tendo um UserDetailsService e um PasswordEncoder no contexto, o proprio
-    // Spring Security monta o provider. Expor o provider manualmente fazia o
-    // framework avisar que o UserDetailsService seria ignorado no login.
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -44,11 +41,17 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // /auth/registrar e /auth/login sao publicos; o resto da API exige token.
+                        // Públicos: login, cadastro, arquivos do frontend e health check.
                         .requestMatchers("/auth/**").permitAll()
-                        // Arquivos do frontend precisam ser publicos, senao a propria
-                        // tela de login ficaria protegida por login.
                         .requestMatchers("/", "/index.html", "/app.js", "/style.css", "/favicon.ico").permitAll()
+                        .requestMatchers("/health").permitAll()
+
+                        // Catálogo: qualquer pessoa logada pode LER,
+                        // mas só ADMIN cria, altera ou remove.
+                        .requestMatchers(HttpMethod.POST, "/concursos/**", "/videoaulas/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/concursos/**", "/videoaulas/**", "/cargos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/concursos/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
