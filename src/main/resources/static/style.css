@@ -67,7 +67,7 @@ h2 { font-size: 17px; margin: 0 0 8px; }
 
 label { display: block; font-size: 13px; color: var(--suave); margin-bottom: 12px; }
 
-input {
+input, select {
     display: block;
     width: 100%;
     margin-top: 4px;
@@ -76,11 +76,11 @@ input {
     border-radius: 7px;
     font-size: 15px;
     font-family: inherit;
+    background: var(--card);
+    color: var(--texto);
 }
 
-input:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
-
-button { font-family: inherit; }
+input:focus, select:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
 
 .primario {
     background: var(--primario);
@@ -91,6 +91,7 @@ button { font-family: inherit; }
     cursor: pointer;
     font-size: 15px;
     width: 100%;
+    font-family: inherit;
 }
 
 .perigo {
@@ -100,6 +101,7 @@ button { font-family: inherit; }
     padding: 8px 14px;
     border-radius: 7px;
     cursor: pointer;
+    font-family: inherit;
 }
 
 .link {
@@ -110,11 +112,17 @@ button { font-family: inherit; }
     padding: 0;
     font-size: 14px;
     text-decoration: underline;
+    font-family: inherit;
 }
 
-.filtros { display: grid; grid-template-columns: 2fr 1fr auto; gap: 12px; align-items: end; }
+.filtros { display: grid; grid-template-columns: 1fr 1fr 100px auto; gap: 12px; align-items: end; }
 .filtros label { margin-bottom: 0; }
 .filtros .primario { width: auto; }
+
+.topo-secao { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.topo-secao h2 { margin: 0; }
+.bloco-form { border: 1px dashed var(--borda); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.filtros-video { margin-bottom: 16px; }
 
 .meta { font-size: 12px; color: var(--suave); margin-bottom: 10px; }
 .enunciado { margin-bottom: 14px; }
@@ -130,6 +138,7 @@ button { font-family: inherit; }
     margin-bottom: 8px;
     cursor: pointer;
     font-size: 15px;
+    font-family: inherit;
 }
 
 .alternativa:hover:not(:disabled) { border-color: var(--primario); }
@@ -142,6 +151,15 @@ button { font-family: inherit; }
 .feedback.ok { background: #f0f9f4; color: var(--acerto); }
 .feedback.nok { background: #fdf3f3; color: var(--erro); }
 
+.sugestao-estudo {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #eef2fd;
+    font-size: 14px;
+}
+.bloco-link { display: block; margin-top: 6px; text-align: left; }
+
 .barra-simulado { display: flex; align-items: center; gap: 16px; }
 .barra-simulado .sub { margin: 0; flex: 1; }
 .cronometro { font-size: 24px; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -152,9 +170,51 @@ button { font-family: inherit; }
 .numero span { font-size: 13px; color: var(--suave); }
 
 .linha-disciplina { margin-bottom: 14px; }
-.linha-disciplina .topo { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; }
+.linha-disciplina .topo { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; gap: 12px; }
+.linha-disciplina .topo .sub { margin: 0; font-size: 12px; }
 .barra { height: 8px; background: var(--fundo); border-radius: 4px; overflow: hidden; }
 .barra div { height: 100%; background: var(--acerto); }
+
+.grade-videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.card-video {
+    border: 1px solid var(--borda);
+    border-radius: 9px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--card);
+    transition: border-color .15s;
+}
+.card-video:hover { border-color: var(--primario); }
+.card-video img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; background: var(--fundo); }
+.info-video { padding: 10px 12px; }
+.info-video strong { display: block; font-size: 14px; line-height: 1.35; margin-bottom: 4px; }
+.info-video .sub { margin: 0; font-size: 12px; }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+}
+.modal-conteudo { width: 100%; max-width: 860px; position: relative; }
+.modal-conteudo #player { aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; }
+.modal-conteudo iframe { display: block; border: 0; }
+.titulo-video { color: #fff; margin: 12px 0 0; font-size: 15px; }
+.fechar {
+    position: absolute;
+    top: -38px;
+    right: 0;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 30px;
+    cursor: pointer;
+    line-height: 1;
+}
 
 .vazio { color: var(--suave); font-size: 14px; text-align: center; padding: 30px; }
 
@@ -162,3 +222,102 @@ button { font-family: inherit; }
     .filtros { grid-template-columns: 1fr; }
     .filtros .primario { width: 100%; }
 }
+
+/* Sprint 8: cadernos e marcadores */
+
+.cabecalho-questao {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.cabecalho-questao .meta { margin: 0; }
+
+.acoes-questao { display: flex; gap: 6px; position: relative; flex-shrink: 0; }
+
+.acao {
+    background: none;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 12px;
+    color: var(--suave);
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.acao:hover { border-color: var(--primario); color: var(--primario); }
+.acao.ativa { color: #d9a400; border-color: #d9a400; }
+.acao.excluir:hover { border-color: var(--erro); color: var(--erro); }
+
+.menu-cadernos {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 6px;
+    background: var(--card);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 6px;
+    min-width: 190px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.1);
+    z-index: 20;
+}
+.item-menu {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--texto);
+}
+.item-menu:hover { background: var(--fundo); }
+
+.linha-caderno {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--borda);
+}
+.linha-caderno:last-child { border-bottom: none; }
+.linha-caderno .nome-caderno { flex: 1; text-align: left; font-size: 15px; }
+.linha-caderno .sub { margin: 0; white-space: nowrap; }
+
+/* Sprint 9: ofensiva, meta e mapa de estudo */
+
+.progresso-meta { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--borda); }
+.progresso-meta .topo { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+.progresso-meta .barra div { background: var(--primario); }
+.progresso-meta .barra div.completa { background: var(--acerto); }
+
+.editor-meta { display: flex; align-items: flex-end; gap: 10px; margin-top: 14px; }
+.editor-meta label { margin-bottom: 0; }
+.editor-meta input { width: 90px; }
+
+.mapa-estudo {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 13px);
+    grid-auto-columns: 13px;
+    gap: 3px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.quadro { width: 13px; height: 13px; border-radius: 3px; background: #ebedf0; }
+.quadro.vazio-quadro { background: transparent; }
+.quadro.nivel-0 { background: #ebedf0; }
+.quadro.nivel-1 { background: #c6e5cd; }
+.quadro.nivel-2 { background: #7fc894; }
+.quadro.nivel-3 { background: #3fa15e; }
+.quadro.nivel-4 { background: #1f6f3c; }
+
+.legenda-mapa { display: flex; align-items: center; gap: 4px; margin-top: 12px; }
+.legenda-mapa .sub { margin: 0; font-size: 12px; }

@@ -27,4 +27,9 @@ public class Alternativa {
 
     @Column(nullable = false)
     private boolean correta;
+
+    // Posicao da alternativa na questao. Sorteada uma unica vez, na carga dos
+    // dados, para que a correta nao caia sempre no mesmo lugar.
+    @Column(nullable = false)
+    private Integer ordem;
 }

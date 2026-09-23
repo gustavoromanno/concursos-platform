@@ -14,6 +14,9 @@
     <button data-tela="questoes">Questões</button>
     <button data-tela="erradas">Revisar erradas</button>
     <button data-tela="simulado">Simulado</button>
+    <button data-tela="cadernos">Cadernos</button>
+    <button data-tela="marcadores">Marcadores</button>
+    <button data-tela="videoaulas">Videoaulas</button>
     <button data-tela="dashboard">Desempenho</button>
   </nav>
   <button id="sair" class="link">Sair</button>
@@ -45,7 +48,8 @@
   <!-- QUESTÕES -->
   <section id="tela-questoes" class="hidden">
     <div class="card filtros">
-      <label>Assunto<input id="f-assunto" type="text" placeholder="ex: morfologia"></label>
+      <label>Disciplina<select id="f-disciplina"><option value="">Todas</option></select></label>
+      <label>Assunto<select id="f-assunto-id"><option value="">Todos</option></select></label>
       <label>Ano<input id="f-ano" type="number" placeholder="ex: 2013"></label>
       <button id="btn-filtrar" class="primario">Filtrar</button>
     </div>
@@ -65,6 +69,7 @@
   <section id="tela-simulado" class="hidden">
     <div id="simulado-config" class="card">
       <h2>Novo simulado</h2>
+      <label>Disciplina<select id="s-disciplina"><option value="">Todas</option></select></label>
       <label>Quantidade de questões<input id="s-quantidade" type="number" value="5" min="1" max="100"></label>
       <label>Duração (minutos)<input id="s-duracao" type="number" value="30" min="1" max="600"></label>
       <button id="btn-iniciar-simulado" class="primario">Iniciar</button>
@@ -83,14 +88,85 @@
     <div id="simulado-resultado" class="hidden"></div>
   </section>
 
+
+  <!-- CADERNOS -->
+  <section id="tela-cadernos" class="hidden">
+    <div class="card">
+      <div class="topo-secao">
+        <h2>Meus cadernos</h2>
+        <button id="btn-novo-caderno" class="link">+ Novo caderno</button>
+      </div>
+      <div id="form-caderno" class="hidden bloco-form">
+        <label>Nome do caderno<input id="c-nome" type="text" placeholder="ex: Revisar antes da prova"></label>
+        <button id="btn-salvar-caderno" class="primario">Criar</button>
+        <p id="caderno-erro" class="erro"></p>
+      </div>
+      <div id="lista-cadernos"></div>
+    </div>
+    <div id="caderno-aberto" class="hidden"></div>
+  </section>
+
+  <!-- MARCADORES -->
+  <section id="tela-marcadores" class="hidden">
+    <div class="card">
+      <h2>Questões marcadas</h2>
+      <p class="sub">Questões que você marcou para ver depois.</p>
+    </div>
+    <div id="lista-marcadores"></div>
+  </section>
+
+  <!-- VIDEOAULAS -->
+  <section id="tela-videoaulas" class="hidden">
+    <div class="card">
+      <h2>Recomendado para você</h2>
+      <p class="sub">Videoaulas dos assuntos em que você mais erra.</p>
+      <div id="sugestoes-video" class="grade-videos"></div>
+    </div>
+
+    <div class="card">
+      <div class="topo-secao">
+        <h2>Biblioteca</h2>
+        <button id="btn-abrir-cadastro" class="link">+ Adicionar videoaula</button>
+      </div>
+
+      <div id="form-video" class="hidden bloco-form">
+        <label>Título<input id="v-titulo" type="text" placeholder="ex: Morfologia — classes de palavras"></label>
+        <label>URL do YouTube<input id="v-url" type="text" placeholder="https://www.youtube.com/watch?v=..."></label>
+        <label>Canal<input id="v-canal" type="text" placeholder="opcional"></label>
+        <label>Duração (minutos)<input id="v-duracao" type="number" placeholder="opcional"></label>
+        <label>Disciplina<select id="v-disciplina"></select></label>
+        <label>Assunto<select id="v-assunto"><option value="">Geral da disciplina</option></select></label>
+        <button id="btn-salvar-video" class="primario">Salvar</button>
+        <p id="video-erro" class="erro"></p>
+      </div>
+
+      <div class="filtros-video">
+        <label>Filtrar por disciplina<select id="vf-disciplina"><option value="">Todas</option></select></label>
+      </div>
+      <div id="lista-videos" class="grade-videos"></div>
+    </div>
+  </section>
+
   <!-- DASHBOARD -->
   <section id="tela-dashboard" class="hidden">
+    <div id="engajamento-dashboard"></div>
+    <div id="mapa-dashboard"></div>
     <div id="resumo-dashboard"></div>
     <div id="disciplinas-dashboard"></div>
+    <div id="assuntos-dashboard"></div>
     <div id="evolucao-dashboard"></div>
   </section>
 
 </main>
+
+<!-- Player de vídeo em sobreposição -->
+<div id="modal-video" class="modal hidden">
+  <div class="modal-conteudo">
+    <button id="fechar-video" class="fechar">&times;</button>
+    <div id="player"></div>
+    <p id="titulo-video" class="titulo-video"></p>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

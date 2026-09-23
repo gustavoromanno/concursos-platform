@@ -21,6 +21,13 @@ public interface RespostaRepository extends JpaRepository<Resposta, Long> {
         long getAcertos();
     }
 
+    interface EstatisticaAssunto {
+        String getAssunto();
+        String getDisciplina();
+        long getTotal();
+        long getAcertos();
+    }
+
     interface EstatisticaDiaria {
         LocalDate getDia();
         long getTotal();
@@ -43,6 +50,23 @@ public interface RespostaRepository extends JpaRepository<Resposta, Long> {
         ORDER BY COUNT(r) DESC
         """)
     List<EstatisticaDisciplina> estatisticasPorDisciplina(@Param("usuarioId") Long usuarioId);
+
+    // Desempenho por assunto (Sprint 7). Ordenado por taxa de ERRO: os topicos
+    // mais fracos aparecem primeiro, que e o que interessa para estudar.
+    @Query("""
+        SELECT a.nome AS assunto,
+               d.nome AS disciplina,
+               COUNT(r) AS total,
+               SUM(CASE WHEN r.correta = true THEN 1 ELSE 0 END) AS acertos
+        FROM Resposta r
+        JOIN r.questao q
+        JOIN q.assuntoRef a
+        JOIN q.disciplina d
+        WHERE r.usuario.id = :usuarioId
+        GROUP BY a.nome, d.nome
+        ORDER BY (SUM(CASE WHEN r.correta = true THEN 1 ELSE 0 END) * 1.0 / COUNT(r)) ASC
+        """)
+    List<EstatisticaAssunto> estatisticasPorAssunto(@Param("usuarioId") Long usuarioId);
 
     @Query("""
         SELECT COUNT(r) AS total,
@@ -69,7 +93,6 @@ public interface RespostaRepository extends JpaRepository<Resposta, Long> {
             @Param("desde") LocalDate desde
     );
 
-    // Base para "refazer questoes erradas" (Sprint 5).
     @Query("""
         SELECT DISTINCT r.questao.id
         FROM Resposta r
