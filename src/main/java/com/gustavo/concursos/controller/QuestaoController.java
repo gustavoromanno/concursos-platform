@@ -31,11 +31,8 @@ public class QuestaoController {
         this.usuarioRepository = usuarioRepository;
     }
 
-    // Exemplos:
-    //   GET /questoes?disciplinaId=3
-    //   GET /questoes?disciplinaId=3&bancaId=1&ano=2013
-    //   GET /questoes?assunto=morfologia&page=0&size=20
     // Todos os filtros sao opcionais e combinaveis entre si.
+    // assuntoId usa o assunto estruturado; assunto (texto) continua funcionando.
     @Transactional(readOnly = true)
     @GetMapping
     public Page<QuestaoResponseDTO> listar(
@@ -43,20 +40,21 @@ public class QuestaoController {
             @RequestParam(required = false) Long bancaId,
             @RequestParam(required = false) Integer ano,
             @RequestParam(required = false) String assunto,
+            @RequestParam(required = false) Long assuntoId,
             Pageable pageable
     ) {
         Specification<Questao> filtro = Specification
                 .where(QuestaoSpecification.disciplinaId(disciplinaId))
                 .and(QuestaoSpecification.bancaId(bancaId))
                 .and(QuestaoSpecification.ano(ano))
-                .and(QuestaoSpecification.assunto(assunto));
+                .and(QuestaoSpecification.assunto(assunto))
+                .and(QuestaoSpecification.assuntoId(assuntoId));
 
         return questaoRepository.findAll(filtro, pageable)
                 .map(QuestaoResponseDTO::fromEntity);
     }
 
-    // GET /questoes/erradas — Sprint 5.
-    // Traz as questoes cuja ULTIMA resposta do usuario foi errada.
+    // Questoes cuja ULTIMA resposta do usuario foi errada.
     // Acertar a questao depois a remove desta lista.
     @Transactional(readOnly = true)
     @GetMapping("/erradas")

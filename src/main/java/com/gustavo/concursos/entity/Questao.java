@@ -35,12 +35,22 @@ public class Questao {
     @Column(nullable = false)
     private Integer ano;
 
+    // Texto livre, mantido por compatibilidade com o que ja existia.
     @Column(length = 150)
     private String assunto;
+
+    // Assunto estruturado. E por aqui que agrupamos desempenho por topico
+    // e ligamos a questao as videoaulas.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assunto_id")
+    private Assunto assuntoRef;
 
     @Column(columnDefinition = "TEXT")
     private String explicacao;
 
+    // @OrderBy garante que as alternativas sempre saiam na ordem sorteada,
+    // e nao na ordem em que o banco devolver.
     @OneToMany(mappedBy = "questao", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordem ASC")
     private List<Alternativa> alternativas = new ArrayList<>();
 }

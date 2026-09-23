@@ -5,8 +5,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 // Cada metodo retorna um filtro isolado. O controller combina apenas os que
 // vierem preenchidos na requisicao, usando Specification.where(...).and(...).
-// Isso evita ter um metodo de repositorio para cada combinacao possivel
-// (disciplina, disciplina+banca, disciplina+banca+ano, etc).
 public class QuestaoSpecification {
 
     private QuestaoSpecification() {
@@ -27,10 +25,17 @@ public class QuestaoSpecification {
                 ano == null ? null : cb.equal(root.get("ano"), ano);
     }
 
+    // Busca pelo texto livre (compatibilidade).
     public static Specification<Questao> assunto(String assunto) {
         return (root, query, cb) ->
                 (assunto == null || assunto.isBlank())
                         ? null
                         : cb.like(cb.lower(root.get("assunto")), "%" + assunto.toLowerCase() + "%");
+    }
+
+    // Filtro pelo assunto estruturado (Sprint 7).
+    public static Specification<Questao> assuntoId(Long assuntoId) {
+        return (root, query, cb) ->
+                assuntoId == null ? null : cb.equal(root.get("assuntoRef").get("id"), assuntoId);
     }
 }

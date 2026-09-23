@@ -1,21 +1,29 @@
 package com.gustavo.concursos.repository;
 
 import com.gustavo.concursos.entity.Questao;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-// JpaSpecificationExecutor permite montar filtros dinamicos e combinaveis
-// (disciplina + banca + ano + assunto) sem precisar de um metodo para cada
-// combinacao possivel. Usado no endpoint de listagem.
 public interface QuestaoRepository extends JpaRepository<Questao, Long>, JpaSpecificationExecutor<Questao> {
 
-    // Sorteia questoes para o simulado. Query nativa porque ORDER BY RANDOM()
-    // nao existe em JPQL. Os filtros sao opcionais: quando o parametro vem nulo,
-    // a condicao passa a ser sempre verdadeira e nao restringe nada.
+    // @EntityGraph faz o Hibernate trazer disciplina, banca e assunto no MESMO
+    // SELECT da questao (via JOIN), em vez de uma query extra por questao.
+    //
+    // As alternativas ficam de fora do grafo de proposito: buscar uma colecao
+    // junto com paginacao obriga o Hibernate a paginar em memoria. Elas sao
+    // resolvidas pelo default_batch_fetch_size (uma query para ate 50 questoes).
+    @Override
+    @EntityGraph(attributePaths = {"disciplina", "banca", "assuntoRef"})
+    Page<Questao> findAll(Specification<Questao> spec, Pageable pageable);
+
     @Query(value = """
         SELECT * FROM questao q
         WHERE (:disciplinaId IS NULL OR q.disciplina_id = :disciplinaId)

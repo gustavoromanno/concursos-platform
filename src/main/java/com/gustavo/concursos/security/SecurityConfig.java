@@ -3,7 +3,6 @@ package com.gustavo.concursos.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,14 +29,10 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
+    // Nao declaramos mais um DaoAuthenticationProvider como bean.
+    // Tendo um UserDetailsService e um PasswordEncoder no contexto, o proprio
+    // Spring Security monta o provider. Expor o provider manualmente fazia o
+    // framework avisar que o UserDetailsService seria ignorado no login.
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -56,7 +51,6 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/app.js", "/style.css", "/favicon.ico").permitAll()
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtService, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class

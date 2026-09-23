@@ -6,30 +6,29 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
+// Favorito simples: o usuario marca a questao sem escolher caderno.
 @Entity
-@Table(name = "alternativa")
+@Table(name = "marcador")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Alternativa {
+public class Marcador {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "questao_id", nullable = false)
     private Questao questao;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String texto;
-
-    @Column(nullable = false)
-    private boolean correta;
-
-    // Posicao da alternativa na questao. Sorteada uma unica vez, na carga dos
-    // dados, para que a correta nao caia sempre no mesmo lugar.
-    @Column(nullable = false)
-    private Integer ordem;
+    @Column(name = "criado_em", nullable = false)
+    private LocalDateTime criadoEm = LocalDateTime.now();
 }
