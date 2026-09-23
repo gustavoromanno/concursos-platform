@@ -1604,15 +1604,12 @@ async function carregarDashboard() {
         const principal = criar('<div class="coluna-principal"></div>');
         const lateral = criar('<div class="coluna-lateral"></div>');
 
-        const cardObjetivo = await cartaoObjetivo();
-        if (cardObjetivo) principal.appendChild(cardObjetivo);
-
         // --- meta diária ---
         const pctMeta = eng.metaDiaria ? (eng.respondidasHoje / eng.metaDiaria) * 100 : 0;
         const faltam = Math.max(0, eng.metaDiaria - eng.respondidasHoje);
         const metaCard = criar(`
-            <div class="card card-meta">
-                ${anelProgresso(pctMeta)}
+            <div class="card card-meta vertical">
+                ${anelProgresso(pctMeta, 64)}
                 <div class="meta-info">
                     <span class="rotulo">META DIÁRIA</span>
                     <div class="meta-numeros">
@@ -1624,10 +1621,10 @@ async function carregarDashboard() {
                         ? 'Meta batida hoje. Bom trabalho.'
                         : `Faltam ${faltam} ${faltam === 1 ? 'questão' : 'questões'} para bater a meta`}</span>
                 </div>
-                <button id="btn-resolver" class="primario btn-resolver">Resolver →</button>
+                <button id="btn-resolver" class="primario">Resolver →</button>
             </div>
         `);
-        principal.appendChild(metaCard);
+        lateral.appendChild(metaCard);   // constância fica agrupada na lateral
 
         // Salvar a meta ao sair do campo evita um botão extra na interface.
         metaCard.querySelector('#input-meta').onchange = async (ev) => {
@@ -1659,6 +1656,10 @@ async function carregarDashboard() {
             </div>
         `)));
         principal.appendChild(linhaIndicadores);
+
+        // Objetivo logo abaixo dos números: primeiro o resultado, depois o alvo.
+        const cardObjetivo = await cartaoObjetivo();
+        if (cardObjetivo) principal.appendChild(cardObjetivo);
 
         // --- roscas: acertos e disciplinas ---
         const duplaRoscas = criar('<div class="grade-dupla"></div>');
