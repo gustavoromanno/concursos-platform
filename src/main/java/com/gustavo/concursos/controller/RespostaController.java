@@ -9,17 +9,14 @@ import com.gustavo.concursos.entity.Usuario;
 import com.gustavo.concursos.repository.QuestaoRepository;
 import com.gustavo.concursos.repository.RespostaRepository;
 import com.gustavo.concursos.repository.UsuarioRepository;
+import com.gustavo.concursos.service.RevisaoService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.util.NoSuchElementException;
 
@@ -30,20 +27,20 @@ public class RespostaController {
     private final QuestaoRepository questaoRepository;
     private final RespostaRepository respostaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final RevisaoService revisaoService;
 
     public RespostaController(
             QuestaoRepository questaoRepository,
             RespostaRepository respostaRepository,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            RevisaoService revisaoService
     ) {
         this.questaoRepository = questaoRepository;
         this.respostaRepository = respostaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.revisaoService = revisaoService;
     }
 
-    // @Transactional mantem a sessao do banco aberta durante todo o metodo.
-    // Sem isso, questao.getAlternativas() (que e LAZY) estoura
-    // LazyInitializationException, porque a conexao ja teria sido fechada.
     @Transactional
     @PostMapping("/{id}/responder")
     public ResponseEntity<RespostaResultDTO> responder(
@@ -61,7 +58,6 @@ public class RespostaController {
                         HttpStatus.BAD_REQUEST, "Essa alternativa nao pertence a essa questao"
                 ));
 
-        // O email do usuario logado vem do token JWT (ver JwtAuthenticationFilter).
         Usuario usuario = usuarioRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new NoSuchElementException("Usuario autenticado nao encontrado"));
 
@@ -73,6 +69,9 @@ public class RespostaController {
         resposta.setAlternativaEscolhida(alternativaEscolhida);
         resposta.setCorreta(correta);
         respostaRepository.save(resposta);
+
+        // Reagenda a questao conforme o resultado (repeticao espacada).
+        revisaoService.registrar(usuario, questao, correta);
 
         Long alternativaCorretaId = questao.getAlternativas().stream()
                 .filter(Alternativa::isCorreta)

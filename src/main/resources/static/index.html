@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Concursos Platform</title>
+<script>
+  // Roda antes da renderização para a tela não piscar em branco ao recarregar
+  // já no modo noturno. Sem preferência salva, segue o sistema operacional.
+  (function () {
+    // Claro é o padrão. O escuro só entra se o usuário escolher — seguir a
+    // preferência do sistema fazia a plataforma abrir escura para quem usa
+    // o Windows em modo noturno, mesmo querendo a interface clara.
+    if (localStorage.getItem('tema') === 'escuro') {
+      document.documentElement.setAttribute('data-tema', 'escuro');
+    }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,14 +26,19 @@
 <header id="topo" class="hidden">
   <strong>Concursos Platform</strong>
   <nav>
+    <button data-tela="inicio">Início</button>
+    <button data-tela="dashboard">Desempenho</button>
     <button data-tela="questoes">Questões</button>
+    <button data-tela="revisao">Revisão <span id="selo-revisao" class="selo hidden"></span></button>
     <button data-tela="erradas">Revisar erradas</button>
     <button data-tela="simulado">Simulado</button>
     <button data-tela="cadernos">Cadernos</button>
     <button data-tela="marcadores">Marcadores</button>
+    <button data-tela="concursos">Concursos</button>
     <button data-tela="videoaulas">Videoaulas</button>
-    <button data-tela="dashboard">Desempenho</button>
   </nav>
+  <button id="btn-tema" class="btn-tema" title="Alternar modo claro/noturno" aria-label="Alternar tema">🌙</button>
+  <span id="usuario-topo" class="usuario-topo"></span>
   <button id="sair" class="link">Sair</button>
 </header>
 
@@ -45,6 +65,11 @@
     </div>
   </section>
 
+  <!-- INÍCIO -->
+  <section id="tela-inicio" class="hidden">
+    <div id="painel-inicio"></div>
+  </section>
+
   <!-- QUESTÕES -->
   <section id="tela-questoes" class="hidden">
     <div class="card filtros">
@@ -54,6 +79,16 @@
       <button id="btn-filtrar" class="primario">Filtrar</button>
     </div>
     <div id="lista-questoes"></div>
+  </section>
+
+  <!-- REVISÃO ESPAÇADA -->
+  <section id="tela-revisao" class="hidden">
+    <div class="card">
+      <h2 class="titulo-icone"><span class="icone-titulo">↻</span> Revisão de hoje</h2>
+      <p class="sub">Questões que você já respondeu e que voltam hoje, no intervalo certo para fixar.</p>
+      <div id="agenda-revisao"></div>
+    </div>
+    <div id="lista-revisao"></div>
   </section>
 
   <!-- ERRADAS -->
@@ -115,6 +150,35 @@
     <div id="lista-marcadores"></div>
   </section>
 
+  <!-- CONCURSOS E PROVAS -->
+  <section id="tela-concursos" class="hidden">
+    <div class="card">
+      <div class="topo-secao">
+        <h2 class="titulo-icone"><span class="icone-titulo">▤</span> Concursos</h2>
+        <button id="btn-novo-concurso" class="link">+ Cadastrar concurso</button>
+      </div>
+      <div id="form-concurso" class="hidden bloco-form">
+        <label>Nome<input id="co-nome" type="text" placeholder="ex: Banco do Brasil — Escriturário"></label>
+        <label>Órgão<input id="co-orgao" type="text" placeholder="ex: Banco do Brasil"></label>
+        <label>Ano<input id="co-ano" type="number" value="2026"></label>
+        <label>Banca<select id="co-banca"><option value="">Não informada</option></select></label>
+        <label>Situação
+          <select id="co-situacao">
+            <option value="PREVISTO">Previsto</option>
+            <option value="INSCRICOES_ABERTAS">Inscrições abertas</option>
+            <option value="EM_ANDAMENTO">Em andamento</option>
+            <option value="ENCERRADO">Encerrado</option>
+          </select>
+        </label>
+        <label>Vagas<input id="co-vagas" type="number" placeholder="opcional"></label>
+        <button id="btn-salvar-concurso" class="primario">Salvar</button>
+        <p id="concurso-erro" class="erro"></p>
+      </div>
+      <div id="lista-concursos"></div>
+    </div>
+    <div id="prova-aberta" class="hidden"></div>
+  </section>
+
   <!-- VIDEOAULAS -->
   <section id="tela-videoaulas" class="hidden">
     <div class="card">
@@ -149,12 +213,7 @@
 
   <!-- DASHBOARD -->
   <section id="tela-dashboard" class="hidden">
-    <div id="engajamento-dashboard"></div>
-    <div id="mapa-dashboard"></div>
-    <div id="resumo-dashboard"></div>
-    <div id="disciplinas-dashboard"></div>
-    <div id="assuntos-dashboard"></div>
-    <div id="evolucao-dashboard"></div>
+    <div id="painel-dashboard"></div>
   </section>
 
 </main>
