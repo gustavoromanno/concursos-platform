@@ -26,4 +26,8 @@ public class Usuario {
 
     @Column(name = "senha_hash", nullable = false, length = 255)
     private String senhaHash;
+
+    // USUARIO (padrão) ou ADMIN. Só ADMIN cadastra e remove conteúdo.
+    @Column(nullable = false, length = 20)
+    private String papel = "USUARIO";
 }
