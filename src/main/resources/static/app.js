@@ -162,6 +162,17 @@ async function carregarCatalogo() {
 
     await carregarEstadoPessoal();
 
+    // Órgãos alimentam o filtro da listagem.
+    try {
+        const orgaos = await api('/orgaos');
+        const sel = $('#f-orgao');
+        if (sel) {
+            sel.innerHTML = '<option value="">Todos</option>';
+            orgaos.forEach(o => sel.appendChild(
+                criar(`<option value="${o.id}">${escapar(o.sigla || o.nome)}</option>`)));
+        }
+    } catch { /* filtro opcional */ }
+
     preencher('#f-disciplina', 'Todas');
     preencher('#s-disciplina', 'Todas');
     preencher('#vf-disciplina', 'Todas');
@@ -245,7 +256,7 @@ function cardQuestao(questao, aoResponder, opcoes = {}) {
     const card = criar(`
         <div class="card">
             <div class="cabecalho-questao">
-                <div class="meta">${escapar(questao.disciplina)} · ${escapar(questao.banca)} · ${questao.ano}${questao.assunto ? ' · ' + escapar(questao.assunto) : ''}</div>
+                <div class="meta">${escapar(questao.disciplina)} · ${escapar(questao.banca)}${questao.orgao ? ' · ' + escapar(questao.orgao) : ''} · ${questao.ano}${questao.assunto ? ' · ' + escapar(questao.assunto) : ''}${questao.tipo === 'CERTO_ERRADO' ? ' <span class="selo-tipo">C/E</span>' : ''}</div>
                 <div class="acoes-questao"></div>
             </div>
             <div class="enunciado">${escapar(questao.enunciado)}</div>
@@ -260,11 +271,23 @@ function cardQuestao(questao, aoResponder, opcoes = {}) {
     }
 
     const alternativas = card.querySelector('.alternativas');
-    questao.alternativas.forEach((alt, i) => {
-        const botao = criar(`<button class="alternativa">${String.fromCharCode(65 + i)}) ${escapar(alt.texto)}</button>`);
-        botao.onclick = () => aoResponder(questao, alt, card);
-        alternativas.appendChild(botao);
-    });
+
+    // Certo/Errado ganha dois botões lado a lado, no formato do CESPE,
+    // em vez da lista A) B) C) da múltipla escolha.
+    if (questao.tipo === 'CERTO_ERRADO') {
+        alternativas.classList.add('certo-errado');
+        questao.alternativas.forEach(alt => {
+            const botao = criar(`<button class="alternativa botao-ce">${escapar(alt.texto)}</button>`);
+            botao.onclick = () => aoResponder(questao, alt, card);
+            alternativas.appendChild(botao);
+        });
+    } else {
+        questao.alternativas.forEach((alt, i) => {
+            const botao = criar(`<button class="alternativa">${String.fromCharCode(65 + i)}) ${escapar(alt.texto)}</button>`);
+            botao.onclick = () => aoResponder(questao, alt, card);
+            alternativas.appendChild(botao);
+        });
+    }
 
     return card;
 }
@@ -398,8 +421,12 @@ async function carregarQuestoes() {
     const disciplinaId = $('#f-disciplina').value;
     const assuntoId = $('#f-assunto-id').value;
     const ano = $('#f-ano').value.trim();
+    const orgaoId = $('#f-orgao')?.value;
+    const tipo = $('#f-tipo')?.value;
     if (disciplinaId) params.set('disciplinaId', disciplinaId);
     if (assuntoId) params.set('assuntoId', assuntoId);
+    if (orgaoId) params.set('orgaoId', orgaoId);
+    if (tipo) params.set('tipo', tipo);
     if (ano) params.set('ano', ano);
 
     try {
