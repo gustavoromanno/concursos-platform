@@ -22,11 +22,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
+
+import static com.gustavo.concursos.service.ObjetivoCalculadora.agruparPorDisciplina;
+import static com.gustavo.concursos.service.ObjetivoCalculadora.classificar;
 
 @RestController
 @RequestMapping("/objetivo")
@@ -131,51 +131,6 @@ public class ObjetivoController {
                 porDisciplina,
                 proximaEtapa(c)
         );
-    }
-
-    /**
-     * Classifica cada assunto do conteúdo programático pelo desempenho do
-     * usuário. Sem resposta nenhuma, o assunto entra em "vai cair" — é o que
-     * ainda nem foi tocado.
-     */
-    private ObjetivoDTO.ProgressoDTO classificar(List<ProgressoRepository.ProgressoAssunto> linhas) {
-        int dominado = 0, atencao = 0, revisar = 0, vaiCair = 0;
-
-        for (var l : linhas) {
-            if (l.getRespondidas() == 0) {
-                vaiCair++;
-                continue;
-            }
-            double taxa = (double) l.getAcertos() / l.getRespondidas();
-            if (taxa >= 0.8) dominado++;
-            else if (taxa >= 0.5) atencao++;
-            else revisar++;
-        }
-
-        int total = linhas.size();
-        int iniciados = total - vaiCair;
-        double percentual = total == 0 ? 0.0 : Math.round(iniciados * 1000.0 / total) / 10.0;
-
-        return new ObjetivoDTO.ProgressoDTO(total, iniciados, percentual, dominado, atencao, revisar, vaiCair);
-    }
-
-    private List<ObjetivoDTO.DisciplinaProgressoDTO> agruparPorDisciplina(
-            List<ProgressoRepository.ProgressoAssunto> linhas
-    ) {
-        // [0] = total de tópicos, [1] = tópicos já iniciados
-        Map<String, int[]> acumulado = new LinkedHashMap<>();
-        for (var l : linhas) {
-            int[] c = acumulado.computeIfAbsent(l.getDisciplina(), k -> new int[2]);
-            c[0]++;
-            if (l.getRespondidas() > 0) c[1]++;
-        }
-
-        List<ObjetivoDTO.DisciplinaProgressoDTO> resultado = new ArrayList<>();
-        acumulado.forEach((disciplina, c) -> resultado.add(new ObjetivoDTO.DisciplinaProgressoDTO(
-                disciplina, c[0], c[1],
-                c[0] == 0 ? 0.0 : Math.round(c[1] * 1000.0 / c[0]) / 10.0
-        )));
-        return resultado;
     }
 
     // Primeira etapa ainda não concluída, com a contagem regressiva.
