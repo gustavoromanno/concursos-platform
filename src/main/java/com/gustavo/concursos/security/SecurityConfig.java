@@ -41,13 +41,20 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Públicos: login, cadastro, arquivos do frontend e health check.
+                        // Públicos
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/", "/index.html", "/app.js", "/style.css", "/favicon.ico").permitAll()
                         .requestMatchers("/health").permitAll()
 
-                        // Catálogo: qualquer pessoa logada pode LER,
-                        // mas só ADMIN cria, altera ou remove.
+                        // Responder questão é de TODO usuário logado. Precisa vir
+                        // antes da regra de admin, senão o padrão /questoes/**
+                        // capturaria esta rota e barraria quem estuda.
+                        .requestMatchers(HttpMethod.POST, "/questoes/*/responder").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/questoes/*/comentarios").authenticated()
+
+                        // Cadastro e remoção de conteúdo: só ADMIN.
+                        .requestMatchers(HttpMethod.POST, "/questoes").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/questoes/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/concursos/**", "/videoaulas/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/concursos/**", "/videoaulas/**", "/cargos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/concursos/**").hasRole("ADMIN")

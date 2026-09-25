@@ -757,9 +757,9 @@ main:has(#tela-inicio:not(.hidden)) { max-width: 1060px; }
     padding: 56px 28px 44px;
     border-radius: 22px;
     background:
-        radial-gradient(circle at 20% 0%, rgba(63, 179, 156, .16), transparent 55%),
-        radial-gradient(circle at 80% 10%, rgba(120, 200, 220, .16), transparent 50%),
-        linear-gradient(180deg, #EAF7F4 0%, var(--card) 100%);
+            radial-gradient(circle at 20% 0%, rgba(63, 179, 156, .16), transparent 55%),
+            radial-gradient(circle at 80% 10%, rgba(120, 200, 220, .16), transparent 50%),
+            linear-gradient(180deg, #EAF7F4 0%, var(--card) 100%);
     border: 1px solid var(--borda);
     margin-bottom: 18px;
 }
@@ -923,9 +923,9 @@ main:has(#tela-inicio:not(.hidden)) { max-width: 1060px; }
 /* --- Modo noturno da página inicial --- */
 [data-tema="escuro"] .hero {
     background:
-        radial-gradient(circle at 20% 0%, rgba(63, 179, 156, .14), transparent 55%),
-        radial-gradient(circle at 80% 10%, rgba(90, 170, 200, .12), transparent 50%),
-        linear-gradient(180deg, #17302B 0%, var(--card) 100%);
+            radial-gradient(circle at 20% 0%, rgba(63, 179, 156, .14), transparent 55%),
+            radial-gradient(circle at 80% 10%, rgba(90, 170, 200, .12), transparent 50%),
+            linear-gradient(180deg, #17302B 0%, var(--card) 100%);
 }
 [data-tema="escuro"] .chamada-final { background: linear-gradient(140deg, #17302B, var(--card)); }
 [data-tema="escuro"] .selo-hero.dourado { background: #2E2718; border-color: #5A4A28; color: var(--dourado); }
@@ -972,9 +972,9 @@ header { background: var(--card); }
 /* Hero mais sóbrio no tema claro: quase branco, com o verde só nos cantos. */
 .hero {
     background:
-        radial-gradient(circle at 18% -10%, rgba(63, 179, 156, .13), transparent 52%),
-        radial-gradient(circle at 82% 0%, rgba(110, 195, 215, .11), transparent 48%),
-        var(--card);
+            radial-gradient(circle at 18% -10%, rgba(63, 179, 156, .13), transparent 52%),
+            radial-gradient(circle at 82% 0%, rgba(110, 195, 215, .11), transparent 48%),
+            var(--card);
 }
 .chamada-final { background: var(--card); }
 
@@ -1185,3 +1185,51 @@ input, select, textarea { border-radius: var(--raio-p); }
 .card-meta.vertical .meta-info { width: 100%; }
 .card-meta.vertical .meta-numeros { justify-content: center; }
 .card-meta.vertical .primario { width: 100%; }
+
+/* ===================================================================
+   Tela de login — sai do grid do menu lateral e centraliza na viewport.
+   Olha para a própria tela de login (não para o header), então funciona
+   independentemente de como o menu é escondido, em qualquer zoom.
+   =================================================================== */
+@media (min-width: 900px) {
+    body:has(#tela-login:not(.hidden)) { display: block; }
+}
+
+main:has(#tela-login:not(.hidden)) {
+    grid-column: 1 / -1;          /* garantia extra: ocupa todas as colunas */
+    max-width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+    display: grid;
+    place-items: center;
+}
+
+#tela-login { width: 100%; }
+
+#tela-login .centro {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 34px 30px;
+}
+#tela-login h1 { font-size: 26px; line-height: 1.25; }
+#tela-login .sub { margin-bottom: 22px; }
+
+/* Questões Certo/Errado */
+.alternativas.certo-errado { display: flex; gap: 10px; }
+.botao-ce {
+    flex: 1;
+    text-align: center;
+    font-weight: 500;
+    padding: 14px;
+    margin-bottom: 0;
+}
+.selo-tipo {
+    display: inline-block; margin-left: 4px;
+    font-size: 10px; letter-spacing: .1em; font-weight: 600;
+    padding: 2px 7px; border-radius: var(--raio-pilula);
+    background: var(--superficie); color: var(--verde);
+}
+
+/* Com dois filtros a mais, a linha precisa de mais colunas */
+.filtros { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) auto; }

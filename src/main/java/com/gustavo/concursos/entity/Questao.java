@@ -1,24 +1,19 @@
 package com.gustavo.concursos.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "questao")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Entity @Table(name = "questao")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Questao {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public static final String MULTIPLA_ESCOLHA = "MULTIPLA_ESCOLHA";
+    public static final String CERTO_ERRADO = "CERTO_ERRADO";
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -32,25 +27,34 @@ public class Questao {
     @JoinColumn(name = "banca_id", nullable = false)
     private Banca banca;
 
+    // Órgão que abriu o concurso de onde a questão veio.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "orgao_id")
+    private Orgao orgao;
+
     @Column(nullable = false)
     private Integer ano;
 
-    // Texto livre, mantido por compatibilidade com o que ja existia.
     @Column(length = 150)
     private String assunto;
 
-    // Assunto estruturado. E por aqui que agrupamos desempenho por topico
-    // e ligamos a questao as videoaulas.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assunto_id")
     private Assunto assuntoRef;
 
+    // MULTIPLA_ESCOLHA ou CERTO_ERRADO. Em Certo/Errado as alternativas
+    // continuam existindo (duas linhas), então nada mais no sistema muda.
+    @Column(nullable = false, length = 20)
+    private String tipo = MULTIPLA_ESCOLHA;
+
     @Column(columnDefinition = "TEXT")
     private String explicacao;
 
-    // @OrderBy garante que as alternativas sempre saiam na ordem sorteada,
-    // e nao na ordem em que o banco devolver.
     @OneToMany(mappedBy = "questao", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem ASC")
     private List<Alternativa> alternativas = new ArrayList<>();
+
+    public boolean isCertoErrado() {
+        return CERTO_ERRADO.equals(tipo);
+    }
 }

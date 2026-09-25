@@ -3,8 +3,8 @@ package com.gustavo.concursos.specification;
 import com.gustavo.concursos.entity.Questao;
 import org.springframework.data.jpa.domain.Specification;
 
-// Cada metodo retorna um filtro isolado. O controller combina apenas os que
-// vierem preenchidos na requisicao, usando Specification.where(...).and(...).
+// Cada metodo devolve um filtro isolado; o controller combina os que vierem
+// preenchidos. Parametro nulo significa "nao restringe".
 public class QuestaoSpecification {
 
     private QuestaoSpecification() {
@@ -20,12 +20,16 @@ public class QuestaoSpecification {
                 bancaId == null ? null : cb.equal(root.get("banca").get("id"), bancaId);
     }
 
+    public static Specification<Questao> orgaoId(Long orgaoId) {
+        return (root, query, cb) ->
+                orgaoId == null ? null : cb.equal(root.get("orgao").get("id"), orgaoId);
+    }
+
     public static Specification<Questao> ano(Integer ano) {
         return (root, query, cb) ->
                 ano == null ? null : cb.equal(root.get("ano"), ano);
     }
 
-    // Busca pelo texto livre (compatibilidade).
     public static Specification<Questao> assunto(String assunto) {
         return (root, query, cb) ->
                 (assunto == null || assunto.isBlank())
@@ -33,9 +37,13 @@ public class QuestaoSpecification {
                         : cb.like(cb.lower(root.get("assunto")), "%" + assunto.toLowerCase() + "%");
     }
 
-    // Filtro pelo assunto estruturado (Sprint 7).
     public static Specification<Questao> assuntoId(Long assuntoId) {
         return (root, query, cb) ->
                 assuntoId == null ? null : cb.equal(root.get("assuntoRef").get("id"), assuntoId);
+    }
+
+    public static Specification<Questao> tipo(String tipo) {
+        return (root, query, cb) ->
+                (tipo == null || tipo.isBlank()) ? null : cb.equal(root.get("tipo"), tipo);
     }
 }
