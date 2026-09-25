@@ -7,6 +7,8 @@ services:
     plan: free
     region: oregon
     healthCheckPath: /health
+    # So publica depois que os testes do GitHub Actions passarem.
+    autoDeployTrigger: checksPass
     envVars:
       # Gerado automaticamente pelo Render, sem precisar digitar.
       - key: JWT_SECRET

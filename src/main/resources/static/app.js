@@ -51,9 +51,17 @@ async function api(caminho, opcoes = {}) {
         }
     });
 
-    if (resp.status === 401 || resp.status === 403) {
-        sair();
-        throw new Error('Sessão expirada. Entre novamente.');
+    // 401 = nao identificado. Com token, a sessao expirou; sem token, e o
+    // login que falhou. 403 = identificado, mas sem permissao: nao desloga.
+    if (resp.status === 401) {
+        if (token) {
+            sair();
+            throw new Error('Sessão expirada. Entre novamente.');
+        }
+        throw new Error('E-mail ou senha incorretos.');
+    }
+    if (resp.status === 403) {
+        throw new Error('Você não tem permissão para esta ação.');
     }
 
     if (!resp.ok) {
