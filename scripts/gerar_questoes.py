@@ -2,10 +2,15 @@
 Gera uma migration Flyway com um lote de questoes AUTORAIS.
 
 Uso:
-    python scripts/gerar_questoes.py src/main/resources/db/migration/V15__lote_questoes_2.sql
+    python scripts/gerar_questoes.py <lote> <arquivo de saida>
+    python scripts/gerar_questoes.py 3 src/main/resources/db/migration/V18__lote_questoes_3.sql
 
-Edite a lista QUESTOES abaixo e gere um novo arquivo (V16, V17...) a cada lote.
-Nunca altere uma migration ja aplicada: o Flyway recusa a subida se o conteudo mudar.
+O numero da migration (V15, V18...) nao precisa seguir o numero do lote: vale o
+proximo numero livre na pasta de migrations no momento em que o lote e criado.
+
+Cada lote e uma lista em LOTES. Para um lote novo, crie LOTE_4 e registre em LOTES.
+Nunca altere um lote ja aplicado: regenerar deve produzir o MESMO arquivo, senao
+o Flyway recusa a subida (checksum diferente).
 
 Formato de cada questao:
     ME (multipla escolha): alternativas = [texto_correto, errada1, errada2, ...]
@@ -17,8 +22,11 @@ import hashlib
 import random
 import sys
 
-# Disciplinas novas deste lote (as existentes sao ignoradas pelo NOT EXISTS).
-DISCIPLINAS = ["Direito Constitucional", "Noções de Informática"]
+# Disciplinas novas de cada lote (as existentes sao ignoradas pelo NOT EXISTS).
+DISCIPLINAS_POR_LOTE = {
+    "2": ["Direito Constitucional", "Noções de Informática"],
+    "3": [],
+}
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
 CARGO_EXEMPLO = "Analista Administrativo"
@@ -40,7 +48,7 @@ def ce(disc, assunto, banca, ano, enunciado, gabarito, explicacao):
                 enunciado=enunciado, gabarito=gabarito, explicacao=explicacao)
 
 
-QUESTOES = [
+LOTE_2 = [
     # ------------------------------------------------------------------
     # Direito Constitucional
     # ------------------------------------------------------------------
@@ -244,13 +252,190 @@ QUESTOES = [
 ]
 
 
+LOTE_3 = [
+    # ------------------------------------------------------------------
+    # Lingua Portuguesa
+    # ------------------------------------------------------------------
+    me(PORT, "Colocação pronominal", FGV, 2024,
+       "Assinale a frase em que a colocação do pronome oblíquo átono está de acordo com a norma-padrão.",
+       ["Não me informaram o resultado.", "Não informaram-me o resultado.", "Me informaram o resultado ontem.",
+        "Tinha informado-me o resultado.", "Informarei-lhe o resultado amanhã."],
+       "Palavras negativas atraem o pronome (próclise): \"não me informaram\". A norma-padrão não inicia período com pronome oblíquo átono, não admite ênclise ao particípio e, no futuro do presente, pede mesóclise (\"informar-lhe-ei\") ou próclise."),
+    me(PORT, "Regência verbal", CESPE, 2023,
+       "Assinale a frase em que a regência verbal está de acordo com a norma-padrão.",
+       ["Os servidores assistiram à palestra do diretor.", "Prefiro trabalhar do que estudar.",
+        "Aspiro o cargo de analista.", "Obedeça o regulamento interno.", "Esqueci do prazo de entrega."],
+       "No sentido de ver, \"assistir\" pede a preposição \"a\" (assistir à palestra). \"Preferir\" rege \"a\" (preferir algo a algo); \"aspirar\", no sentido de desejar, e \"obedecer\" pedem \"a\"; \"esquecer\" sem pronome pede objeto direto (\"esqueci o prazo\")."),
+    me(PORT, "Concordância nominal", FGV, 2025,
+       "Assinale a frase em que a concordância nominal está correta.",
+       ["É proibida a entrada de pessoas estranhas.", "É proibido a entrada de pessoas estranhas.",
+        "Seguem anexo os documentos solicitados.", "Ela mesmo resolveu o problema.",
+        "Havia bastante pessoas na fila."],
+       "Com o artigo (\"a entrada\"), o predicativo concorda: \"é proibida\". Sem artigo, ficaria \"é proibido entrada\". \"Anexo\" e \"mesmo\" são adjetivos e concordam (\"anexos\", \"mesma\"); \"bastante\" como adjetivo vai ao plural (\"bastantes pessoas\")."),
+    me(PORT, "Ortografia", CESPE, 2024,
+       "Assinale a frase em que a forma do \"porquê\" está empregada corretamente.",
+       ["Não sei por que ele faltou à reunião.", "Por quê você faltou à reunião?",
+        "Ele faltou por que estava doente.", "Ninguém entendeu o por quê da decisão.", "Você faltou porquê?"],
+       "\"Por que\" separado e sem acento aparece em perguntas diretas e indiretas (\"não sei por que\"). \"Porque\" junto indica causa; \"por quê\" vai no fim da frase; \"porquê\" com acento é substantivo (\"o porquê\")."),
+    me(PORT, "Semântica", FGV, 2023,
+       "No período \"Estudou durante meses; contudo, não foi aprovado\", o conectivo \"contudo\" estabelece relação de",
+       ["oposição.", "causa.", "conclusão.", "condição.", "finalidade."],
+       "\"Contudo\" é conjunção adversativa, como \"mas\", \"porém\" e \"entretanto\": introduz uma ideia que contraria a expectativa criada pela anterior."),
+    me(PORT, "Acentuação gráfica", CESPE, 2025,
+       "Assinale a palavra grafada de acordo com o Acordo Ortográfico vigente.",
+       ["ideia", "heróico", "vôo", "assembléia", "pára (verbo parar)"],
+       "O Acordo eliminou o acento dos ditongos abertos \"ei\" e \"oi\" em paroxítonas (ideia, heroico, assembleia), o circunflexo de \"oo\" (voo) e o acento diferencial de \"para\" (verbo)."),
+
+    # ------------------------------------------------------------------
+    # Direito Administrativo
+    # ------------------------------------------------------------------
+    me(DADM, "Atos administrativos", CESPE, 2024,
+       "O atributo do ato administrativo que permite à Administração executar suas próprias decisões, sem necessidade de autorização prévia do Poder Judiciário, é a",
+       ["autoexecutoriedade.", "imperatividade.", "tipicidade.", "presunção de legitimidade.", "motivação."],
+       "Autoexecutoriedade é executar diretamente a decisão. Imperatividade é impor obrigações independentemente da concordância do particular; presunção de legitimidade é a presunção de que o ato é válido até prova em contrário; tipicidade é a correspondência com figuras previstas em lei. Motivação não é atributo, e sim requisito de forma."),
+    me(DADM, "Poderes administrativos", FGV, 2023,
+       "O poder conferido à Administração para condicionar e restringir o uso e o gozo de bens, atividades e direitos individuais em benefício do interesse público é o poder",
+       ["de polícia.", "hierárquico.", "disciplinar.", "regulamentar.", "vinculado."],
+       "Poder de polícia é limitar a liberdade individual em favor do interesse coletivo (fiscalização sanitária, de trânsito, de obras). O hierárquico organiza a estrutura interna; o disciplinar pune servidores e quem tem vínculo especial; o regulamentar edita normas para a fiel execução das leis."),
+    me(DADM, "Licitações", CESPE, 2025,
+       "NÃO é modalidade de licitação prevista na Lei nº 14.133/2021:",
+       ["tomada de preços.", "pregão.", "concorrência.", "leilão.", "diálogo competitivo."],
+       "A Lei 14.133/2021 prevê pregão, concorrência, concurso, leilão e diálogo competitivo. Tomada de preços e convite eram modalidades da antiga Lei 8.666/1993 e não existem na lei nova."),
+    me(DADM, "Responsabilidade civil do Estado", FGV, 2024,
+       "Nos termos do art. 37, § 6º, da Constituição Federal, as pessoas jurídicas de direito público respondem pelos danos que seus agentes, nessa qualidade, causarem a terceiros, de forma",
+       ["objetiva, assegurado o direito de regresso contra o agente nos casos de dolo ou culpa.",
+        "subjetiva, dependendo sempre da prova de culpa do agente.",
+        "objetiva, sem possibilidade de regresso contra o agente.",
+        "subjetiva, com regresso automático contra o agente.",
+        "solidária com o agente, que responde diretamente perante a vítima."],
+       "A responsabilidade do Estado é objetiva (teoria do risco administrativo): a vítima prova o dano e o nexo, sem precisar provar culpa. O Estado pode depois cobrar do agente, em ação de regresso, se ele agiu com dolo ou culpa."),
+    me(DADM, "Improbidade administrativa", CESPE, 2024,
+       "Após as alterações promovidas pela Lei nº 14.230/2021, a configuração de ato de improbidade administrativa exige",
+       ["dolo do agente.", "culpa grave do agente.", "apenas a ilegalidade do ato.",
+        "culpa, em qualquer de suas modalidades.", "prejuízo ao erário, em todos os casos."],
+       "A Lei 14.230/2021 eliminou a improbidade culposa: todos os tipos exigem dolo, isto é, vontade livre e consciente de alcançar o resultado ilícito. Nem todo ato de improbidade depende de dano ao erário (há os de enriquecimento ilícito e os que atentam contra princípios)."),
+    ce(DADM, "Anulação e revogação", CESPE, 2023,
+       "O Poder Judiciário, no exercício da função jurisdicional, pode revogar ato administrativo por razões de conveniência e oportunidade.",
+       False,
+       "A revogação é privativa da Administração que praticou o ato, por ser juízo de mérito. No controle jurisdicional, o Judiciário só anula atos ilegais."),
+    ce(DADM, "Servidores públicos", CESPE, 2024,
+       "O servidor público estável só perderá o cargo em virtude de sentença judicial transitada em julgado, mediante processo administrativo em que lhe seja assegurada ampla defesa ou mediante procedimento de avaliação periódica de desempenho, na forma de lei complementar.",
+       True,
+       "É a redação do art. 41, § 1º, da CF. Há ainda a hipótese de excesso de despesa com pessoal (art. 169, § 4º)."),
+    ce(DADM, "Organização administrativa", CESPE, 2025,
+       "As empresas públicas e as sociedades de economia mista integram a administração pública indireta.",
+       True,
+       "A administração indireta é formada por autarquias, fundações públicas, empresas públicas e sociedades de economia mista."),
+    ce(DADM, "Processo administrativo", CESPE, 2023,
+       "Na esfera federal, o direito da Administração de anular os atos administrativos de que decorram efeitos favoráveis para os destinatários decai em cinco anos, contados da data em que foram praticados, salvo comprovada má-fé.",
+       True,
+       "Art. 54 da Lei 9.784/1999. Com má-fé comprovada, não há o limite de cinco anos."),
+
+    # ------------------------------------------------------------------
+    # Direito Constitucional
+    # ------------------------------------------------------------------
+    me(DCON, "Remédios constitucionais", CESPE, 2024,
+       "De acordo com a Constituição Federal, o mandado de segurança coletivo pode ser impetrado por",
+       ["partido político com representação no Congresso Nacional.", "qualquer cidadão.",
+        "qualquer pessoa jurídica de direito privado.",
+        "associação legalmente constituída e em funcionamento há pelo menos seis meses.",
+        "Ministério Público, exclusivamente."],
+       "Art. 5º, LXX: partido político com representação no Congresso Nacional e organização sindical, entidade de classe ou associação legalmente constituída e em funcionamento há pelo menos um ano, em defesa de seus membros ou associados."),
+    me(DCON, "Poder Legislativo", FGV, 2025,
+       "A iniciativa popular de projeto de lei federal exige a apresentação à Câmara dos Deputados de projeto subscrito por, no mínimo,",
+       ["um por cento do eleitorado nacional, distribuído por pelo menos cinco Estados, com não menos de três décimos por cento dos eleitores de cada um deles.",
+        "cinco por cento do eleitorado nacional, distribuído por pelo menos nove Estados.",
+        "um por cento do eleitorado de cada Estado da Federação.",
+        "cem mil eleitores, independentemente da distribuição por Estados.",
+        "dez por cento do eleitorado nacional, sem exigência de distribuição."],
+       "Art. 61, § 2º, da CF: 1% do eleitorado nacional, distribuído por pelo menos cinco Estados, com não menos de 0,3% dos eleitores de cada um deles."),
+    me(DCON, "Poder Legislativo", CESPE, 2023,
+       "Os deputados federais são eleitos pelo sistema",
+       ["proporcional.", "majoritário absoluto.", "majoritário simples.", "distrital puro.", "de lista fechada sem votação nominal."],
+       "Art. 45 da CF: a Câmara compõe-se de representantes do povo eleitos pelo sistema proporcional em cada Estado, Território e no DF. Os senadores são eleitos pelo princípio majoritário."),
+    ce(DCON, "Direitos fundamentais", CESPE, 2024,
+       "É livre a manifestação do pensamento, sendo vedado o anonimato.",
+       True,
+       "Art. 5º, IV, da CF. A vedação ao anonimato permite responsabilizar quem abusa da liberdade de expressão."),
+    ce(DCON, "Direitos fundamentais", CESPE, 2025,
+       "A lei penal não retroagirá, salvo para beneficiar o réu.",
+       True,
+       "Art. 5º, XL, da CF: a lei penal mais benéfica retroage, inclusive para alcançar fatos já julgados."),
+    ce(DCON, "Remédios constitucionais", CESPE, 2023,
+       "O habeas corpus é o remédio adequado para proteger o direito líquido e certo à obtenção de certidões em repartições públicas.",
+       False,
+       "O habeas corpus protege a liberdade de locomoção. O direito de certidão (art. 5º, XXXIV, b) é protegido por mandado de segurança."),
+
+    # ------------------------------------------------------------------
+    # Nocoes de Informatica
+    # ------------------------------------------------------------------
+    me(INFO, "Planilhas eletrônicas", FGV, 2024,
+       "Em uma planilha, a célula A1 contém o valor 6. O resultado da fórmula =SE(A1>=7;\"Aprovado\";\"Reprovado\") é",
+       ["Reprovado", "Aprovado", "7", "6", "#VALOR!"],
+       "A função SE testa a condição (6 >= 7 é falso) e devolve o terceiro argumento, \"Reprovado\". Com A1 igual ou maior que 7, devolveria \"Aprovado\"."),
+    me(INFO, "Arquivos e pastas", CESPE, 2023,
+       "A extensão de arquivo padrão das planilhas criadas nas versões atuais do Microsoft Excel é",
+       [".xlsx", ".docx", ".pptx", ".pdf", ".txt"],
+       ".xlsx é a planilha do Excel; .docx é documento do Word; .pptx, apresentação do PowerPoint; .pdf e .txt são formatos de documento e texto simples."),
+    me(INFO, "Redes e internet", FGV, 2025,
+       "No endereço de correio eletrônico fulano@orgao.gov.br, o trecho após o símbolo @ identifica",
+       ["o domínio do provedor ou da organização responsável pela caixa postal.", "o nome do usuário.",
+        "o protocolo de envio utilizado.", "o endereço IP do computador do usuário.", "a senha de acesso criptografada."],
+       "Antes do @ fica o nome da caixa postal (usuário); depois, o domínio que hospeda o serviço de e-mail. Protocolo e endereço IP não aparecem no endereço."),
+    ce(INFO, "Redes e internet", CESPE, 2024,
+       "A computação em nuvem permite acessar arquivos armazenados remotamente a partir de diferentes dispositivos conectados à internet.",
+       True,
+       "Na nuvem os dados ficam em servidores do provedor e podem ser acessados de qualquer dispositivo com conexão e credenciais."),
+    ce(INFO, "Segurança da informação", CESPE, 2025,
+       "O worm é um programa malicioso que depende da execução de um arquivo hospedeiro para se propagar.",
+       False,
+       "Quem depende de arquivo hospedeiro é o vírus. O worm se propaga sozinho, explorando falhas da rede e enviando cópias de si mesmo."),
+    ce(INFO, "Hardware e sistemas operacionais", CESPE, 2023,
+       "No Windows, o atalho Ctrl + C copia o item selecionado para a área de transferência.",
+       True,
+       "Ctrl + C copia, Ctrl + X recorta e Ctrl + V cola o conteúdo da área de transferência."),
+
+    # ------------------------------------------------------------------
+    # Raciocinio Logico
+    # ------------------------------------------------------------------
+    me(RLM, "Porcentagem", FGV, 2024,
+       "Um capital de R$ 1.000,00 foi aplicado a juros simples de 2% ao mês durante 5 meses. O valor dos juros obtidos é",
+       ["R$ 100,00.", "R$ 104,08.", "R$ 50,00.", "R$ 200,00.", "R$ 110,00."],
+       "Juros simples: J = C × i × t = 1.000 × 0,02 × 5 = R$ 100,00. O valor de R$ 104,08 seria o de juros compostos no mesmo período."),
+    me(RLM, "Sequências", CESPE, 2025,
+       "Na sequência 2, 6, 18, 54, ..., o próximo termo é",
+       ["162.", "108.", "72.", "216.", "150."],
+       "Cada termo é o anterior multiplicado por 3 (progressão geométrica de razão 3): 54 × 3 = 162."),
+    me(RLM, "Proposições e conectivos", FGV, 2023,
+       "A tabela-verdade de uma proposição composta formada por três proposições simples distintas tem",
+       ["8 linhas.", "3 linhas.", "6 linhas.", "9 linhas.", "16 linhas."],
+       "O número de linhas é 2 elevado ao número de proposições simples: 2³ = 8."),
+    ce(RLM, "Equivalências lógicas", CESPE, 2024,
+       "A proposição \"Se Pedro é médico, então Pedro é formado\" é equivalente a \"Pedro não é médico ou Pedro é formado\".",
+       True,
+       "A condicional p → q equivale a ~p ∨ q: ela só é falsa quando p é verdadeira e q é falsa, exatamente como a disjunção ~p ∨ q."),
+    ce(RLM, "Análise combinatória", CESPE, 2023,
+       "Em um grupo de 5 pessoas, há 10 maneiras distintas de escolher um presidente e um vice-presidente, que devem ser pessoas diferentes.",
+       False,
+       "A ordem importa (presidente ≠ vice), então é arranjo: A(5,2) = 5 × 4 = 20. O valor 10 seria a combinação C(5,2), que ignora os cargos."),
+    ce(RLM, "Porcentagem", CESPE, 2025,
+       "Se 30% de um valor correspondem a 60, então esse valor é 200.",
+       True,
+       "0,30 × V = 60, logo V = 60 / 0,30 = 200."),
+]
+
+LOTES = {"2": LOTE_2, "3": LOTE_3}
+
+
 def sql(texto):
     return "'" + texto.replace("'", "''") + "'"
 
 
-def gerar():
+def gerar(lote):
+    QUESTOES = LOTES[lote]
+    DISCIPLINAS = DISCIPLINAS_POR_LOTE[lote]
     linhas = [
-        "-- Lote 2 de questoes AUTORAIS, gerado por scripts/gerar_questoes.py.",
+        f"-- Lote {lote} de questoes AUTORAIS, gerado por scripts/gerar_questoes.py.",
         "-- Nao edite a mao: altere o script e gere uma nova versao (V16, V17...).",
         "--",
         "-- Questoes escritas no estilo das bancas, nao copiadas de provas (o texto",
@@ -331,8 +516,12 @@ SET total_topicos = (SELECT COUNT(*) FROM assunto a WHERE a.disciplina_id = cd.d
 
 
 if __name__ == "__main__":
-    destino = sys.argv[1] if len(sys.argv) > 1 else "V15__lote_questoes_2.sql"
+    if len(sys.argv) != 3 or sys.argv[1] not in LOTES:
+        print(f"uso: python scripts/gerar_questoes.py <lote: {', '.join(LOTES)}> <arquivo de saida>")
+        sys.exit(1)
+    lote, destino = sys.argv[1], sys.argv[2]
     with open(destino, "w", encoding="utf-8", newline="\n") as f:
-        f.write(gerar())
-    me_ = sum(q["tipo"] == "MULTIPLA_ESCOLHA" for q in QUESTOES)
-    print(f"{destino}: {len(QUESTOES)} questoes ({me_} multipla escolha, {len(QUESTOES) - me_} certo/errado)")
+        f.write(gerar(lote))
+    qs = LOTES[lote]
+    me_ = sum(q["tipo"] == "MULTIPLA_ESCOLHA" for q in qs)
+    print(f"{destino}: {len(qs)} questoes ({me_} multipla escolha, {len(qs) - me_} certo/errado)")
