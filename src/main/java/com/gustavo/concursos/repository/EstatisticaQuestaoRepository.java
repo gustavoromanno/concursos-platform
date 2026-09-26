@@ -31,4 +31,20 @@ public interface EstatisticaQuestaoRepository extends JpaRepository<Resposta, Lo
 
     @Query("SELECT COUNT(r) FROM Resposta r WHERE r.questao.id = :questaoId AND r.correta = true")
     long totalAcertos(@Param("questaoId") Long questaoId);
+
+    interface TotaisQuestao {
+        Long getQuestaoId();
+        long getTotal();
+        long getAcertos();
+    }
+
+    // Totais de respostas e acertos de cada questao ja respondida (base do filtro de dificuldade).
+    @Query(value = """
+        SELECT r.questao_id AS "questaoId",
+               COUNT(*) AS total,
+               SUM(CASE WHEN r.correta THEN 1 ELSE 0 END) AS acertos
+        FROM resposta r
+        GROUP BY r.questao_id
+        """, nativeQuery = true)
+    List<TotaisQuestao> totaisPorQuestao();
 }

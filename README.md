@@ -44,10 +44,12 @@ O projeto cobre o ciclo completo de uma aplicação real: modelagem e migrations
 ### 🔎 Questões
 | Recurso | Detalhe |
 |---|---|
-| Filtros combináveis | Palavra-chave, disciplina, assunto, banca, órgão, ano, modalidade, "com comentários" e situação pessoal (resolvidas, não resolvidas, certas, erradas) |
+| Filtros combináveis | Palavra-chave, disciplina, assunto, banca, órgão, ano, modalidade, dificuldade, "com comentários", "minhas anotações" e situação pessoal (resolvidas, não resolvidas, certas, erradas) |
 | Modalidades | Múltipla escolha e Certo/Errado (formato CESPE) |
 | Correção imediata | Resultado e explicação do gabarito logo após responder; a listagem nunca expõe a alternativa correta |
 | Comunidade | Estatística de como os outros usuários responderam cada questão e comentários |
+| Dificuldade | Fácil, média, difícil ou muito difícil pela taxa de acerto da comunidade — só a partir de 5 respostas, para o rótulo não se basear em amostra irrisória |
+| Anotações | Nota privada em cada questão, visível só para o autor |
 | Paginação | 20 por página, ordenação estável |
 
 ### 🧠 Estudo
@@ -85,7 +87,7 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V16| DB
+    FW[Flyway] -->|migrations V1…V17| DB
 ```
 
 ```
@@ -99,7 +101,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V16 (Flyway)
+├── db/migration    # V1 a V17 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
@@ -135,6 +137,8 @@ erDiagram
     QUESTAO ||--o{ RESPOSTA : recebe
     USUARIO ||--o{ REVISAO : agenda
     USUARIO ||--o{ CADERNO : organiza
+    USUARIO ||--o{ ANOTACAO : escreve
+    QUESTAO ||--o{ ANOTACAO : recebe
     USUARIO ||--o| OBJETIVO_USUARIO : define
     CONCURSO ||--o{ CONCURSO_CARGO : oferece
     CONCURSO_CARGO ||--o{ CARGO_DISCIPLINA : cobra
@@ -148,9 +152,9 @@ Questões Certo/Errado usam a mesma tabela de alternativas (duas linhas, "Certo"
 
 ## Decisões técnicas
 
-**Números derivados, não armazenados.** Ofensiva, progresso do objetivo e contadores são calculados a partir do histórico de respostas. Guardá-los em coluna abriria espaço para divergirem do que realmente aconteceu.
+**Números derivados, não armazenados.** Ofensiva, dificuldade, progresso do objetivo e contadores são calculados a partir do histórico de respostas. Guardá-los em coluna abriria espaço para divergirem do que realmente aconteceu.
 
-**Regras de negócio em classes puras.** Os cálculos de engajamento e de objetivo ficam em `EngajamentoCalculadora` e `ObjetivoCalculadora`: recebem dados, devolvem resultado, não dependem de banco, relógio nem Spring — por isso são testados em milissegundos. Os controllers só cuidam de HTTP.
+**Regras de negócio em classes puras.** Os cálculos de engajamento, objetivo e dificuldade ficam em `EngajamentoCalculadora`, `ObjetivoCalculadora` e `DificuldadeCalculadora`: recebem dados, devolvem resultado, não dependem de banco, relógio nem Spring — por isso são testados em milissegundos. Os controllers só cuidam de HTTP.
 
 **Filtros dinâmicos com Specifications.** Cada filtro é uma `Specification` independente, combinada só quando o parâmetro vem preenchido. Não existe um método de repositório por combinação de filtros.
 
@@ -180,7 +184,9 @@ Os testes rodam contra **H2 em memória**, sem banco externo, e são executados 
 | `RevisaoServiceTest` | Progressão do SM-2, teto de um ano, limites do fator de facilidade, erro reinicia a contagem |
 | `EngajamentoCalculadoraTest` | Ofensiva com dia ainda parcial, buracos e dias abaixo da meta; melhor sequência; intensidade do mapa |
 | `ObjetivoCalculadoraTest` | Limites exatos das faixas (80% e 50%), "vai cair" × "revisar", agrupamento por disciplina |
+| `DificuldadeCalculadoraTest` | Mínimo de respostas, limites das faixas e arredondamento idêntico ao exibido na tela |
 | `QuestaoFiltroTest` | Filtros novos montam consultas válidas e o JSON de paginação mantém o formato usado pela tela |
+| `AnotacaoTest` | Salvar, ler e apagar; filtro "minhas anotações"; anotação invisível para outros usuários |
 
 ---
 
@@ -193,6 +199,7 @@ Todas as rotas, exceto `/auth/**` e `/health`, exigem `Authorization: Bearer <to
 | Autenticação | `POST /auth/registrar` · `POST /auth/login` |
 | Questões | `GET /questoes` (filtros + paginação) · `POST /questoes/{id}/responder` · `GET /questoes/erradas` |
 | Comunidade | `GET/POST /questoes/{id}/comentarios` · `GET /questoes/{id}/estatisticas` |
+| Anotações | `GET/PUT/DELETE /questoes/{id}/anotacao` · `GET /anotacoes/ids` |
 | Catálogo | `GET /disciplinas` · `GET /bancas` · `GET /orgaos` |
 | Simulado | `POST /simulados` · `POST /simulados/{id}/questoes/{questaoId}/responder` · `POST /simulados/{id}/finalizar` |
 | Revisão | `GET /revisoes/hoje` · `GET /revisoes/resumo` |
@@ -242,8 +249,8 @@ python scripts/gerar_questoes.py <lote> src/main/resources/db/migration/V<n>__lo
 
 ## Próximos passos
 
-- [ ] Anotações pessoais em cada questão
-- [ ] Dificuldade calculada pela taxa de acerto da comunidade
+- [x] Anotações pessoais em cada questão
+- [x] Dificuldade calculada pela taxa de acerto da comunidade
 - [ ] Novos lotes de questões vinculadas a órgãos
 - [ ] Migração para Spring Boot 4
 

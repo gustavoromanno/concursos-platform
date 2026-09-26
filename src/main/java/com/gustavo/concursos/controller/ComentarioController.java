@@ -1,5 +1,7 @@
 package com.gustavo.concursos.controller;
 
+import com.gustavo.concursos.service.DificuldadeCalculadora;
+
 import com.gustavo.concursos.dto.ComentarioDTO;
 import com.gustavo.concursos.dto.EstatisticaQuestaoDTO;
 import com.gustavo.concursos.dto.NovoComentarioDTO;
@@ -121,19 +123,16 @@ public class ComentarioController {
             ));
         }
 
-        double percentual = total == 0 ? 0.0 : Math.round(acertos * 1000.0 / total) / 10.0;
+        double percentual = DificuldadeCalculadora.percentual(total, acertos);
 
-        return new EstatisticaQuestaoDTO(total, acertos, percentual, dificuldade(total, percentual), fatias);
+        return new EstatisticaQuestaoDTO(total, acertos, percentual, dificuldade(total, acertos), fatias);
     }
 
     // Classificacao pela taxa de acerto da comunidade. Abaixo de 5 respostas
     // a amostra e pequena demais para rotular.
-    private String dificuldade(long total, double percentualAcerto) {
-        if (total < 5) return "Sem dados suficientes";
-        if (percentualAcerto >= 80) return "Fácil";
-        if (percentualAcerto >= 60) return "Média";
-        if (percentualAcerto >= 40) return "Difícil";
-        return "Muito difícil";
+    private String dificuldade(long total, long acertos) {
+        var d = DificuldadeCalculadora.classificar(total, acertos);
+        return d == null ? "Sem dados suficientes" : d.rotulo();
     }
 
     private Usuario usuarioLogado(Authentication authentication) {
