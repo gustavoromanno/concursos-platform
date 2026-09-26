@@ -1518,3 +1518,48 @@ main:has(#tela-login:not(.hidden)) {
 .linha-checkbox input { width: auto; margin: 2px 0 0; flex-shrink: 0; }
 .dica-senha { font-size: 12px; margin: -6px 0 10px; }
 .primario:disabled { opacity: .6; cursor: wait; }
+
+/* Wrapper de Senha com Olho Toggle */
+.campo-senha-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.campo-senha-wrap input {
+    width: 100%;
+    padding-right: 42px;
+}
+.btn-olho {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    color: var(--suave);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-olho:hover {
+    color: var(--primario);
+}
+.btn-olho .ic {
+    width: 20px;
+    height: 20px;
+}
+.regras-senha {
+    font-size: 12px;
+    color: var(--suave);
+    margin: 8px 0 12px;
+    padding-left: 18px;
+    list-style: none;
+}
+.regras-senha li {
+    margin-bottom: 3px;
+    transition: color 0.15s ease;
+}
+.regras-senha li.ok {
+    color: #2e7d32;
+    font-weight: 500;
+}

@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PerfilTest {
 
     private static final String EMAIL = "perfil@teste.com";
-    private static final String SENHA = "senha-original";
+    private static final String SENHA = "Senha-original1!";
 
     @Autowired private MockMvc mvc;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -65,10 +65,10 @@ class PerfilTest {
     @WithMockUser(username = EMAIL)
     void trocaSenhaEONovoLoginFunciona() throws Exception {
         mvc.perform(put("/perfil/senha").contentType(MediaType.APPLICATION_JSON)
-                        .content(senhas(SENHA, "nova-senha-123")))
+                        .content(senhas(SENHA, "Nova-senha-123!")))
                 .andExpect(status().isNoContent());
 
-        assertThat(passwordEncoder.matches("nova-senha-123",
+        assertThat(passwordEncoder.matches("Nova-senha-123!",
                 usuarioRepository.findByEmail(EMAIL).orElseThrow().getSenhaHash())).isTrue();
 
         // Login real, pelo endpoint publico, com a senha nova.
@@ -83,7 +83,7 @@ class PerfilTest {
     void senhaAtualErradaRecebe400ENaoTroca() throws Exception {
         // 400 e nao 401: um 401 faria o frontend deslogar quem so digitou errado.
         mvc.perform(put("/perfil/senha").contentType(MediaType.APPLICATION_JSON)
-                        .content(senhas("chute-errado", "nova-senha-123")))
+                        .content(senhas("chute-errado", "Nova-senha-123!")))
                 .andExpect(status().isBadRequest());
 
         assertThat(passwordEncoder.matches(SENHA,

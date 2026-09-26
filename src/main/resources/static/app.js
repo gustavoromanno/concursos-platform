@@ -121,6 +121,36 @@ $('#btn-entrar').onclick = async () => {
     const erro = $('#login-erro');
     erro.textContent = '';
 
+    
+// Olho toggle para mostrar/ocultar senha
+document.querySelectorAll('.btn-olho').forEach(btn => {
+    btn.onclick = (e) => {
+        e.preventDefault();
+        const idAlvo = btn.getAttribute('data-alvo');
+        const campo = document.getElementById(idAlvo);
+        if (!campo) return;
+        const ehSenha = campo.type === 'password';
+        campo.type = ehSenha ? 'text' : 'password';
+        btn.querySelector('.ic-olho-fechado').classList.toggle('hidden', ehSenha);
+        btn.querySelector('.ic-olho-aberto').classList.toggle('hidden', !ehSenha);
+    };
+});
+
+// Atualiza regras de senha em tempo real na tela de registro
+const campoSenha = $('#login-senha');
+const campoConfirma = $('#reg-confirma-senha');
+
+function atualizarRegrasSenha() {
+    if (!modoRegistro) return;
+    const v = campoSenha.value;
+    $('#regra-minimo')?.classList.toggle('ok', v.length >= 6);
+    $('#regra-maiuscula')?.classList.toggle('ok', /[A-Z]/.test(v));
+    $('#regra-numero')?.classList.toggle('ok', /\d/.test(v));
+    $('#regra-especial')?.classList.toggle('ok', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v));
+}
+
+campoSenha?.addEventListener('input', atualizarRegrasSenha);
+
     const textoOriginal = botao.textContent;
     botao.disabled = true;
     botao.textContent = modoRegistro ? 'Criando conta…' : 'Entrando…';
@@ -129,7 +159,12 @@ $('#btn-entrar').onclick = async () => {
         if (modoRegistro) {
             const nome = $('#reg-nome').value.trim();
             if (!nome) throw new Error('Informe seu nome');
-            if (senha.length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres');
+            if (senha.length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.');
+            if (!/[A-Z]/.test(senha)) throw new Error('A senha precisa ter pelo menos 1 letra maiúscula.');
+            if (!/\d/.test(senha)) throw new Error('A senha precisa ter pelo menos 1 número.');
+            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(senha)) throw new Error('A senha precisa ter pelo menos 1 caractere especial.');
+            const confirma = $('#reg-confirma-senha').value;
+            if (senha !== confirma) throw new Error('As senhas não coincidem.');
             await api('/auth/registrar', {
                 method: 'POST',
                 body: JSON.stringify({ nome, email, senha, aceitaMarketing: $('#reg-marketing').checked })
