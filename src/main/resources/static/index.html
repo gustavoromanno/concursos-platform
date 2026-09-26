@@ -24,22 +24,26 @@
 <body>
 
 <header id="topo" class="hidden">
-  <strong>Concursos Platform</strong>
+  <div class="marca"><svg class="ic marca-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m9 10 2 2 4-4"/></svg><strong>Concursos Platform</strong></div>
   <nav>
-    <button data-tela="inicio">Início</button>
-    <button data-tela="dashboard">Desempenho</button>
-    <button data-tela="questoes">Questões</button>
-    <button data-tela="revisao">Revisão <span id="selo-revisao" class="selo hidden"></span></button>
-    <button data-tela="erradas">Revisar erradas</button>
-    <button data-tela="simulado">Simulado</button>
-    <button data-tela="cadernos">Cadernos</button>
-    <button data-tela="marcadores">Marcadores</button>
-    <button data-tela="concursos">Concursos</button>
-    <button data-tela="videoaulas">Videoaulas</button>
+    <button data-tela="inicio"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Início</span></button>
+    <button data-tela="dashboard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg><span>Desempenho</span></button>
+    <button data-tela="questoes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>Questões</span></button>
+    <button data-tela="revisao"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Revisão</span> <span id="selo-revisao" class="selo hidden"></span></button>
+    <button data-tela="simulado"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg><span>Simulados</span></button>
+    <button data-tela="concursos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg><span>Concursos</span></button>
+    <button data-tela="cadernos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg><span>Cadernos</span></button>
+    <button data-tela="marcadores"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><span>Marcadores</span></button>
+    <button data-tela="videoaulas"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><span>Videoaulas</span></button>
   </nav>
-  <button id="btn-tema" class="btn-tema" title="Alternar modo claro/noturno" aria-label="Alternar tema">🌙</button>
-  <span id="usuario-topo" class="usuario-topo"></span>
-  <button id="sair" class="link">Sair</button>
+  <div class="acoes-topo">
+    <button id="btn-tema" class="btn-tema" title="Alternar modo claro/noturno" aria-label="Alternar tema"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+    <div class="usuario-chip">
+      <span id="avatar-topo" class="avatar"></span>
+      <span id="usuario-topo" class="usuario-topo"></span>
+      <button id="sair" class="btn-sair" title="Sair" aria-label="Sair"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></button>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -72,20 +76,56 @@
 
   <!-- QUESTÕES -->
   <section id="tela-questoes" class="hidden">
-    <div class="card filtros">
-      <label>Disciplina<select id="f-disciplina"><option value="">Todas</option></select></label>
-      <label>Assunto<select id="f-assunto-id"><option value="">Todos</option></select></label>
-      <label>Órgão<select id="f-orgao"><option value="">Todos</option></select></label>
-      <label>Tipo
-        <select id="f-tipo">
-          <option value="">Todos</option>
-          <option value="MULTIPLA_ESCOLHA">Múltipla escolha</option>
-          <option value="CERTO_ERRADO">Certo/Errado</option>
-        </select>
-      </label>
-      <label>Ano<input id="f-ano" type="number" placeholder="ex: 2013"></label>
-      <button id="btn-filtrar" class="primario">Filtrar</button>
+    <div class="cabecalho-tela">
+      <span class="icone-tela"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <div>
+        <h1>Questões</h1>
+        <p class="sub">Encontre as questões para o seu estudo combinando os filtros abaixo.</p>
+      </div>
     </div>
+
+    <div class="card painel-filtros">
+      <div class="grade-filtros">
+        <label class="campo-busca">
+          <span class="rotulo-oculto">Palavra-chave</span>
+          <input id="f-palavra" type="search" placeholder="Palavra-chave">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </label>
+        <label><span class="rotulo-oculto">Disciplina</span><select id="f-disciplina"><option value="">Disciplina</option></select></label>
+        <label><span class="rotulo-oculto">Assunto</span><select id="f-assunto-id" disabled><option value="">Assunto</option></select></label>
+        <label><span class="rotulo-oculto">Banca</span><select id="f-banca"><option value="">Banca</option></select></label>
+        <label><span class="rotulo-oculto">Órgão</span><select id="f-orgao"><option value="">Órgão</option></select></label>
+        <label><span class="rotulo-oculto">Ano</span><select id="f-ano"><option value="">Ano</option></select></label>
+      </div>
+
+      <div class="grupos-filtros">
+        <fieldset class="grupo-chips">
+          <legend>Modalidade</legend>
+          <button type="button" class="chip" data-grupo="tipo" data-valor="MULTIPLA_ESCOLHA">Múltipla escolha</button>
+          <button type="button" class="chip" data-grupo="tipo" data-valor="CERTO_ERRADO">Certo/Errado</button>
+        </fieldset>
+        <fieldset class="grupo-chips">
+          <legend>Questões com</legend>
+          <button type="button" class="chip" data-grupo="comentarios" data-valor="true">Comentários</button>
+        </fieldset>
+        <fieldset class="grupo-chips">
+          <legend>Minhas questões</legend>
+          <button type="button" class="chip" data-grupo="situacao" data-valor="RESOLVIDAS">Resolvidas</button>
+          <button type="button" class="chip" data-grupo="situacao" data-valor="NAO_RESOLVIDAS">Não resolvidas</button>
+          <button type="button" class="chip" data-grupo="situacao" data-valor="CERTAS">Certas</button>
+          <button type="button" class="chip" data-grupo="situacao" data-valor="ERRADAS">Erradas</button>
+        </fieldset>
+      </div>
+
+      <div class="acoes-filtros">
+        <button id="btn-filtrar" class="primario">Filtrar questões</button>
+        <span class="espaco"></span>
+        <button id="btn-gerar-simulado" class="primario secundario-forte">+ Gerar simulado</button>
+        <button id="btn-limpar-filtros" class="secundario"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Limpar</button>
+      </div>
+    </div>
+
+    <p id="resumo-questoes" class="sub resumo-questoes"></p>
     <div id="lista-questoes"></div>
   </section>
 

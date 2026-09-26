@@ -13,6 +13,11 @@ let perfilUsuario = null;  // nome e email de quem esta logado
 
 // ---------- tema claro / noturno ----------
 
+// Icones Lucide (licenca ISC), inline para nao depender de CDN.
+const SVG = corpo => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${corpo}</svg>`;
+const ICONE_LUA = SVG('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>');
+const ICONE_SOL = SVG('<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>');
+
 function temaAtual() {
     return document.documentElement.getAttribute('data-tema') === 'escuro' ? 'escuro' : 'claro';
 }
@@ -26,7 +31,7 @@ function aplicarTema(tema) {
     localStorage.setItem('tema', tema);
     // O ícone mostra para onde o clique leva, não o estado atual.
     const botao = document.querySelector('#btn-tema');
-    if (botao) botao.textContent = tema === 'escuro' ? '☀️' : '🌙';
+    if (botao) botao.innerHTML = tema === 'escuro' ? ICONE_SOL : ICONE_LUA;
 }
 
 document.querySelector('#btn-tema').onclick = () => {
@@ -175,18 +180,32 @@ async function carregarCatalogo() {
         const orgaos = await api('/orgaos');
         const sel = $('#f-orgao');
         if (sel) {
-            sel.innerHTML = '<option value="">Todos</option>';
+            sel.innerHTML = '<option value="">Órgão</option>';
             orgaos.forEach(o => sel.appendChild(
                 criar(`<option value="${o.id}">${escapar(o.sigla || o.nome)}</option>`)));
         }
     } catch { /* filtro opcional */ }
 
-    preencher('#f-disciplina', 'Todas');
+    preencher('#f-disciplina', 'Disciplina');
+
+    // Bancas e anos do painel de filtros de questões.
+    try {
+        const bancas = await api('/bancas');
+        const selBanca = $('#f-banca');
+        selBanca.innerHTML = '<option value="">Banca</option>';
+        bancas.forEach(b => selBanca.appendChild(
+            criar(`<option value="${b.id}">${escapar(b.nome)}</option>`)));
+    } catch { /* filtro opcional */ }
+    const selAno = $('#f-ano');
+    selAno.innerHTML = '<option value="">Ano</option>';
+    for (let ano = new Date().getFullYear(); ano >= 2010; ano--) {
+        selAno.appendChild(criar(`<option value="${ano}">${ano}</option>`));
+    }
     preencher('#s-disciplina', 'Todas');
     preencher('#vf-disciplina', 'Todas');
     preencher('#v-disciplina', null);
 
-    atualizarAssuntos('#f-disciplina', '#f-assunto-id', 'Todos');
+    atualizarAssuntosFiltro();
     atualizarAssuntos('#v-disciplina', '#v-assunto', 'Geral da disciplina');
 }
 
@@ -196,6 +215,11 @@ async function carregarEstadoPessoal() {
     try {
         perfilUsuario = await api('/perfil');
         $('#usuario-topo').textContent = perfilUsuario.nome;
+        const partes = (perfilUsuario.nome || '').trim().split(/\s+/).filter(Boolean);
+        const iniciais = partes.length > 1
+            ? partes[0][0] + partes[partes.length - 1][0]
+            : (partes[0] || '?').slice(0, 2);
+        $('#avatar-topo').textContent = iniciais.toUpperCase();
     } catch {
         perfilUsuario = null;
     }
@@ -232,12 +256,19 @@ function atualizarAssuntos(selDisciplina, selAssunto, rotuloVazio) {
     achatar(disciplina.assuntos || []);
 }
 
-$('#f-disciplina').onchange = () => atualizarAssuntos('#f-disciplina', '#f-assunto-id', 'Todos');
+// No painel de questões, "Assunto" só habilita depois de escolher a disciplina.
+function atualizarAssuntosFiltro() {
+    atualizarAssuntos('#f-disciplina', '#f-assunto-id', 'Assunto');
+    $('#f-assunto-id').disabled = !$('#f-disciplina').value;
+}
+
+$('#f-disciplina').onchange = atualizarAssuntosFiltro;
 $('#v-disciplina').onchange = () => atualizarAssuntos('#v-disciplina', '#v-assunto', 'Geral da disciplina');
 
 // ---------- navegacao ----------
 
 document.querySelectorAll('#topo nav button').forEach(btn => {
+    btn.title = btn.textContent.trim();
     btn.onclick = () => abrir(btn.dataset.tela);
 });
 
@@ -421,34 +452,72 @@ async function responderDireto(questao, alternativa, card) {
     }
 }
 
+// Valor do chip ativo em cada grupo (um por grupo; clicar de novo desmarca).
+function chipAtivo(grupo) {
+    return document.querySelector(`.chip.ativo[data-grupo="${grupo}"]`)?.dataset.valor || '';
+}
+
+document.querySelectorAll('.chip[data-grupo]').forEach(chip => {
+    chip.onclick = () => {
+        const jaAtivo = chip.classList.contains('ativo');
+        document.querySelectorAll(`.chip[data-grupo="${chip.dataset.grupo}"]`)
+            .forEach(c => c.classList.remove('ativo'));
+        if (!jaAtivo) chip.classList.add('ativo');
+    };
+});
+
 async function carregarQuestoes() {
     const alvo = $('#lista-questoes');
+    const resumo = $('#resumo-questoes');
     alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+    resumo.textContent = '';
 
     const params = new URLSearchParams({ size: 20 });
-    const disciplinaId = $('#f-disciplina').value;
-    const assuntoId = $('#f-assunto-id').value;
-    const ano = $('#f-ano').value.trim();
-    const orgaoId = $('#f-orgao')?.value;
-    const tipo = $('#f-tipo')?.value;
-    if (disciplinaId) params.set('disciplinaId', disciplinaId);
-    if (assuntoId) params.set('assuntoId', assuntoId);
-    if (orgaoId) params.set('orgaoId', orgaoId);
-    if (tipo) params.set('tipo', tipo);
-    if (ano) params.set('ano', ano);
+    const filtros = {
+        palavraChave: $('#f-palavra').value.trim(),
+        disciplinaId: $('#f-disciplina').value,
+        assuntoId: $('#f-assunto-id').value,
+        bancaId: $('#f-banca').value,
+        orgaoId: $('#f-orgao').value,
+        ano: $('#f-ano').value,
+        tipo: chipAtivo('tipo'),
+        comComentarios: chipAtivo('comentarios'),
+        situacao: chipAtivo('situacao')
+    };
+    Object.entries(filtros).forEach(([chave, valor]) => { if (valor) params.set(chave, valor); });
 
     try {
         const pagina = await api('/questoes?' + params);
         alvo.innerHTML = '';
         if (!pagina.content.length) {
-            alvo.appendChild(criar('<div class="vazio">Nenhuma questão encontrada.</div>'));
+            alvo.appendChild(criar('<div class="vazio">Nenhuma questão encontrada com esses filtros.</div>'));
             return;
         }
+        const total = pagina.totalElements;
+        resumo.textContent = total > pagina.content.length
+            ? `${total} questões encontradas — mostrando as ${pagina.content.length} primeiras.`
+            : `${total} ${total === 1 ? 'questão encontrada' : 'questões encontradas'}.`;
         pagina.content.forEach(q => alvo.appendChild(cardQuestao(q, responderDireto)));
     } catch (e) {
         alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
 }
+
+$('#f-palavra').onkeydown = e => { if (e.key === 'Enter') carregarQuestoes(); };
+
+$('#btn-limpar-filtros').onclick = () => {
+    $('#f-palavra').value = '';
+    ['#f-disciplina', '#f-banca', '#f-orgao', '#f-ano'].forEach(sel => { $(sel).value = ''; });
+    atualizarAssuntosFiltro();
+    document.querySelectorAll('.chip.ativo').forEach(c => c.classList.remove('ativo'));
+    carregarQuestoes();
+};
+
+// O simulado sorteia por disciplina: leva a disciplina escolhida no filtro.
+$('#btn-gerar-simulado').onclick = () => {
+    $('#s-disciplina').value = $('#f-disciplina').value;
+    abrir('simulado');
+};
 
 $('#btn-filtrar').onclick = carregarQuestoes;
 
