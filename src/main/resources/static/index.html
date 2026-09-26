@@ -39,8 +39,10 @@
   <div class="acoes-topo">
     <button id="btn-tema" class="btn-tema" title="Alternar modo claro/noturno" aria-label="Alternar tema"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
     <div class="usuario-chip">
-      <span id="avatar-topo" class="avatar"></span>
-      <span id="usuario-topo" class="usuario-topo"></span>
+      <button id="btn-conta" class="btn-conta" title="Minha conta">
+        <span id="avatar-topo" class="avatar"></span>
+        <span id="usuario-topo" class="usuario-topo"></span>
+      </button>
       <button id="sair" class="btn-sair" title="Sair" aria-label="Sair"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></button>
     </div>
   </div>
@@ -270,6 +272,37 @@
   </section>
 
   <!-- DASHBOARD -->
+  <section id="tela-conta" class="hidden">
+    <div class="cabecalho-tela">
+      <span class="icone-tela"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></span>
+      <div>
+        <h1>Minha conta</h1>
+        <p class="sub">Seus dados de acesso.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Dados</h2>
+      <label>Nome<input id="conta-nome" maxlength="150"></label>
+      <label>E-mail (usado no login)<input id="conta-email" disabled></label>
+      <div class="acoes-conta">
+        <button id="btn-salvar-nome" class="primario">Salvar nome</button>
+        <span id="msg-nome" class="sub"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Alterar senha</h2>
+      <label>Senha atual<input id="conta-senha-atual" type="password" autocomplete="current-password"></label>
+      <label>Nova senha<input id="conta-senha-nova" type="password" autocomplete="new-password" minlength="6"></label>
+      <label>Confirme a nova senha<input id="conta-senha-confirma" type="password" autocomplete="new-password"></label>
+      <div class="acoes-conta">
+        <button id="btn-salvar-senha" class="primario">Alterar senha</button>
+        <span id="msg-senha" class="sub"></span>
+      </div>
+    </div>
+  </section>
+
   <section id="tela-dashboard" class="hidden">
     <div id="painel-dashboard"></div>
   </section>

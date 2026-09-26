@@ -69,6 +69,9 @@ O projeto cobre o ciclo completo de uma aplicação real: modelagem e migrations
 ### 🏛️ Concursos
 Catálogo com cronograma de etapas, cargos (vagas e salário), conteúdo programático e provas anteriores resolvíveis na numeração original.
 
+### 👤 Conta
+Alteração de nome e de senha (com confirmação da senha atual).
+
 ### 🎨 Interface
 Menu superior com ícones, modo claro e noturno, layout responsivo — HTML, CSS e JavaScript puros, sem framework nem etapa de build.
 
@@ -87,7 +90,7 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V17| DB
+    FW[Flyway] -->|migrations V1…V18| DB
 ```
 
 ```
@@ -101,7 +104,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V17 (Flyway)
+├── db/migration    # V1 a V18 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
@@ -187,6 +190,7 @@ Os testes rodam contra **H2 em memória**, sem banco externo, e são executados 
 | `DificuldadeCalculadoraTest` | Mínimo de respostas, limites das faixas e arredondamento idêntico ao exibido na tela |
 | `QuestaoFiltroTest` | Filtros novos montam consultas válidas e o JSON de paginação mantém o formato usado pela tela |
 | `AnotacaoTest` | Salvar, ler e apagar; filtro "minhas anotações"; anotação invisível para outros usuários |
+| `PerfilTest` | Troca de nome; troca de senha com login real usando a senha nova; senha atual errada não altera nada |
 
 ---
 
@@ -207,6 +211,7 @@ Todas as rotas, exceto `/auth/**` e `/health`, exigem `Authorization: Bearer <to
 | Engajamento | `GET /engajamento` · `PUT /engajamento/meta` · `GET /engajamento/mapa` |
 | Objetivo | `GET/PUT/DELETE /objetivo` |
 | Organização | `/cadernos` · `/marcadores` · `/videoaulas` |
+| Conta | `GET/PUT /perfil` · `PUT /perfil/senha` (exige a senha atual) |
 | Concursos | `GET /concursos` · `GET /concursos/{id}` · `GET /provas/{id}` |
 | Admin | `POST /questoes` · `DELETE /questoes/{id}` · `POST/DELETE /concursos…` · `POST/DELETE /videoaulas` |
 

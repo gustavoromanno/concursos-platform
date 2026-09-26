@@ -220,12 +220,7 @@ async function carregarCatalogo() {
 async function carregarEstadoPessoal() {
     try {
         perfilUsuario = await api('/perfil');
-        $('#usuario-topo').textContent = perfilUsuario.nome;
-        const partes = (perfilUsuario.nome || '').trim().split(/\s+/).filter(Boolean);
-        const iniciais = partes.length > 1
-            ? partes[0][0] + partes[partes.length - 1][0]
-            : (partes[0] || '?').slice(0, 2);
-        $('#avatar-topo').textContent = iniciais.toUpperCase();
+        atualizarUsuarioTopo(perfilUsuario.nome);
     } catch {
         perfilUsuario = null;
     }
@@ -298,7 +293,65 @@ function abrir(tela) {
     if (tela === 'concursos') carregarConcursos();
     if (tela === 'videoaulas') carregarVideoaulas();
     if (tela === 'dashboard') carregarDashboard();
+    if (tela === 'conta') carregarConta();
 }
+
+// ---------- minha conta ----------
+
+function atualizarUsuarioTopo(nome) {
+    $('#usuario-topo').textContent = nome;
+    const partes = (nome || '').trim().split(/\s+/).filter(Boolean);
+    const iniciais = partes.length > 1
+        ? partes[0][0] + partes[partes.length - 1][0]
+        : (partes[0] || '?').slice(0, 2);
+    $('#avatar-topo').textContent = iniciais.toUpperCase();
+}
+
+function carregarConta() {
+    $('#conta-nome').value = perfilUsuario?.nome || '';
+    $('#conta-email').value = perfilUsuario?.email || '';
+    ['#msg-nome', '#msg-senha'].forEach(sel => { $(sel).textContent = ''; });
+    ['#conta-senha-atual', '#conta-senha-nova', '#conta-senha-confirma'].forEach(sel => { $(sel).value = ''; });
+}
+
+$('#btn-conta').onclick = () => abrir('conta');
+
+$('#btn-salvar-nome').onclick = async () => {
+    const msg = $('#msg-nome');
+    const nome = $('#conta-nome').value.trim();
+    if (!nome) {
+        msg.textContent = 'Informe um nome.';
+        return;
+    }
+    try {
+        perfilUsuario = await api('/perfil', { method: 'PUT', body: JSON.stringify({ nome }) });
+        atualizarUsuarioTopo(perfilUsuario.nome);
+        msg.textContent = 'Nome atualizado.';
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+};
+
+$('#btn-salvar-senha').onclick = async () => {
+    const msg = $('#msg-senha');
+    const senhaAtual = $('#conta-senha-atual').value;
+    const novaSenha = $('#conta-senha-nova').value;
+    if (novaSenha.length < 6) {
+        msg.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
+        return;
+    }
+    if (novaSenha !== $('#conta-senha-confirma').value) {
+        msg.textContent = 'A confirmação não confere com a nova senha.';
+        return;
+    }
+    try {
+        await api('/perfil/senha', { method: 'PUT', body: JSON.stringify({ senhaAtual, novaSenha }) });
+        ['#conta-senha-atual', '#conta-senha-nova', '#conta-senha-confirma'].forEach(sel => { $(sel).value = ''; });
+        msg.textContent = 'Senha alterada.';
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+};
 
 // ---------- questoes ----------
 

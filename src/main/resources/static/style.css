@@ -1461,3 +1461,16 @@ main:has(#tela-login:not(.hidden)) {
 .painel-anotacao textarea:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
 .acoes-anotacao { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
 .acoes-anotacao .primario { width: auto; padding: 7px 18px; font-size: 13px; }
+
+/* Chip do usuario vira botao para "Minha conta" */
+#topo .btn-conta {
+    display: flex; align-items: center; gap: 9px;
+    background: none; border: none; padding: 0; cursor: pointer; color: inherit;
+    font-family: inherit;
+}
+#topo .btn-conta:hover .usuario-topo { text-decoration: underline; text-decoration-color: var(--dourado); }
+
+#tela-conta .card { max-width: 560px; }
+#tela-conta input:disabled { background: var(--trilho); color: var(--suave); }
+.acoes-conta { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.acoes-conta .primario { width: auto; }

@@ -47,6 +47,11 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/", "/index.html", "/app.js", "/style.css", "/favicon.ico").permitAll()
                         .requestMatchers("/health").permitAll()
+                        // Quando um controller responde com erro (400, 404...), o Tomcat
+                        // repassa a requisicao para /error. Nesse repasse o token ja nao
+                        // e lido, e sem esta liberacao o usuario recebia 401 no lugar do
+                        // erro real — e o frontend o deslogava.
+                        .requestMatchers("/error").permitAll()
 
                         // Responder questão é de TODO usuário logado. Precisa vir
                         // antes da regra de admin, senão o padrão /questoes/**
