@@ -80,7 +80,7 @@ async function api(caminho, opcoes = {}) {
         throw new Error(corpo.message || corpo.detail || mensagemPadrao(resp.status));
     }
 
-    return resp.status === 204 ? null : resp.json();
+    return resp.status === 204 ? null : resp.text().then(t => t ? JSON.parse(t) : null);
 }
 
 function mensagemPadrao(status) {
