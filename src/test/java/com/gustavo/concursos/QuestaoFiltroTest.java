@@ -75,6 +75,20 @@ class QuestaoFiltroTest {
 
     @Test
     @WithMockUser(username = EMAIL)
+    void paginacaoOrdenadaDevolveMetadadosQueOFrontendUsa() throws Exception {
+        // O frontend depende de totalElements, totalPages e number para montar
+        // a paginacao. Se o formato do JSON mudar (ex.: upgrade do Spring),
+        // este teste quebra antes de a tela quebrar em producao.
+        mvc.perform(get("/questoes").param("page", "0").param("size", "20").param("sort", "id"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.totalElements").isNumber())
+                .andExpect(jsonPath("$.totalPages").isNumber())
+                .andExpect(jsonPath("$.number").value(0));
+    }
+
+    @Test
+    @WithMockUser(username = EMAIL)
     void situacaoInvalidaRecebe400() throws Exception {
         mvc.perform(get("/questoes").param("situacao", "QUALQUER"))
                 .andExpect(status().isBadRequest());

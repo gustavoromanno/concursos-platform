@@ -1424,3 +1424,16 @@ main:has(#tela-login:not(.hidden)) {
     .acoes-filtros .espaco { display: none; }
     .acoes-filtros .primario, .acoes-filtros .secundario { width: 100%; justify-content: center; }
 }
+
+/* Paginacao da lista de questoes */
+.paginacao { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 18px 0 8px; }
+.paginacao .pagina {
+    min-width: 40px; height: 40px; padding: 0 12px;
+    border: 1px solid var(--borda); border-radius: var(--raio-p);
+    background: var(--card); color: var(--texto);
+    font-family: inherit; font-size: 14px; cursor: pointer;
+}
+.paginacao .pagina:hover:not(:disabled) { border-color: var(--verde); color: var(--verde); }
+.paginacao .pagina.ativa { background: var(--verde); border-color: var(--verde); color: #fff; cursor: default; }
+[data-tema="escuro"] .paginacao .pagina.ativa { color: #10201C; }
+.paginacao .pagina:disabled:not(.ativa) { opacity: .45; cursor: default; }
