@@ -51,4 +51,23 @@ public interface QuestaoRepository extends JpaRepository<Questao, Long>, JpaSpec
         ORDER BY q.id
         """, nativeQuery = true)
     List<Questao> questoesErradas(@Param("usuarioId") Long usuarioId);
+
+    // Ids das questoes que o usuario ja respondeu pelo menos uma vez.
+    @Query(value = "SELECT DISTINCT r.questao_id FROM resposta r WHERE r.usuario_id = :usuarioId",
+            nativeQuery = true)
+    List<Long> idsRespondidas(@Param("usuarioId") Long usuarioId);
+
+    // Ids das questoes cuja resposta MAIS RECENTE do usuario foi certa (true) ou errada (false).
+    // Mesmo criterio da lista "Revisar erradas".
+    @Query(value = """
+        SELECT ultima.questao_id FROM (
+            -- respondida_em no SELECT deixa a consulta valida tambem no H2 dos testes.
+            SELECT DISTINCT ON (r.questao_id) r.questao_id, r.correta, r.respondida_em
+            FROM resposta r
+            WHERE r.usuario_id = :usuarioId
+            ORDER BY r.questao_id, r.respondida_em DESC
+        ) ultima
+        WHERE ultima.correta = :correta
+        """, nativeQuery = true)
+    List<Long> idsPorUltimaResposta(@Param("usuarioId") Long usuarioId, @Param("correta") boolean correta);
 }
