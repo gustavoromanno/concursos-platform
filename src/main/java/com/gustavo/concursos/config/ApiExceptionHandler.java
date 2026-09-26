@@ -44,6 +44,11 @@ public class ApiExceptionHandler {
         return corpo(HttpStatus.BAD_REQUEST, "Requisição inválida.");
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> statusEx(org.springframework.web.server.ResponseStatusException e) {
+        return corpo(HttpStatus.valueOf(e.getStatusCode().value()), e.getReason() != null ? e.getReason() : e.getMessage());
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> integridade(DataIntegrityViolationException e) {
         log.warn("Violacao de integridade: {}", e.getMostSpecificCause().getMessage());
