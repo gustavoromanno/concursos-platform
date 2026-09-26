@@ -631,26 +631,30 @@ async function carregarQuestoes(pagina = 0) {
             alvo.appendChild(criar('<div class="vazio">Nenhuma questão encontrada com esses filtros.</div>'));
             return;
         }
-        const total = resultado.totalElements;
-        const inicio = resultado.number * POR_PAGINA + 1;
+        // A API serializa paginas "VIA_DTO": os metadados vem dentro de "page"
+        // (ver ConcursosPlatformApplication). O fallback cobre o formato antigo.
+        const meta = resultado.page ?? resultado;
+        const total = meta.totalElements;
+        const inicio = meta.number * POR_PAGINA + 1;
         const fim = inicio + resultado.content.length - 1;
         resumo.textContent = total === 1
             ? '1 questão encontrada.'
-            : `${total} questões encontradas${resultado.totalPages > 1 ? ` — exibindo ${inicio} a ${fim}` : ''}.`;
+            : `${total} questões encontradas${meta.totalPages > 1 ? ` — exibindo ${inicio} a ${fim}` : ''}.`;
         resultado.content.forEach(q => alvo.appendChild(cardQuestao(q, responderDireto)));
-        montarPaginacao(paginacao, resultado);
+        montarPaginacao(paginacao, meta);
     } catch (e) {
         alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
 }
 
 // Anterior / numeros / Proxima. Mostra ate 5 numeros em volta da pagina atual.
-function montarPaginacao(alvo, resultado) {
+// Recebe os metadados da pagina ({ number, totalPages, ... }).
+function montarPaginacao(alvo, meta) {
     alvo.innerHTML = '';
-    const totalPaginas = resultado.totalPages;
+    const totalPaginas = meta.totalPages;
     if (totalPaginas <= 1) return;
 
-    const atual = resultado.number;
+    const atual = meta.number;
     const botao = (rotulo, pagina, { ativo = false, desabilitado = false } = {}) => {
         const b = criar(`<button class="pagina${ativo ? ' ativa' : ''}">${rotulo}</button>`);
         b.disabled = desabilitado || ativo;

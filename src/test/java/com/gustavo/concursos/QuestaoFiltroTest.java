@@ -76,15 +76,16 @@ class QuestaoFiltroTest {
     @Test
     @WithMockUser(username = EMAIL)
     void paginacaoOrdenadaDevolveMetadadosQueOFrontendUsa() throws Exception {
-        // O frontend depende de totalElements, totalPages e number para montar
-        // a paginacao. Se o formato do JSON mudar (ex.: upgrade do Spring),
-        // este teste quebra antes de a tela quebrar em producao.
+        // O frontend depende de page.totalElements, page.totalPages e page.number
+        // para montar a paginacao (formato VIA_DTO, configurado na aplicacao).
+        // Se o formato do JSON mudar, este teste quebra antes de a tela quebrar.
         mvc.perform(get("/questoes").param("page", "0").param("size", "20").param("sort", "id"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.totalElements").isNumber())
-                .andExpect(jsonPath("$.totalPages").isNumber())
-                .andExpect(jsonPath("$.number").value(0));
+                .andExpect(jsonPath("$.page.totalElements").isNumber())
+                .andExpect(jsonPath("$.page.totalPages").isNumber())
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(20));
     }
 
     @Test
