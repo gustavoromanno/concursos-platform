@@ -41,7 +41,7 @@ class CadastroTest {
         registrar(cadastro("Ana", "ana.nova@teste.com", "Senha123!", null)).andExpect(status().isCreated());
 
         mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"ana.nova@teste.com\",\"senha\":\"senha123\"}"))
+                        .content("{\"email\":\"ana.nova@teste.com\",\"senha\":\"Senha123!\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty());
     }
@@ -58,7 +58,7 @@ class CadastroTest {
 
         // E o login aceita o e-mail escrito de qualquer jeito.
         mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"BRUNO.SILVA@teste.com\",\"senha\":\"senha123\"}"))
+                        .content("{\"email\":\"BRUNO.SILVA@teste.com\",\"senha\":\"Senha123!\"}"))
                 .andExpect(status().isOk());
     }
 

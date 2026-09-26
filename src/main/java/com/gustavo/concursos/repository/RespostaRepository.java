@@ -70,10 +70,12 @@ public interface RespostaRepository extends JpaRepository<Resposta, Long> {
 
     @Query("""
         SELECT COUNT(r) AS total,
-               SUM(CASE WHEN r.correta = true THEN 1 ELSE 0 END) AS acertos
+               COALESCE(SUM(CASE WHEN r.correta = true THEN 1 ELSE 0 END), 0) AS acertos
         FROM Resposta r
         WHERE r.usuario.id = :usuarioId
         """)
+    // COALESCE: sem nenhuma resposta, SUM devolve NULL (e o COUNT, 0). Sem ele,
+    // o painel de quem acabou de criar a conta dava erro 500.
     TotalGeral totalGeral(@Param("usuarioId") Long usuarioId);
 
     // Evolucao diaria. Query nativa porque agrupar por data (descartando a hora)
