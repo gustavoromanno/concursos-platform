@@ -36,6 +36,7 @@
     <button data-tela="marcadores"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><span>Marcadores</span></button>
     <button data-tela="videoaulas"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><span>Videoaulas</span></button>
     <button data-tela="planos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg><span>Planos</span></button>
+    <button data-tela="admin" class="so-admin hidden"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg><span>Admin</span></button>
     <button data-tela="importacoes" class="so-admin hidden"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg><span>Importar provas</span></button>
   </nav>
   <div class="acoes-topo">
@@ -53,8 +54,108 @@
 <main>
 
   <!-- LOGIN -->
-  <section id="tela-login">
+  <section id="tela-landing" class="hidden">
+    <nav class="topo-landing">
+      <strong class="marca-landing">Concursos Platform</strong>
+      <div class="links-landing">
+        <a href="#landing-recursos">Funcionalidades</a>
+        <a href="#landing-como">Como funciona</a>
+        <a href="#landing-planos">Planos</a>
+      </div>
+      <button class="primario ir-login">Acessar →</button>
+    </nav>
+
+    <div class="hero hero-landing">
+      <div class="selos-hero">
+        <span id="landing-selo-questoes" class="selo-hero">Questões autorais de concursos</span>
+        <span class="selo-hero dourado">Plano gratuito para sempre</span>
+      </div>
+      <h1 class="titulo-hero">Estude pelo que <span class="destaque-nome">cai na prova.</span></h1>
+      <p class="sub-hero">Questões no estilo das bancas, correção com explicação, simulados e revisão no momento certo. Tudo num só lugar.</p>
+      <div class="acoes-hero">
+        <button class="primario ir-cadastro">Criar conta grátis</button>
+        <button class="secundario ir-login">Já tenho conta</button>
+      </div>
+    </div>
+
+    <div class="previa-questao previa-landing">
+      <div class="barra-janela"><span class="bolinha"></span><span class="bolinha"></span><span class="bolinha"></span>
+        <span class="rotulo-janela">EXEMPLO DE QUESTÃO</span></div>
+      <div class="corpo-previa">
+        <span class="trilha-previa">Direito Constitucional · Remédios constitucionais</span>
+        <p class="enunciado-previa">O remédio constitucional cabível para assegurar o conhecimento de informações relativas à pessoa do impetrante, constantes de registros de entidades governamentais, é o</p>
+        <div class="alternativa-previa certa-previa"><span class="marcador"></span>A) habeas data.</div>
+        <div class="alternativa-previa"><span class="marcador"></span>B) mandado de injunção.</div>
+        <div class="alternativa-previa"><span class="marcador"></span>C) mandado de segurança.</div>
+        <div class="explicacao-previa"><strong>Explicação:</strong> art. 5º, LXXII, da Constituição: o habeas data assegura o conhecimento e a retificação de informações sobre a pessoa do impetrante.</div>
+      </div>
+    </div>
+
+    <div class="numeros-hero">
+      <div class="numero-hero"><strong id="lnd-questoes">—</strong><span>Questões</span></div>
+      <div class="numero-hero"><strong id="lnd-bancas">—</strong><span>Bancas</span></div>
+      <div class="numero-hero"><strong id="lnd-disciplinas">—</strong><span>Disciplinas</span></div>
+      <div class="numero-hero"><strong id="lnd-concursos">—</strong><span>Concursos</span></div>
+    </div>
+
+    <div id="landing-recursos" class="secao-inicio">
+      <h2 class="titulo-secao">Tudo o que você precisa para estudar</h2>
+      <p class="sub centralizado">Ferramentas pensadas para aproveitar cada hora de estudo.</p>
+      <div class="grade-recursos-landing"><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></span><strong>Análise de desempenho</strong><span class="sub">Acompanhe sua evolução por disciplina e assunto e descubra onde focar.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><strong>Banco de questões</strong><span class="sub">Questões autorais no estilo das bancas, de múltipla escolha e Certo/Errado.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><strong>Filtros completos</strong><span class="sub">Disciplina, assunto, banca, órgão, ano, concurso, cargo e dificuldade.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838.838-2.872a2 2 0 0 1 .506-.854z"/></svg></span><strong>Gabarito explicado</strong><span class="sub">Cada questão mostra por que a resposta está certa, com o fundamento.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg></span><strong>Cadernos e anotações</strong><span class="sub">Monte listas para revisar e anote o que importa em cada questão.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span><strong>Concursos e cargos</strong><span class="sub">Cronograma, cargos, conteúdo programático e seu progresso no edital.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg></span><strong>Simulados cronometrados</strong><span class="sub">Sorteio por disciplina e banca, com resultado por matéria no final.</span></div><div class="card recurso-landing"><span class="icone-atalho"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span><strong>Revisão espaçada</strong><span class="sub">O que você errou volta no momento certo, antes de você esquecer.</span></div></div>
+    </div>
+
+    <div id="landing-como" class="secao-inicio">
+      <h2 class="titulo-secao">Como funciona</h2>
+      <div class="grade-passos">
+        <div class="passo"><span class="numero-passo">01</span><strong>Crie sua conta</strong><p class="sub">Grátis, em menos de um minuto. Sem cartão.</p></div>
+        <div class="passo"><span class="numero-passo">02</span><strong>Escolha seu concurso</strong><p class="sub">Filtre pela banca, pelo órgão e pelo cargo que você busca.</p></div>
+        <div class="passo"><span class="numero-passo">03</span><strong>Resolva questões</strong><p class="sub">Responda e entenda o gabarito na hora.</p></div>
+        <div class="passo"><span class="numero-passo">04</span><strong>Acompanhe a evolução</strong><p class="sub">Veja onde está acertando e o que precisa revisar.</p></div>
+      </div>
+    </div>
+
+    <div id="landing-planos" class="secao-inicio">
+      <h2 class="titulo-secao">Planos simples, sem pegadinhas</h2>
+      <p class="sub centralizado">Comece grátis. Assine quando precisar de mais.</p>
+      <div class="grade-planos">
+        <div class="card cartao-plano">
+          <span class="rotulo">GRATUITO</span>
+          <div class="preco-plano"><strong>R$ 0</strong></div>
+          <p class="sub">Para sempre</p>
+          <ul class="lista-beneficios">
+            <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Banco de questões autorais</li><li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Filtros completos</li>
+            <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Correção com explicação</li><li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span class="lnd-simulados-gratis">Simulados com limite mensal</span></li>
+            <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Cadernos e marcadores</li>
+          </ul>
+          <button class="secundario ir-cadastro">Criar conta grátis</button>
+        </div>
+        <div class="card cartao-plano destaque-plano">
+          <span class="selo-popular">✦ RECOMENDADO</span>
+          <span class="rotulo">PRO</span>
+          <div class="preco-plano"><strong id="lnd-preco">—</strong> <span class="sub">/mês</span></div>
+          <p id="lnd-preco-anual" class="sub"></p>
+          <p class="rotulo-beneficios">TUDO DO GRATUITO, MAIS:</p>
+          <ul class="lista-beneficios">
+            <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Questões inéditas geradas de provas anteriores</li><li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Simulados ilimitados</li>
+            <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Revisão espaçada e anotações</li><li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Objetivo de estudo no seu concurso</li>
+            <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Painel completo de desempenho</li>
+          </ul>
+          <button class="primario ir-cadastro">Começar agora →</button>
+          <p class="sub garantia-plano">7 dias para desistir · Sem renovação automática</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chamada-pro">
+      <h2>A aprovação é construída questão por questão.</h2>
+      <p class="sub">Crie sua conta grátis e comece hoje.</p>
+      <button class="primario ir-cadastro">Criar conta grátis</button>
+    </div>
+  </section>
+
+  <section id="tela-login" class="hidden">
     <div class="card centro">
+      <button class="link ir-landing">← Voltar ao início</button>
       <h1>Concursos Platform</h1>
       <p class="sub">Banco de questões para estudo de concursos</p>
 
@@ -104,6 +205,23 @@
         <button id="btn-alternar" class="link">Criar conta</button>
       </p>
       <p id="login-erro" class="erro"></p>
+      <p class="sub esqueci-linha"><button id="btn-esqueci" class="link">Esqueci minha senha</button></p>
+      <div id="caixa-esqueci" class="hidden caixa-esqueci">
+        <label>E-mail da sua conta<input id="esqueci-email" type="email" autocomplete="email"></label>
+        <button id="btn-enviar-esqueci" class="secundario">Enviar link</button>
+        <p id="msg-esqueci" class="sub"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tela-redefinir" class="hidden">
+    <div class="card centro">
+      <h1>Crie uma nova senha</h1>
+      <p class="sub">De 6 a 64 caracteres, com pelo menos 1 letra maiúscula, 1 número e 1 caractere especial.</p>
+      <label>Nova senha<input id="redef-senha" type="password" autocomplete="new-password"></label>
+      <label>Confirme a nova senha<input id="redef-confirma" type="password" autocomplete="new-password"></label>
+      <button id="btn-redefinir" class="primario">Salvar nova senha</button>
+      <p id="msg-redefinir" class="sub"></p>
     </div>
   </section>
 
@@ -462,6 +580,27 @@
       <h2>Pare de só resolver questões. Comece a revisar do jeito certo.</h2>
       <p class="sub">Cada erro vira revisão agendada, cada prova antiga vira treino novo.</p>
       <button id="btn-assinar-rodape" class="primario">Assinar Pro</button>
+    </div>
+  </section>
+
+  <section id="tela-admin" class="hidden">
+    <div class="cabecalho-tela"><div><h1>Painel do administrador</h1><p class="sub">Números do negócio, usuários e atalhos de gestão.</p></div></div>
+    <div id="admin-numeros" class="grade-admin-numeros"></div>
+    <div class="grade-conta">
+      <div class="card">
+        <h2>Últimos pagamentos</h2>
+        <div id="admin-pagamentos"></div>
+      </div>
+      <div class="card">
+        <h2>Pendências</h2>
+        <div id="admin-pendencias"></div>
+        <button class="secundario" data-ir="importacoes">Abrir importações e pedidos</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="topo-secao"><h2>Usuários</h2>
+        <input id="admin-busca" type="search" placeholder="Buscar por nome ou e-mail" class="busca-admin"></div>
+      <div id="admin-usuarios"></div>
     </div>
   </section>
 

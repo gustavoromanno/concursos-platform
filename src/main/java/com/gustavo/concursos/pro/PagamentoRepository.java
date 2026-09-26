@@ -17,7 +17,7 @@ public interface PagamentoRepository extends JpaRepository<Pagamento, Long> {
     List<Pagamento> findByUsuarioIdOrderByCriadoEmDesc(Long usuarioId);
 
     @Modifying
-    @Query(value = "INSERT INTO stripe_evento (id, tipo) VALUES (:id, :tipo)", nativeQuery = true)
+    @Query(value = "INSERT INTO stripe_evento (id, tipo, recebido_em) VALUES (:id, :tipo, CURRENT_TIMESTAMP)", nativeQuery = true)
     void registrarEvento(@Param("id") String id, @Param("tipo") String tipo);
 
     @Query(value = "SELECT COUNT(*) FROM stripe_evento WHERE id = :id", nativeQuery = true)
