@@ -29,6 +29,7 @@ import static com.gustavo.concursos.service.ObjetivoCalculadora.agruparPorDiscip
 import static com.gustavo.concursos.service.ObjetivoCalculadora.classificar;
 
 @RestController
+@com.gustavo.concursos.pro.RequerPro("O objetivo de estudo")
 @RequestMapping("/objetivo")
 public class ObjetivoController {
 

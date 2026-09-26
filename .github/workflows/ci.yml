@@ -19,5 +19,15 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verificar o frontend
+        run: |
+          npm install --no-save --no-package-lock jsdom@24
+          node scripts/verificar-frontend.js
+
       - name: Rodar os testes
         run: mvn -B test

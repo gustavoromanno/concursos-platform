@@ -41,6 +41,27 @@ public class Usuario {
     @Column(name = "criado_em", nullable = false)
     private java.time.LocalDateTime criadoEm = java.time.LocalDateTime.now();
 
+    // Acesso Pro pre-pago valido ate esta data (nulo = nunca comprou).
+    @Column(name = "pro_ate")
+    private java.time.LocalDateTime proAte;
+
+    @Column(length = 2)
+    private String uf;
+
+    @Column(name = "carreira_alvo", length = 60)
+    private String carreiraAlvo;
+
+    @Column(length = 500)
+    private String bio;
+
+    @Column(columnDefinition = "TEXT")
+    private String foto;
+
+    // ADMIN sempre tem tudo liberado.
+    public boolean ehPro() {
+        return "ADMIN".equals(papel) || (proAte != null && proAte.isAfter(java.time.LocalDateTime.now()));
+    }
+
     // E-mail sempre minusculo e sem espacos: e a chave de login.
     public static String normalizarEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(java.util.Locale.ROOT);

@@ -31,19 +31,22 @@ public class QuestaoController {
     private final OrgaoRepository orgaoRepository;
     private final AnotacaoRepository anotacaoRepository;
     private final EstatisticaQuestaoRepository estatisticaRepository;
+    private final com.gustavo.concursos.pro.AcessoPro acessoPro;
 
     public QuestaoController(
             QuestaoRepository questaoRepository,
             UsuarioRepository usuarioRepository,
             OrgaoRepository orgaoRepository,
             AnotacaoRepository anotacaoRepository,
-            EstatisticaQuestaoRepository estatisticaRepository
+            EstatisticaQuestaoRepository estatisticaRepository,
+            com.gustavo.concursos.pro.AcessoPro acessoPro
     ) {
         this.questaoRepository = questaoRepository;
         this.usuarioRepository = usuarioRepository;
         this.orgaoRepository = orgaoRepository;
         this.anotacaoRepository = anotacaoRepository;
         this.estatisticaRepository = estatisticaRepository;
+        this.acessoPro = acessoPro;
     }
 
     // Filtros opcionais e combináveis: palavra-chave, disciplina, assunto, banca,
@@ -70,6 +73,12 @@ public class QuestaoController {
             Pageable pageable,
             Authentication authentication
     ) {
+        // Questoes ineditas geradas a partir de provas sao do plano Pro.
+        boolean pro = acessoPro.ehPro(authentication);
+        if (!pro && Questao.ORIGEM_IA.equals(origem)) {
+            throw com.gustavo.concursos.pro.AcessoPro.bloqueio("As questões inéditas das provas");
+        }
+
         Specification<Questao> filtro = Specification
                 .where(QuestaoSpecification.palavraChave(palavraChave))
                 .and(QuestaoSpecification.disciplinaId(disciplinaId))
@@ -85,7 +94,8 @@ public class QuestaoController {
                 .and(filtroDificuldade(dificuldade))
                 .and(QuestaoSpecification.concursoId(concursoId))
                 .and(QuestaoSpecification.cargoId(cargoId))
-                .and(QuestaoSpecification.origem(origem));
+                .and(QuestaoSpecification.origem(origem))
+                .and(pro ? null : QuestaoSpecification.semOrigem(Questao.ORIGEM_IA));
 
         return questaoRepository.findAll(filtro, pageable).map(QuestaoResponseDTO::fromEntity);
     }

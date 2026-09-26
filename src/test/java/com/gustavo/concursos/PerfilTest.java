@@ -95,6 +95,9 @@ class PerfilTest {
     void novaSenhaCurtaOuIgualRecebe400() throws Exception {
         mvc.perform(put("/perfil/senha").contentType(MediaType.APPLICATION_JSON).content(senhas(SENHA, "123")))
                 .andExpect(status().isBadRequest());
+        // Troca para uma senha fraca (sem maiuscula/simbolo) tambem e recusada.
+        mvc.perform(put("/perfil/senha").contentType(MediaType.APPLICATION_JSON).content(senhas(SENHA, "senhafraca123")))
+                .andExpect(status().isBadRequest());
         mvc.perform(put("/perfil/senha").contentType(MediaType.APPLICATION_JSON).content(senhas(SENHA, SENHA)))
                 .andExpect(status().isBadRequest());
     }

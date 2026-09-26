@@ -52,6 +52,8 @@ public class SecurityConfig {
                         // e lido, e sem esta liberacao o usuario recebia 401 no lugar do
                         // erro real — e o frontend o deslogava.
                         .requestMatchers("/error").permitAll()
+                        // Webhook do Stripe: publico, mas so aceita eventos com assinatura valida.
+                        .requestMatchers(HttpMethod.POST, "/pagamentos/webhook").permitAll()
 
                         // Responder questão é de TODO usuário logado. Precisa vir
                         // antes da regra de admin, senão o padrão /questoes/**

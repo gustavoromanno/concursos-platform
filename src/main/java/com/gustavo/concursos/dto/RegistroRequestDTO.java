@@ -16,14 +16,14 @@ public record RegistroRequestDTO(
         String email,
 
         @NotBlank(message = "Informe uma senha")
-        @Pattern(
-                regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\b\\[\\]{};':\"\\|,.<>\\/?]).{6,}$",
-                message = "A senha deve ter pelo menos 6 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial"
-        )
+        @Pattern(regexp = RegrasSenha.REGEX, message = RegrasSenha.MENSAGEM)
         String senha,
 
+        // Opt-in para e-mails promocionais. Ausente = nao aceita.
         Boolean aceitaMarketing
 ) {
+    // Roda quando o JSON e lido, ANTES da validacao: espacos em volta ou
+    // maiusculas no e-mail nao podem reprovar o cadastro nem criar conta duplicada.
     public RegistroRequestDTO {
         email = com.gustavo.concursos.entity.Usuario.normalizarEmail(email);
         nome = nome == null ? null : nome.strip();

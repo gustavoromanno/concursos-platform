@@ -28,12 +28,14 @@ public interface QuestaoRepository extends JpaRepository<Questao, Long>, JpaSpec
         SELECT * FROM questao q
         WHERE (:disciplinaId IS NULL OR q.disciplina_id = :disciplinaId)
           AND (:bancaId IS NULL OR q.banca_id = :bancaId)
+          AND (:incluirIneditas = TRUE OR q.origem <> 'IA')
         ORDER BY RANDOM()
         LIMIT :quantidade
         """, nativeQuery = true)
     List<Questao> sortear(
             @Param("disciplinaId") Long disciplinaId,
             @Param("bancaId") Long bancaId,
+            @Param("incluirIneditas") boolean incluirIneditas,
             @Param("quantidade") int quantidade
     );
 

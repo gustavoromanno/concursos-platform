@@ -10,6 +10,8 @@ public interface SimuladoRepository extends JpaRepository<Simulado, Long> {
 
     List<Simulado> findByUsuarioIdOrderByCriadoEmDesc(Long usuarioId);
 
+    long countByUsuarioIdAndCriadoEmGreaterThanEqual(Long usuarioId, java.time.LocalDateTime desde);
+
     // Busca por id JUNTO com o dono: impede que um usuario acesse o simulado de outro
     // apenas adivinhando o id.
     Optional<Simulado> findByIdAndUsuarioId(Long id, Long usuarioId);

@@ -28,13 +28,17 @@ public class PerfilController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public record PerfilDTO(Long id, String nome, String email, String papel, boolean aceitaMarketing) {}
+    public record PerfilDTO(Long id, String nome, String email, String papel, boolean aceitaMarketing,
+                            boolean pro, java.time.LocalDateTime proAte) {}
 
     public record AlterarNomeDTO(@NotBlank @Size(max = 150) String nome) {}
 
     public record AlterarSenhaDTO(
             @NotBlank String senhaAtual,
-            @NotBlank @Size(min = 6, message = "A nova senha deve ter pelo menos 6 caracteres") String novaSenha
+            // Mesma regra do cadastro: a troca nao pode enfraquecer a senha.
+            @NotBlank @jakarta.validation.constraints.Pattern(
+                    regexp = com.gustavo.concursos.dto.RegrasSenha.REGEX,
+                    message = com.gustavo.concursos.dto.RegrasSenha.MENSAGEM) String novaSenha
     ) {}
 
     @GetMapping("/perfil")
@@ -85,7 +89,8 @@ public class PerfilController {
     }
 
     private PerfilDTO paraDTO(Usuario u) {
-        return new PerfilDTO(u.getId(), u.getNome(), u.getEmail(), u.getPapel(), u.isAceitaMarketing());
+        return new PerfilDTO(u.getId(), u.getNome(), u.getEmail(), u.getPapel(), u.isAceitaMarketing(),
+                u.ehPro(), "ADMIN".equals(u.getPapel()) ? null : u.getProAte());
     }
 
     private Usuario usuarioLogado(Authentication authentication) {
