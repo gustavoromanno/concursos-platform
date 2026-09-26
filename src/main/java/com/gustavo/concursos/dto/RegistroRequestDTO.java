@@ -21,4 +21,10 @@ public record RegistroRequestDTO(
         // Opt-in para e-mails promocionais. Ausente = nao aceita.
         Boolean aceitaMarketing
 ) {
+    // Roda quando o JSON e lido, ANTES da validacao: espacos em volta ou
+    // maiusculas no e-mail nao podem reprovar o cadastro nem criar conta duplicada.
+    public RegistroRequestDTO {
+        email = com.gustavo.concursos.entity.Usuario.normalizarEmail(email);
+        nome = nome == null ? null : nome.strip();
+    }
 }
