@@ -107,6 +107,14 @@
         <fieldset class="grupo-chips">
           <legend>Questões com</legend>
           <button type="button" class="chip" data-grupo="comentarios" data-valor="true">Comentários</button>
+          <button type="button" class="chip" data-grupo="anotacoes" data-valor="true">Minhas anotações</button>
+        </fieldset>
+        <fieldset class="grupo-chips">
+          <legend>Dificuldade <span class="dica-legenda" title="Pela taxa de acerto da comunidade. Questões com menos de 5 respostas ainda não têm dificuldade.">ⓘ</span></legend>
+          <button type="button" class="chip" data-grupo="dificuldade" data-valor="FACIL">Fácil</button>
+          <button type="button" class="chip" data-grupo="dificuldade" data-valor="MEDIA">Média</button>
+          <button type="button" class="chip" data-grupo="dificuldade" data-valor="DIFICIL">Difícil</button>
+          <button type="button" class="chip" data-grupo="dificuldade" data-valor="MUITO_DIFICIL">Muito difícil</button>
         </fieldset>
         <fieldset class="grupo-chips">
           <legend>Minhas questões</legend>
@@ -154,6 +162,7 @@
     <div id="simulado-config" class="card">
       <h2>Novo simulado</h2>
       <label>Disciplina<select id="s-disciplina"><option value="">Todas</option></select></label>
+      <label>Banca<select id="s-banca"><option value="">Todas</option></select></label>
       <label>Quantidade de questões<input id="s-quantidade" type="number" value="5" min="1" max="100"></label>
       <label>Duração (minutos)<input id="s-duracao" type="number" value="30" min="1" max="600"></label>
       <button id="btn-iniciar-simulado" class="primario">Iniciar</button>

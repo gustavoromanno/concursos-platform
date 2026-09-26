@@ -8,6 +8,7 @@ let simuladoAtual = null;
 let cronometro = null;
 let disciplinas = [];   // catalogo carregado uma vez apos o login
 let marcados = new Set();  // ids das questoes marcadas pelo usuario
+let anotadas = new Set();  // ids das questoes com anotacao do usuario
 let cadernos = [];         // cadernos do usuario, para o menu de salvar
 let perfilUsuario = null;  // nome e email de quem esta logado
 
@@ -195,6 +196,11 @@ async function carregarCatalogo() {
         selBanca.innerHTML = '<option value="">Banca</option>';
         bancas.forEach(b => selBanca.appendChild(
             criar(`<option value="${b.id}">${escapar(b.nome)}</option>`)));
+        // A mesma lista alimenta a banca do simulado.
+        const selBancaSimulado = $('#s-banca');
+        selBancaSimulado.innerHTML = '<option value="">Todas</option>';
+        bancas.forEach(b => selBancaSimulado.appendChild(
+            criar(`<option value="${b.id}">${escapar(b.nome)}</option>`)));
     } catch { /* filtro opcional */ }
     const selAno = $('#f-ano');
     selAno.innerHTML = '<option value="">Ano</option>';
@@ -227,6 +233,11 @@ async function carregarEstadoPessoal() {
         marcados = new Set(await api('/marcadores/ids'));
     } catch {
         marcados = new Set();
+    }
+    try {
+        anotadas = new Set(await api('/anotacoes/ids'));
+    } catch {
+        anotadas = new Set();
     }
     try {
         cadernos = await api('/cadernos');
@@ -354,6 +365,11 @@ function montarAcoes(alvo, questao, opcoes) {
     salvar.onclick = () => abrirMenuCadernos(salvar, questao);
     alvo.appendChild(salvar);
 
+    const anotar = criar('<button class="acao" title="Minha anotação (só você vê)">✎ anotação</button>');
+    anotar.classList.toggle('ativa', anotadas.has(questao.id));
+    anotar.onclick = () => alternarAnotacao(anotar, questao);
+    alvo.appendChild(anotar);
+
     // Dentro de um caderno aberto, oferece remover em vez de adicionar.
     if (opcoes.cadernoId) {
         const remover = criar('<button class="acao" title="Remover do caderno">remover</button>');
@@ -363,6 +379,67 @@ function montarAcoes(alvo, questao, opcoes) {
         };
         alvo.appendChild(remover);
     }
+}
+
+// Painel de anotacao pessoal, aberto sob a questao. Carrega o texto so ao abrir.
+async function alternarAnotacao(botao, questao) {
+    const card = botao.closest('.card');
+    const aberto = card.querySelector('.painel-anotacao');
+    if (aberto) {
+        aberto.remove();
+        return;
+    }
+
+    const painel = criar(`
+        <div class="painel-anotacao">
+            <label class="rotulo">Minha anotação <span class="sub">— visível só para você</span>
+                <textarea rows="3" maxlength="5000" placeholder="Ex.: pegadinha da banca, artigo de lei, macete…"></textarea>
+            </label>
+            <div class="acoes-anotacao">
+                <button class="primario salvar-anotacao">Salvar</button>
+                <button class="link apagar-anotacao">Apagar</button>
+                <span class="sub status-anotacao"></span>
+            </div>
+        </div>
+    `);
+    card.querySelector('.enunciado').after(painel);
+
+    const campo = painel.querySelector('textarea');
+    const status = painel.querySelector('.status-anotacao');
+    const apagar = painel.querySelector('.apagar-anotacao');
+
+    const atualizarBotoes = temAnotacao => {
+        botao.classList.toggle('ativa', temAnotacao);
+        apagar.classList.toggle('hidden', !temAnotacao);
+        if (temAnotacao) anotadas.add(questao.id); else anotadas.delete(questao.id);
+    };
+
+    try {
+        const atual = await api(`/questoes/${questao.id}/anotacao`);
+        campo.value = atual ? atual.texto : '';
+        atualizarBotoes(!!atual);
+    } catch (e) {
+        status.textContent = e.message;
+    }
+    campo.focus();
+
+    const gravar = async texto => {
+        status.textContent = 'Salvando…';
+        try {
+            const r = await api(`/questoes/${questao.id}/anotacao`, {
+                method: 'PUT',
+                body: JSON.stringify({ texto })
+            });
+            campo.value = r ? r.texto : '';
+            atualizarBotoes(!!r);
+            status.textContent = r ? 'Anotação salva.' : 'Anotação apagada.';
+        } catch (e) {
+            status.textContent = e.message;
+        }
+    };
+
+    painel.querySelector('.salvar-anotacao').onclick = () => gravar(campo.value);
+    apagar.onclick = () => gravar('');
 }
 
 // Menu suspenso simples com os cadernos do usuario.
@@ -488,6 +565,8 @@ async function carregarQuestoes(pagina = 0) {
         ano: $('#f-ano').value,
         tipo: chipAtivo('tipo'),
         comComentarios: chipAtivo('comentarios'),
+        comAnotacoes: chipAtivo('anotacoes'),
+        dificuldade: chipAtivo('dificuldade'),
         situacao: chipAtivo('situacao')
     };
     Object.entries(filtros).forEach(([chave, valor]) => { if (valor) params.set(chave, valor); });
@@ -548,9 +627,10 @@ $('#btn-limpar-filtros').onclick = () => {
     carregarQuestoes();
 };
 
-// O simulado sorteia por disciplina: leva a disciplina escolhida no filtro.
+// O simulado sorteia por disciplina e banca: leva as duas escolhidas no filtro.
 $('#btn-gerar-simulado').onclick = () => {
     $('#s-disciplina').value = $('#f-disciplina').value;
+    $('#s-banca').value = $('#f-banca').value;
     abrir('simulado');
 };
 
@@ -579,13 +659,15 @@ async function carregarErradas() {
 $('#btn-iniciar-simulado').onclick = async () => {
     $('#simulado-erro').textContent = '';
     const disciplinaId = $('#s-disciplina').value;
+    const bancaId = $('#s-banca').value;
     try {
         simuladoAtual = await api('/simulados', {
             method: 'POST',
             body: JSON.stringify({
                 quantidade: Number($('#s-quantidade').value),
                 duracaoMinutos: Number($('#s-duracao').value),
-                disciplinaId: disciplinaId ? Number(disciplinaId) : null
+                disciplinaId: disciplinaId ? Number(disciplinaId) : null,
+                bancaId: bancaId ? Number(bancaId) : null
             })
         });
         mostrarSimulado();

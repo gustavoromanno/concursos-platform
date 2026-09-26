@@ -4,9 +4,12 @@ import com.gustavo.concursos.dto.QuestaoResponseDTO;
 import com.gustavo.concursos.entity.Orgao;
 import com.gustavo.concursos.entity.Questao;
 import com.gustavo.concursos.entity.Usuario;
+import com.gustavo.concursos.repository.AnotacaoRepository;
+import com.gustavo.concursos.repository.EstatisticaQuestaoRepository;
 import com.gustavo.concursos.repository.OrgaoRepository;
 import com.gustavo.concursos.repository.QuestaoRepository;
 import com.gustavo.concursos.repository.UsuarioRepository;
+import com.gustavo.concursos.service.DificuldadeCalculadora;
 import com.gustavo.concursos.specification.QuestaoSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,15 +29,21 @@ public class QuestaoController {
     private final QuestaoRepository questaoRepository;
     private final UsuarioRepository usuarioRepository;
     private final OrgaoRepository orgaoRepository;
+    private final AnotacaoRepository anotacaoRepository;
+    private final EstatisticaQuestaoRepository estatisticaRepository;
 
     public QuestaoController(
             QuestaoRepository questaoRepository,
             UsuarioRepository usuarioRepository,
-            OrgaoRepository orgaoRepository
+            OrgaoRepository orgaoRepository,
+            AnotacaoRepository anotacaoRepository,
+            EstatisticaQuestaoRepository estatisticaRepository
     ) {
         this.questaoRepository = questaoRepository;
         this.usuarioRepository = usuarioRepository;
         this.orgaoRepository = orgaoRepository;
+        this.anotacaoRepository = anotacaoRepository;
+        this.estatisticaRepository = estatisticaRepository;
     }
 
     // Filtros opcionais e combináveis: palavra-chave, disciplina, assunto, banca,
@@ -53,6 +62,8 @@ public class QuestaoController {
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) Boolean comComentarios,
             @RequestParam(required = false) String situacao,
+            @RequestParam(required = false) Boolean comAnotacoes,
+            @RequestParam(required = false) String dificuldade,
             Pageable pageable,
             Authentication authentication
     ) {
@@ -66,7 +77,9 @@ public class QuestaoController {
                 .and(QuestaoSpecification.assuntoId(assuntoId))
                 .and(QuestaoSpecification.tipo(tipo))
                 .and(QuestaoSpecification.comComentarios(comComentarios))
-                .and(filtroSituacao(situacao, authentication));
+                .and(filtroSituacao(situacao, authentication))
+                .and(filtroAnotacoes(comAnotacoes, authentication))
+                .and(filtroDificuldade(dificuldade));
 
         return questaoRepository.findAll(filtro, pageable).map(QuestaoResponseDTO::fromEntity);
     }
@@ -80,9 +93,7 @@ public class QuestaoController {
                     "situacao invalida: use RESOLVIDAS, NAO_RESOLVIDAS, CERTAS ou ERRADAS");
         }
 
-        Long usuarioId = usuarioRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new NoSuchElementException("Usuario autenticado nao encontrado"))
-                .getId();
+        Long usuarioId = usuarioLogadoId(authentication);
 
         return switch (situacao) {
             case "RESOLVIDAS" -> QuestaoSpecification.idEm(questaoRepository.idsRespondidas(usuarioId));
@@ -91,6 +102,38 @@ public class QuestaoController {
             case "ERRADAS" -> QuestaoSpecification.idEm(questaoRepository.idsPorUltimaResposta(usuarioId, false));
             default -> throw new IllegalStateException("situacao ja validada acima");
         };
+    }
+
+    // Somente questoes em que o usuario escreveu anotacao.
+    private Specification<Questao> filtroAnotacoes(Boolean comAnotacoes, Authentication authentication) {
+        if (!Boolean.TRUE.equals(comAnotacoes)) return null;
+        return QuestaoSpecification.idEm(anotacaoRepository.questaoIdsDoUsuario(usuarioLogadoId(authentication)));
+    }
+
+    // Dificuldade derivada da taxa de acerto da comunidade (ver DificuldadeCalculadora).
+    // Questoes com poucas respostas nao entram em nenhuma faixa.
+    private Specification<Questao> filtroDificuldade(String dificuldade) {
+        if (dificuldade == null || dificuldade.isBlank()) return null;
+
+        DificuldadeCalculadora.Dificuldade alvo;
+        try {
+            alvo = DificuldadeCalculadora.Dificuldade.valueOf(dificuldade);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "dificuldade invalida: use FACIL, MEDIA, DIFICIL ou MUITO_DIFICIL");
+        }
+
+        List<Long> ids = estatisticaRepository.totaisPorQuestao().stream()
+                .filter(t -> DificuldadeCalculadora.classificar(t.getTotal(), t.getAcertos()) == alvo)
+                .map(EstatisticaQuestaoRepository.TotaisQuestao::getQuestaoId)
+                .toList();
+        return QuestaoSpecification.idEm(ids);
+    }
+
+    private Long usuarioLogadoId(Authentication authentication) {
+        return usuarioRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new NoSuchElementException("Usuario autenticado nao encontrado"))
+                .getId();
     }
 
     @Transactional(readOnly = true)

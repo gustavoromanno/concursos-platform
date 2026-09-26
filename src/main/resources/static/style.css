@@ -1437,3 +1437,27 @@ main:has(#tela-login:not(.hidden)) {
 .paginacao .pagina.ativa { background: var(--verde); border-color: var(--verde); color: #fff; cursor: default; }
 [data-tema="escuro"] .paginacao .pagina.ativa { color: #10201C; }
 .paginacao .pagina:disabled:not(.ativa) { opacity: .45; cursor: default; }
+
+/* Quatro grupos de chips: quebram em linhas conforme a largura. */
+.grupos-filtros { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.dica-legenda { cursor: help; text-transform: none; letter-spacing: 0; }
+
+/* Anotacao pessoal na questao */
+.painel-anotacao {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: var(--raio-m);
+    background: var(--superficie);
+    border-left: 3px solid var(--dourado);
+}
+.painel-anotacao label { margin: 0; }
+.painel-anotacao .sub { font-size: 12px; margin: 0; text-transform: none; letter-spacing: 0; }
+.painel-anotacao textarea {
+    display: block; width: 100%; margin-top: 8px; padding: 9px 11px;
+    border: 1px solid var(--borda); border-radius: var(--raio-p);
+    background: var(--card); color: var(--texto);
+    font-family: inherit; font-size: 14px; resize: vertical;
+}
+.painel-anotacao textarea:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
+.acoes-anotacao { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.acoes-anotacao .primario { width: auto; padding: 7px 18px; font-size: 13px; }
