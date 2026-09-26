@@ -68,6 +68,8 @@ class AnotacaoTest {
             u.setNome("Teste");
             u.setEmail(email);
             u.setSenhaHash("nao-usado");
+            // Anotacoes sao do plano Pro.
+            u.setProAte(java.time.LocalDateTime.now().plusDays(30));
             usuarioRepository.save(u);
         }
     }

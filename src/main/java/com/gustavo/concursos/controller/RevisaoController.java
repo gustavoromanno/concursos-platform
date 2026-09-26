@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
+@com.gustavo.concursos.pro.RequerPro("A revisão espaçada")
 @RequestMapping("/revisoes")
 public class RevisaoController {
 

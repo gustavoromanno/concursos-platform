@@ -98,4 +98,8 @@ public class QuestaoSpecification {
         return (root, query, cb) ->
                 (origem == null || origem.isBlank()) ? null : cb.equal(root.get("origem"), origem);
     }
+
+    public static Specification<Questao> semOrigem(String origem) {
+        return (root, query, cb) -> cb.notEqual(root.get("origem"), origem);
+    }
 }

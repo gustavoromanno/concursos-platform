@@ -55,6 +55,7 @@ public class EstatisticasController {
 
     // GET /estatisticas/assuntos — pontos fracos primeiro (Sprint 7).
     @Transactional(readOnly = true)
+    @com.gustavo.concursos.pro.RequerPro("O desempenho por assunto")
     @GetMapping("/assuntos")
     public ResponseEntity<List<DesempenhoAssuntoDTO>> porAssunto(Authentication authentication) {
         List<DesempenhoAssuntoDTO> lista = respostaRepository
@@ -68,6 +69,7 @@ public class EstatisticasController {
 
     // GET /estatisticas/evolucao?dias=30
     @Transactional(readOnly = true)
+    @com.gustavo.concursos.pro.RequerPro("A evolução no tempo")
     @GetMapping("/evolucao")
     public ResponseEntity<List<EvolucaoDiariaDTO>> evolucao(
             @RequestParam(defaultValue = "30") int dias,

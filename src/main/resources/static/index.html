@@ -35,6 +35,7 @@
     <button data-tela="cadernos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg><span>Cadernos</span></button>
     <button data-tela="marcadores"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><span>Marcadores</span></button>
     <button data-tela="videoaulas"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><span>Videoaulas</span></button>
+    <button data-tela="planos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg><span>Planos</span></button>
     <button data-tela="importacoes" class="so-admin hidden"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg><span>Importar provas</span></button>
   </nav>
   <div class="acoes-topo">
@@ -88,6 +89,7 @@
           <li id="regra-maiuscula">• Pelo menos 1 letra maiúscula</li>
           <li id="regra-numero">• Pelo menos 1 número</li>
           <li id="regra-especial">• Pelo menos 1 caractere especial (!@#$%^&amp;*...)</li>
+          <li id="regra-confirma">• As senhas coincidem</li>
         </ul>
 
         <label class="linha-checkbox">
@@ -177,6 +179,7 @@
     </div>
 
     <p id="resumo-questoes" class="sub resumo-questoes"></p>
+    <p class="sub dica-solicitar">Não encontrou o concurso ou a matéria? <a href="#" data-ir="solicitar">Peça o conteúdo</a>.</p>
     <div id="lista-questoes"></div>
     <nav id="paginacao-questoes" class="paginacao" aria-label="Páginas de questões"></nav>
   </section>
@@ -339,6 +342,22 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2>Contatos para e-mail promocional</h2>
+      <p class="sub">Só pessoas que marcaram que aceitam receber (exigência da LGPD).</p>
+      <div class="acoes-conta">
+        <button id="btn-exportar-contatos" class="secundario">Baixar lista (CSV)</button>
+        <span id="msg-exportar" class="sub"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="topo-secao"><h2>Pedidos de conteúdo</h2>
+        <select id="filtro-solicitacoes"><option value="">Todos</option><option value="NOVA">Novos</option><option value="EM_ANALISE">Em análise</option><option value="ATENDIDA">Atendidos</option><option value="RECUSADA">Recusados</option></select>
+      </div>
+      <div id="admin-solicitacoes"></div>
+    </div>
+
     <div class="topo-secao"><h2>Importações</h2><button id="btn-atualizar-importacoes" class="link">Atualizar</button></div>
     <div id="lista-importacoes"></div>
 
@@ -354,22 +373,155 @@
     </div>
   </section>
 
-  <section id="tela-conta" class="hidden">
-    <div class="cabecalho-tela">
-      <span class="icone-tela"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></span>
-      <div>
-        <h1>Minha conta</h1>
-        <p class="sub">Seus dados de acesso.</p>
+<section id="tela-planos" class="hidden">
+    <div class="planos-hero">
+      <span class="selo-hero">Sem renovação automática · pague só pelo período que escolher</span>
+      <h1>Estude com <span class="destaque-nome">tudo liberado</span></h1>
+      <p class="sub">Questões inéditas no estilo das bancas, simulados sem limite, revisão no momento certo e o painel completo do seu desempenho.</p>
+      <div id="seletor-periodo" class="seletor-periodo" role="tablist">
+        <button data-periodo="MENSAL" class="ativo">Mensal</button>
+        <button data-periodo="TRIMESTRAL">Trimestral</button>
+        <button data-periodo="ANUAL">Anual <span id="economia-anual" class="selo-economia"></span></button>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Dados</h2>
-      <label>Nome<input id="conta-nome" maxlength="150"></label>
-      <label>E-mail (usado no login)<input id="conta-email" disabled></label>
-      <div class="acoes-conta">
-        <button id="btn-salvar-nome" class="primario">Salvar nome</button>
-        <span id="msg-nome" class="sub"></span>
+    <div id="status-pro" class="card status-pro hidden"></div>
+
+    <div class="grade-planos">
+      <div class="card cartao-plano">
+        <span class="rotulo">GRATUITO</span>
+        <div class="preco-plano"><strong>R$ 0</strong></div>
+        <p class="sub">Para sempre</p>
+        <ul class="lista-beneficios">
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Banco de questões autorais completo</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Filtros por disciplina, banca, órgão, concurso e mais</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Correção imediata com explicação</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span id="beneficio-simulados-gratis">Simulados cronometrados (limite mensal)</span></li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Cadernos, marcadores e comentários</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Meta diária, ofensiva e mapa de estudo</li>
+        </ul>
+        <button class="secundario" disabled>Seu plano atual</button>
+      </div>
+
+      <div class="card cartao-plano destaque-plano">
+        <span class="selo-popular">✦ RECOMENDADO</span>
+        <span class="rotulo">PRO</span>
+        <div class="preco-plano"><strong id="preco-pro">—</strong> <span id="preco-pro-sufixo" class="sub"></span></div>
+        <p id="preco-pro-detalhe" class="sub"></p>
+        <p class="rotulo-beneficios">TUDO DO GRATUITO, MAIS:</p>
+        <ul class="lista-beneficios">
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Questões inéditas geradas a partir de provas anteriores</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Simulados ilimitados, incluindo as inéditas</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Revisão espaçada automática (quando você está prestes a esquecer)</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Anotações pessoais em cada questão</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Objetivo de estudo: progresso no conteúdo do seu concurso</li>
+          <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Painel completo: desempenho por assunto, evolução e radar</li>
+        </ul>
+        <button id="btn-assinar" class="primario">Assinar Pro</button>
+        <p class="sub garantia-plano">7 dias para desistir com reembolso · Cartão, boleto e Pix</p>
+        <p id="msg-assinar" class="sub"></p>
+      </div>
+    </div>
+
+    <div class="garantias">
+      <div class="card garantia"><strong>7 dias de arrependimento</strong><span class="sub">Desistiu em até 7 dias? Devolvemos o valor (Código de Defesa do Consumidor).</span></div>
+      <div class="card garantia"><strong>Pagamento seguro</strong><span class="sub">Processado pelo Stripe. Não guardamos dados do seu cartão.</span></div>
+      <div class="card garantia"><strong>Sem cobrança automática</strong><span class="sub">É pré-pago: acabou o período, volta ao gratuito. Renova só se quiser.</span></div>
+    </div>
+
+    <h2 class="titulo-secao">Compare os planos</h2>
+    <div class="card tabela-planos-caixa">
+      <table class="tabela-planos">
+        <thead><tr><th>Recurso</th><th>Gratuito</th><th>Pro</th></tr></thead>
+        <tbody>
+          <tr><td>Questões autorais</td><td>Todas</td><td>Todas</td></tr>
+          <tr><td>Questões inéditas das provas</td><td>—</td><td>✓</td></tr>
+          <tr><td>Simulados</td><td id="tabela-simulados-gratis">Limite mensal</td><td>Ilimitados</td></tr>
+          <tr><td>Filtros de busca</td><td>✓</td><td>✓</td></tr>
+          <tr><td>Cadernos e marcadores</td><td>✓</td><td>✓</td></tr>
+          <tr><td>Anotações pessoais</td><td>—</td><td>✓</td></tr>
+          <tr><td>Revisão espaçada</td><td>—</td><td>✓</td></tr>
+          <tr><td>Objetivo de estudo</td><td>—</td><td>✓</td></tr>
+          <tr><td>Painel: resumo, meta e ofensiva</td><td>✓</td><td>✓</td></tr>
+          <tr><td>Painel: por assunto, evolução e radar</td><td>—</td><td>✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="titulo-secao">Perguntas frequentes</h2>
+    <div class="faq">
+      <details><summary>O plano Pro renova sozinho?</summary><p>Não. É pré-pago: você paga 30, 90 ou 365 dias. Ao terminar, sua conta volta ao gratuito, sem perder nada do que você já fez. Se comprar de novo antes de vencer, os dias se somam.</p></details>
+      <details><summary>Quais formas de pagamento são aceitas?</summary><p>Cartão de crédito e boleto. O Pix aparece no pagamento assim que estiver habilitado na conta. O boleto libera o Pro quando o banco confirma o pagamento, o que pode levar até 2 dias úteis.</p></details>
+      <details><summary>Posso desistir depois de pagar?</summary><p>Sim. Em até 7 dias da compra você tem direito ao reembolso integral, pelo Código de Defesa do Consumidor. Peça pelo e-mail de contato.</p></details>
+      <details><summary>O que são as questões inéditas?</summary><p>São questões criadas a partir de provas anteriores de cada concurso, no mesmo assunto e estilo da banca, com texto próprio. Todas são revisadas antes de publicadas, e as provas originais não são reproduzidas.</p></details>
+      <details><summary>O que acontece com meus dados se o Pro acabar?</summary><p>Nada é apagado. Anotações, revisões e o objetivo ficam guardados e voltam a aparecer quando você renovar.</p></details>
+      <details><summary>Funciona no celular?</summary><p>Sim. O site se adapta a telas pequenas; não é preciso instalar nada.</p></details>
+    </div>
+
+    <div class="card chamada-pro">
+      <h2>Pare de só resolver questões. Comece a revisar do jeito certo.</h2>
+      <p class="sub">Cada erro vira revisão agendada, cada prova antiga vira treino novo.</p>
+      <button id="btn-assinar-rodape" class="primario">Assinar Pro</button>
+    </div>
+  </section>
+
+  <section id="tela-conta" class="hidden">
+    <div class="card perfil-topo">
+      <div class="perfil-identidade">
+        <div class="foto-perfil">
+          <img id="foto-perfil" alt="" class="hidden">
+          <span id="foto-iniciais" class="foto-iniciais"></span>
+        </div>
+        <div>
+          <h1 id="perfil-nome"></h1>
+          <p class="sub"><span id="perfil-email"></span> <span id="perfil-plano" class="selo-plano"></span></p>
+          <div class="acoes-foto">
+            <label class="link">Trocar foto<input id="input-foto" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>
+            <button id="btn-remover-foto" class="link perigo-link">Remover foto</button>
+            <span id="msg-foto" class="sub"></span>
+          </div>
+        </div>
+      </div>
+      <div class="forca-perfil">
+        <div class="topo"><span>Força do perfil</span><strong id="forca-valor">0%</strong></div>
+        <div class="barra"><div id="forca-barra" style="width:0%"></div></div>
+        <span class="sub">Complete seu cadastro para uma experiência personalizada.</span>
+      </div>
+    </div>
+
+    <div class="grade-numeros-perfil">
+      <div class="card numero-perfil"><strong id="num-respondidas">0</strong><span>Questões respondidas</span></div>
+      <div class="card numero-perfil"><strong id="num-acerto">0%</strong><span>Taxa de acerto</span></div>
+      <div class="card numero-perfil"><strong id="num-simulados">0</strong><span>Simulados feitos</span></div>
+      <div class="card numero-perfil"><strong id="num-cadernos">0</strong><span>Cadernos criados</span></div>
+    </div>
+
+    <div class="grade-conta">
+      <div class="card">
+        <h2>Dados pessoais</h2>
+        <label>Nome completo<input id="conta-nome" maxlength="150"></label>
+        <label>E-mail (usado no login)<input id="conta-email" disabled></label>
+        <div class="linha-dupla">
+          <label>UF<select id="conta-uf"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></label>
+          <label>Carreira alvo<select id="conta-carreira"><option value="">Selecione sua carreira</option><option>Administrativa</option><option>Bancária</option><option>Controle e Auditoria</option><option>Educação</option><option>Fiscal</option><option>Jurídica</option><option>Legislativa</option><option>Policial</option><option>Saúde</option><option>Tribunais</option><option>Outra</option></select></label>
+        </div>
+        <label>Objetivos<textarea id="conta-bio" rows="3" maxlength="500" placeholder="Conte um pouco sobre sua jornada e objetivos…"></textarea></label>
+        <div class="acoes-conta">
+          <button id="btn-salvar-nome" class="primario">Salvar alterações</button>
+          <span id="msg-nome" class="sub"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Segurança</h2>
+        <label>Senha atual<input id="conta-senha-atual" type="password" autocomplete="current-password"></label>
+        <label>Nova senha<input id="conta-senha-nova" type="password" autocomplete="new-password"></label>
+        <label>Confirme a nova senha<input id="conta-senha-confirma" type="password" autocomplete="new-password"></label>
+        <p class="sub dica-senha">De 6 a 64 caracteres, com pelo menos 1 letra maiúscula, 1 número e 1 caractere especial.</p>
+        <div class="acoes-conta">
+          <button id="btn-salvar-senha" class="primario">Atualizar senha</button>
+          <span id="msg-senha" class="sub"></span>
+        </div>
       </div>
     </div>
 
@@ -381,17 +533,32 @@
       </label>
       <span id="msg-marketing" class="sub"></span>
     </div>
-    </div>
 
     <div class="card">
-      <h2>Alterar senha</h2>
-      <label>Senha atual<input id="conta-senha-atual" type="password" autocomplete="current-password"></label>
-      <label>Nova senha<input id="conta-senha-nova" type="password" autocomplete="new-password" minlength="6"></label>
-      <label>Confirme a nova senha<input id="conta-senha-confirma" type="password" autocomplete="new-password"></label>
-      <div class="acoes-conta">
-        <button id="btn-salvar-senha" class="primario">Alterar senha</button>
-        <span id="msg-senha" class="sub"></span>
+      <h2>Assinatura</h2>
+      <div id="assinatura-status"></div>
+      <div id="historico-pagamentos"></div>
+    </div>
+
+    <div class="card zona-perigo">
+      <h2>Zona de perigo</h2>
+      <p class="sub">Ações que não podem ser desfeitas.</p>
+      <div class="grade-perigo">
+        <div class="item-perigo" data-categoria="ESTATISTICAS"><strong>Estatísticas</strong><span class="sub">Apaga o histórico de acertos e erros nas questões.</span></div>
+        <div class="item-perigo" data-categoria="CADERNOS"><strong>Cadernos e anotações</strong><span class="sub">Remove seus cadernos e as anotações das questões.</span></div>
+        <div class="item-perigo" data-categoria="SIMULADOS"><strong>Simulados</strong><span class="sub">Apaga todos os simulados e resultados.</span></div>
+        <div class="item-perigo" data-categoria="MARCADORES"><strong>Marcadores</strong><span class="sub">Remove as questões marcadas como favoritas.</span></div>
+        <div class="item-perigo" data-categoria="PROGRESSO"><strong>Progresso de estudo</strong><span class="sub">Remove a agenda de revisão, o objetivo e a meta diária.</span></div>
       </div>
+      <div class="perigo-forte">
+        <div><strong>Zerar tudo</strong><span class="sub">Apaga todo o seu progresso. Sua conta continua ativa.</span></div>
+        <button id="btn-zerar-tudo" class="perigo">Zerar tudo</button>
+      </div>
+      <div class="perigo-forte">
+        <div><strong>Excluir minha conta</strong><span class="sub">Exclui a conta e todos os dados de estudo. Pedimos sua senha para confirmar.</span></div>
+        <button id="btn-excluir-conta" class="perigo">Excluir conta</button>
+      </div>
+      <span id="msg-perigo" class="sub"></span>
     </div>
   </section>
 
@@ -399,6 +566,82 @@
     <div id="painel-dashboard"></div>
   </section>
 
+
+  <section id="tela-solicitar" class="hidden">
+    <div class="cabecalho-tela">
+      <div>
+        <h1>Não achou o que estuda?</h1>
+        <p class="sub">Conte qual concurso e matéria faltam. Os pedidos ajudam a decidir as próximas provas importadas e os próximos lotes de questões.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="grade-importacao">
+        <label>Concurso ou edital *<input id="sol-concurso" maxlength="150" placeholder="Ex.: Bacen 2024"></label>
+        <label>Cargo<input id="sol-cargo" maxlength="150" placeholder="Ex.: Analista - Área 1"></label>
+        <label>Matéria *<input id="sol-materia" maxlength="150" placeholder="Ex.: Economia Bancária"></label>
+        <label>Link do edital<input id="sol-link" maxlength="500" placeholder="https://…"></label>
+      </div>
+      <label>Detalhes<textarea id="sol-detalhes" rows="3" maxlength="1000" placeholder="Assuntos que faltam, banca, ano da prova…"></textarea></label>
+      <div class="acoes-conta">
+        <button id="btn-enviar-solicitacao" class="primario">Enviar pedido</button>
+        <span id="msg-solicitacao" class="sub"></span>
+      </div>
+    </div>
+    <h2 class="titulo-secao">Meus pedidos</h2>
+    <div id="lista-solicitacoes"></div>
+  </section>
+
+  <section id="tela-termos" class="hidden pagina-legal">
+    <button class="link voltar-legal">← Voltar</button>
+    <h1>Termos de Uso</h1>
+    <p class="sub">Última atualização: <span class="data-legal"></span></p>
+    <h2>1. Quem somos</h2>
+    <p>A Concursos Platform é oferecida por <span class="empresa-nome"></span>. Contato: <span class="empresa-email"></span>.</p>
+    <h2>2. A plataforma</h2>
+    <p>Oferecemos um banco de questões para estudo, simulados, ferramentas de revisão e acompanhamento de desempenho. As questões são autorais, escritas no estilo das bancas; não reproduzimos provas oficiais. O conteúdo tem fins de estudo e não garante aprovação.</p>
+    <h2>3. Sua conta</h2>
+    <p>Você é responsável por manter sua senha em sigilo e pelas informações que cadastra. A conta é pessoal e intransferível. Você pode excluí-la a qualquer momento em "Minha conta".</p>
+    <h2>4. Plano Pro</h2>
+    <p>O Pro é pré-pago, por 30, 90 ou 365 dias, sem renovação automática. O pagamento é processado pelo Stripe. Você pode desistir em até 7 dias da compra e receber o valor de volta (art. 49 do Código de Defesa do Consumidor). Ao fim do período, a conta volta ao plano gratuito sem perda de dados.</p>
+    <h2>5. Uso adequado</h2>
+    <p>Não é permitido copiar em massa o conteúdo, tentar acessar dados de outras pessoas, sobrecarregar o serviço ou publicar comentários ofensivos ou ilegais. Comentários assim podem ser removidos e a conta, suspensa.</p>
+    <h2>6. Disponibilidade e alterações</h2>
+    <p>Trabalhamos para manter o serviço no ar, mas podem ocorrer interrupções. Estes termos podem mudar; mudanças relevantes serão avisadas na plataforma.</p>
+    <h2>7. Foro</h2>
+    <p>Aplica-se a legislação brasileira. Fica eleito o foro do domicílio do consumidor.</p>
+  </section>
+
+  <section id="tela-privacidade" class="hidden pagina-legal">
+    <button class="link voltar-legal">← Voltar</button>
+    <h1>Política de Privacidade</h1>
+    <p class="sub">Última atualização: <span class="data-legal"></span></p>
+    <h2>1. Controlador</h2>
+    <p><span class="empresa-nome"></span> é o controlador dos seus dados, nos termos da LGPD (Lei 13.709/2018). Contato para assuntos de privacidade: <span class="empresa-email"></span>.</p>
+    <h2>2. Dados que coletamos</h2>
+    <p><strong>Cadastro:</strong> nome, e-mail e senha (guardada de forma criptografada, nunca em texto). <strong>Opcionais:</strong> foto, UF, carreira alvo e objetivos. <strong>Uso:</strong> respostas às questões, simulados, cadernos, marcadores, anotações, comentários e pedidos de conteúdo. <strong>Pagamentos:</strong> plano, valor, data e situação. Os dados do cartão são tratados só pelo Stripe; não os recebemos.</p>
+    <h2>3. Para que usamos</h2>
+    <p>Para oferecer a plataforma (execução do contrato), calcular seu desempenho e sua revisão, liberar o plano Pro, cumprir obrigações fiscais e, só se você autorizar, enviar novidades e promoções por e-mail (consentimento, que pode ser retirado em "Minha conta").</p>
+    <h2>4. Com quem compartilhamos</h2>
+    <p>Com prestadores necessários ao serviço: hospedagem da aplicação (Render), banco de dados (Neon), pagamentos (Stripe) e, na geração de questões a partir de provas, o provedor de IA (Anthropic), que recebe apenas as provas enviadas pela administração, sem dados de usuários. Alguns desses serviços ficam fora do Brasil, com salvaguardas contratuais. Não vendemos seus dados.</p>
+    <h2>5. Seus direitos</h2>
+    <p>Você pode acessar e corrigir seus dados, apagar seu histórico de estudo e excluir a conta direto em "Minha conta", além de revogar o consentimento de e-mails. Para outros pedidos (como uma cópia dos seus dados), escreva para o contato acima.</p>
+    <h2>6. Por quanto tempo guardamos</h2>
+    <p>Enquanto sua conta existir. Ao excluí-la, apagamos seus dados de estudo e de perfil; registros de pagamento são mantidos pelo prazo exigido pela legislação fiscal, sem vínculo com a conta.</p>
+    <h2>7. Segurança</h2>
+    <p>Usamos conexão criptografada (HTTPS), senhas com hash BCrypt e acesso restrito aos dados de cada conta.</p>
+  </section>
+
+  <section id="tela-cookies" class="hidden pagina-legal">
+    <button class="link voltar-legal">← Voltar</button>
+    <h1>Política de Cookies</h1>
+    <p class="sub">Última atualização: <span class="data-legal"></span></p>
+    <p>A Concursos Platform <strong>não usa cookies de rastreamento nem de publicidade</strong>. Guardamos no seu navegador (armazenamento local) apenas o que é necessário para funcionar:</p>
+    <ul>
+      <li><strong>Sessão:</strong> um token que mantém você conectado. Sai ao clicar em "Sair".</li>
+      <li><strong>Tema:</strong> sua escolha entre modo claro e noturno.</li>
+    </ul>
+    <p>Na página de pagamento, que é do Stripe, o próprio Stripe pode usar cookies necessários à segurança da transação, conforme a política dele.</p>
+  </section>
 </main>
 
 <!-- Player de vídeo em sobreposição -->
@@ -410,6 +653,38 @@
   </div>
 </div>
 
+<footer id="rodape" class="rodape">
+  <div class="rodape-grade">
+    <div class="rodape-coluna so-logado">
+      <span class="rodape-titulo">Plataforma</span>
+      <a href="#" data-ir="questoes">Questões</a>
+      <a href="#" data-ir="simulado">Simulados</a>
+      <a href="#" data-ir="cadernos">Cadernos</a>
+      <a href="#" data-ir="marcadores">Marcadores</a>
+      <a href="#" data-ir="concursos">Concursos</a>
+    </div>
+    <div class="rodape-coluna so-logado">
+      <span class="rodape-titulo">Conta</span>
+      <a href="#" data-ir="dashboard">Meu desempenho</a>
+      <a href="#" data-ir="conta">Meu perfil</a>
+      <a href="#" data-ir="planos">Planos</a>
+      <a href="#" data-ir="solicitar">Solicitar conteúdo</a>
+    </div>
+    <div class="rodape-coluna">
+      <span class="rodape-titulo">Legal</span>
+      <a href="#" data-ir="termos">Termos de uso</a>
+      <a href="#" data-ir="privacidade">Política de privacidade</a>
+      <a href="#" data-ir="cookies">Política de cookies</a>
+    </div>
+    <div class="rodape-coluna">
+      <span class="rodape-titulo">Contato</span>
+      <a id="rodape-email" class="hidden" href="#"></a>
+      <div id="rodape-redes" class="rodape-redes"></div>
+    </div>
+  </div>
+  <p class="rodape-copy sub">© <span id="rodape-ano"></span> Concursos Platform</p>
+</footer>
+<div id="aviso-pro" class="aviso-pro hidden"><span id="aviso-pro-texto"></span><button id="aviso-pro-ver" class="primario">Ver planos</button><button id="aviso-pro-fechar" class="link">Fechar</button></div>
 <script src="app.js"></script>
 </body>
 </html>

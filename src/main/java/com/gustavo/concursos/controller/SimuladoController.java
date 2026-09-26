@@ -37,6 +37,9 @@ import java.util.NoSuchElementException;
 @RequestMapping("/simulados")
 public class SimuladoController {
 
+    @org.springframework.beans.factory.annotation.Value("${pro.simulados-gratis-por-mes:3}")
+    private int simuladosGratisPorMes;
+
     private final SimuladoRepository simuladoRepository;
     private final SimuladoQuestaoRepository simuladoQuestaoRepository;
     private final QuestaoRepository questaoRepository;
@@ -67,8 +70,20 @@ public class SimuladoController {
     ) {
         Usuario usuario = usuarioLogado(authentication);
 
+        // Plano gratuito: limite de simulados por mes. Pro: ilimitado e com ineditas.
+        boolean pro = usuario.ehPro();
+        if (!pro) {
+            java.time.LocalDateTime inicioDoMes = java.time.LocalDate.now().withDayOfMonth(1).atStartOfDay();
+            long feitos = simuladoRepository.countByUsuarioIdAndCriadoEmGreaterThanEqual(usuario.getId(), inicioDoMes);
+            if (feitos >= simuladosGratisPorMes) {
+                throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED,
+                        "No plano gratuito são " + simuladosGratisPorMes
+                                + " simulados por mês. Simulados ilimitados são um recurso do plano Pro.");
+            }
+        }
+
         List<Questao> sorteadas = questaoRepository.sortear(
-                request.disciplinaId(), request.bancaId(), request.quantidade()
+                request.disciplinaId(), request.bancaId(), pro, request.quantidade()
         );
 
         if (sorteadas.isEmpty()) {

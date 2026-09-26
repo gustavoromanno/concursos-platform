@@ -22,6 +22,7 @@ import java.util.NoSuchElementException;
 // Anotacoes pessoais. Tudo e sempre do usuario logado: nao ha como
 // ler ou alterar a anotacao de outra pessoa por nenhum destes endpoints.
 @RestController
+@com.gustavo.concursos.pro.RequerPro("Anotações")
 public class AnotacaoController {
 
     private final AnotacaoRepository anotacaoRepository;

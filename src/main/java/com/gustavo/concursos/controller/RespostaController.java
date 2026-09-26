@@ -29,16 +29,20 @@ public class RespostaController {
     private final UsuarioRepository usuarioRepository;
     private final RevisaoService revisaoService;
 
+    private final com.gustavo.concursos.pro.AcessoPro acessoPro;
+
     public RespostaController(
             QuestaoRepository questaoRepository,
             RespostaRepository respostaRepository,
             UsuarioRepository usuarioRepository,
-            RevisaoService revisaoService
+            RevisaoService revisaoService,
+            com.gustavo.concursos.pro.AcessoPro acessoPro
     ) {
         this.questaoRepository = questaoRepository;
         this.respostaRepository = respostaRepository;
         this.usuarioRepository = usuarioRepository;
         this.revisaoService = revisaoService;
+        this.acessoPro = acessoPro;
     }
 
     @Transactional
@@ -50,6 +54,9 @@ public class RespostaController {
     ) {
         Questao questao = questaoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Questao nao encontrada"));
+        if (Questao.ORIGEM_IA.equals(questao.getOrigem()) && !acessoPro.ehPro(authentication)) {
+            throw com.gustavo.concursos.pro.AcessoPro.bloqueio("As questões inéditas das provas");
+        }
 
         Alternativa alternativaEscolhida = questao.getAlternativas().stream()
                 .filter(a -> a.getId().equals(request.alternativaId()))

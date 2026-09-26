@@ -66,8 +66,13 @@ class CadastroTest {
     void errosDeValidacaoVemEmPortuguesSemTextoTecnico() throws Exception {
         registrar(cadastro("Carla", "carla@teste.com", "123", null))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("A senha deve ter pelo menos 6 caracteres"))
+                .andExpect(jsonPath("$.message").value(com.gustavo.concursos.dto.RegrasSenha.MENSAGEM))
                 .andExpect(content().string(not(containsString("Validation failed"))));
+
+        // Senha longa, mas sem maiuscula, numero ou simbolo: tambem recusada.
+        registrar(cadastro("Carla", "carla@teste.com", "senhasemregras", null))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(com.gustavo.concursos.dto.RegrasSenha.MENSAGEM));
 
         registrar(cadastro("Carla", "isso-nao-e-email", "Senha123!", null))
                 .andExpect(status().isBadRequest())

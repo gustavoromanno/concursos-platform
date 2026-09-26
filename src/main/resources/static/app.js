@@ -73,6 +73,15 @@ async function api(caminho, opcoes = {}) {
     if (resp.status === 403) {
         throw new Error('Você não tem permissão para esta ação.');
     }
+    if (resp.status === 402) {
+        const corpo = await resp.json().catch(() => ({}));
+        const erro = new Error(corpo.message || 'Recurso do plano Pro.');
+        erro.pro = true;
+        // Chamadas de fundo (selo, painel) passam semAvisoPro: o aviso so aparece
+        // quando a propria pessoa tenta usar o recurso.
+        if (!opcoes.semAvisoPro) mostrarAvisoPro(erro.message);
+        throw erro;
+    }
 
     if (!resp.ok) {
         const corpo = await resp.json().catch(() => ({}));
@@ -110,7 +119,49 @@ $('#btn-alternar').onclick = () => {
     $('#alternar-texto').textContent = modoRegistro ? 'Já tem conta?' : 'Não tem conta?';
     $('#btn-alternar').textContent = modoRegistro ? 'Fazer login' : 'Criar conta';
     $('#login-erro').textContent = '';
+    atualizarRegrasSenha();
 };
+
+// ---------- campos de senha (nivel superior: vale desde o carregamento) ----------
+
+// Olho para mostrar/ocultar a senha em qualquer campo com botao .btn-olho.
+document.querySelectorAll('.btn-olho').forEach(btn => {
+    btn.onclick = e => {
+        e.preventDefault();
+        const campo = document.getElementById(btn.getAttribute('data-alvo'));
+        if (!campo) return;
+        const ehSenha = campo.type === 'password';
+        campo.type = ehSenha ? 'text' : 'password';
+        btn.querySelector('.ic-olho-fechado')?.classList.toggle('hidden', ehSenha);
+        btn.querySelector('.ic-olho-aberto')?.classList.toggle('hidden', !ehSenha);
+    };
+});
+
+// Mesma regra do backend (RegrasSenha.java). "Especial" = qualquer caractere
+// que nao seja letra sem acento, numero ou espaco.
+const REGRAS_SENHA = {
+    minimo: v => v.length >= 6 && v.length <= 64,
+    maiuscula: v => /[A-Z]/.test(v),
+    numero: v => /\d/.test(v),
+    especial: v => /[^A-Za-z0-9\s]/.test(v)
+};
+const senhaValida = v => Object.values(REGRAS_SENHA).every(regra => regra(v));
+const MENSAGEM_SENHA = 'A senha deve ter de 6 a 64 caracteres, com pelo menos 1 letra maiúscula, 1 número e 1 caractere especial.';
+
+// Marca em verde, em tempo real, cada regra cumprida no cadastro.
+function atualizarRegrasSenha() {
+    if (!modoRegistro) return;
+    const v = $('#login-senha').value;
+    const confirma = $('#reg-confirma-senha')?.value || '';
+    $('#regra-minimo')?.classList.toggle('ok', REGRAS_SENHA.minimo(v));
+    $('#regra-maiuscula')?.classList.toggle('ok', REGRAS_SENHA.maiuscula(v));
+    $('#regra-numero')?.classList.toggle('ok', REGRAS_SENHA.numero(v));
+    $('#regra-especial')?.classList.toggle('ok', REGRAS_SENHA.especial(v));
+    $('#regra-confirma')?.classList.toggle('ok', v.length > 0 && v === confirma);
+}
+
+$('#login-senha').addEventListener('input', atualizarRegrasSenha);
+$('#reg-confirma-senha')?.addEventListener('input', atualizarRegrasSenha);
 
 $('#btn-entrar').onclick = async () => {
     const botao = $('#btn-entrar');
@@ -121,35 +172,6 @@ $('#btn-entrar').onclick = async () => {
     const erro = $('#login-erro');
     erro.textContent = '';
 
-    
-// Olho toggle para mostrar/ocultar senha
-document.querySelectorAll('.btn-olho').forEach(btn => {
-    btn.onclick = (e) => {
-        e.preventDefault();
-        const idAlvo = btn.getAttribute('data-alvo');
-        const campo = document.getElementById(idAlvo);
-        if (!campo) return;
-        const ehSenha = campo.type === 'password';
-        campo.type = ehSenha ? 'text' : 'password';
-        btn.querySelector('.ic-olho-fechado').classList.toggle('hidden', ehSenha);
-        btn.querySelector('.ic-olho-aberto').classList.toggle('hidden', !ehSenha);
-    };
-});
-
-// Atualiza regras de senha em tempo real na tela de registro
-const campoSenha = $('#login-senha');
-const campoConfirma = $('#reg-confirma-senha');
-
-function atualizarRegrasSenha() {
-    if (!modoRegistro) return;
-    const v = campoSenha.value;
-    $('#regra-minimo')?.classList.toggle('ok', v.length >= 6);
-    $('#regra-maiuscula')?.classList.toggle('ok', /[A-Z]/.test(v));
-    $('#regra-numero')?.classList.toggle('ok', /\d/.test(v));
-    $('#regra-especial')?.classList.toggle('ok', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v));
-}
-
-campoSenha?.addEventListener('input', atualizarRegrasSenha);
 
     const textoOriginal = botao.textContent;
     botao.disabled = true;
@@ -159,10 +181,7 @@ campoSenha?.addEventListener('input', atualizarRegrasSenha);
         if (modoRegistro) {
             const nome = $('#reg-nome').value.trim();
             if (!nome) throw new Error('Informe seu nome');
-            if (senha.length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.');
-            if (!/[A-Z]/.test(senha)) throw new Error('A senha precisa ter pelo menos 1 letra maiúscula.');
-            if (!/\d/.test(senha)) throw new Error('A senha precisa ter pelo menos 1 número.');
-            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(senha)) throw new Error('A senha precisa ter pelo menos 1 caractere especial.');
+            if (!senhaValida(senha)) throw new Error(MENSAGEM_SENHA);
             const confirma = $('#reg-confirma-senha').value;
             if (senha !== confirma) throw new Error('As senhas não coincidem.');
             await api('/auth/registrar', {
@@ -188,7 +207,7 @@ campoSenha?.addEventListener('input', atualizarRegrasSenha);
 };
 
 // Enter no formulario de login/cadastro envia.
-['#login-email', '#login-senha', '#reg-nome'].forEach(sel => {
+['#login-email', '#login-senha', '#reg-nome', '#reg-confirma-senha'].forEach(sel => {
     $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-entrar').click(); });
 });
 
@@ -202,12 +221,14 @@ function sair() {
     $('#topo').classList.add('hidden');
     document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
     $('#tela-login').classList.remove('hidden');
+    atualizarRodape();
 }
 
 $('#sair').onclick = sair;
 
 async function entrarNoApp() {
     $('#tela-login').classList.add('hidden');
+    atualizarRodape();
     $('#topo').classList.remove('hidden');
     await carregarCatalogo();
     atualizarSeloRevisao();
@@ -302,7 +323,7 @@ async function carregarEstadoPessoal() {
         marcados = new Set();
     }
     try {
-        anotadas = new Set(await api('/anotacoes/ids'));
+        anotadas = new Set(await api('/anotacoes/ids', { semAvisoPro: true }));
     } catch {
         anotadas = new Set();
     }
@@ -379,6 +400,9 @@ function abrir(tela) {
     if (tela === 'videoaulas') carregarVideoaulas();
     if (tela === 'dashboard') carregarDashboard();
     if (tela === 'conta') carregarConta();
+    if (tela === 'planos') carregarPlanos();
+    if (tela === 'solicitar') carregarSolicitacoes();
+    if (tela === 'importacoes') carregarSolicitacoesAdmin();
     if (tela === 'importacoes') carregarImportacoes();
 }
 
@@ -395,12 +419,158 @@ function atualizarUsuarioTopo(nome) {
 
 function carregarConta() {
     $('#conta-marketing').checked = !!perfilUsuario?.aceitaMarketing;
-    $('#msg-marketing').textContent = '';
+    ['#msg-marketing', '#msg-nome', '#msg-senha', '#msg-foto', '#msg-perigo'].forEach(sel => { $(sel).textContent = ''; });
     $('#conta-nome').value = perfilUsuario?.nome || '';
     $('#conta-email').value = perfilUsuario?.email || '';
-    ['#msg-nome', '#msg-senha'].forEach(sel => { $(sel).textContent = ''; });
     ['#conta-senha-atual', '#conta-senha-nova', '#conta-senha-confirma'].forEach(sel => { $(sel).value = ''; });
+    carregarPerfilCompleto();
+    carregarContagensPerigo();
+    carregarAssinatura();
 }
+
+async function carregarPerfilCompleto() {
+    try {
+        const p = await api('/perfil/completo');
+        preencherPerfil(p);
+    } catch { /* o resto da tela funciona sem estes dados */ }
+}
+
+function preencherPerfil(p) {
+    $('#perfil-nome').textContent = perfilUsuario?.nome || '';
+    $('#perfil-email').textContent = perfilUsuario?.email || '';
+    const selo = $('#perfil-plano');
+    selo.textContent = p.pro ? 'MEMBRO PRO' : 'MEMBRO GRATUITO';
+    selo.classList.toggle('pro', !!p.pro);
+
+    const img = $('#foto-perfil');
+    img.classList.toggle('hidden', !p.foto);
+    if (p.foto) img.src = p.foto;
+    $('#foto-iniciais').classList.toggle('hidden', !!p.foto);
+    $('#foto-iniciais').textContent = $('#avatar-topo').textContent;
+    $('#btn-remover-foto').classList.toggle('hidden', !p.foto);
+
+    $('#forca-valor').textContent = p.forcaPerfil + '%';
+    $('#forca-barra').style.width = p.forcaPerfil + '%';
+    $('#num-respondidas').textContent = p.respondidas.toLocaleString('pt-BR');
+    $('#num-acerto').textContent = p.taxaAcerto + '%';
+    $('#num-simulados').textContent = p.simulados;
+    $('#num-cadernos').textContent = p.cadernos;
+
+    $('#conta-uf').value = p.uf || '';
+    $('#conta-carreira').value = p.carreiraAlvo || '';
+    $('#conta-bio').value = p.bio || '';
+}
+
+const ROTULO_PLANO = { MENSAL: 'Mensal', TRIMESTRAL: 'Trimestral', ANUAL: 'Anual' };
+const ROTULO_PAGAMENTO = {
+    PENDENTE: 'Não concluído', AGUARDANDO: 'Aguardando pagamento', PAGO: 'Pago',
+    FALHOU: 'Falhou', EXPIRADO: 'Expirado', REEMBOLSADO: 'Reembolsado'
+};
+const reais = centavos => (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dataBr = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '';
+
+async function carregarAssinatura() {
+    const status = $('#assinatura-status');
+    const historico = $('#historico-pagamentos');
+    const pro = perfilUsuario?.pro;
+    status.innerHTML = pro
+        ? `<div class="assinatura-ativa"><strong>Pro ativo</strong>
+             <span class="sub">${perfilUsuario.proAte ? 'Válido até ' + dataBr(perfilUsuario.proAte) : 'Acesso de administrador'}</span>
+             <button class="secundario ir-planos">Estender acesso</button></div>`
+        : `<div class="assinatura-vazia"><strong>Nenhum plano ativo</strong>
+             <span class="sub">Desbloqueie os recursos Pro e estude com tudo liberado.</span>
+             <button class="primario ir-planos">Ver planos</button></div>`;
+    status.querySelector('.ir-planos').onclick = () => abrir('planos');
+
+    try {
+        const pagamentos = await api('/pagamentos');
+        historico.innerHTML = pagamentos.length ? `
+            <table class="tabela-pagamentos">
+                <thead><tr><th>Data</th><th>Plano</th><th>Valor</th><th>Situação</th></tr></thead>
+                <tbody>${pagamentos.map(p => `<tr><td>${dataBr(p.criadoEm)}</td><td>${ROTULO_PLANO[p.plano] || p.plano}</td>
+                    <td>${reais(p.valorCentavos)}</td><td>${ROTULO_PAGAMENTO[p.status] || p.status}</td></tr>`).join('')}</tbody>
+            </table>` : '';
+    } catch { historico.innerHTML = ''; }
+}
+
+async function carregarContagensPerigo() {
+    try {
+        const contagens = await api('/perfil/dados-estudo');
+        document.querySelectorAll('.item-perigo').forEach(item => {
+            const n = contagens[item.dataset.categoria] ?? 0;
+            item.querySelector('.rodape-perigo')?.remove();
+            const rodape = criar(`<div class="rodape-perigo"><span class="sub">${n ? n + ' registro' + (n > 1 ? 's' : '') : 'Nenhum registro'}</span>
+                <button class="perigo-suave" ${n ? '' : 'disabled'}>Zerar</button></div>`);
+            rodape.querySelector('button').onclick = () => zerarDados(item.dataset.categoria, item.querySelector('strong').textContent);
+            item.appendChild(rodape);
+        });
+    } catch { /* silencioso */ }
+}
+
+async function zerarDados(categoria, nome) {
+    const texto = categoria === 'TUDO'
+        ? 'Apagar TODO o seu progresso (estatísticas, cadernos, anotações, simulados, marcadores e revisão)? Não dá para desfazer.'
+        : `Apagar "${nome}"? Não dá para desfazer.`;
+    if (!confirm(texto)) return;
+    try {
+        await api(`/perfil/dados-estudo/${categoria}`, { method: 'DELETE' });
+        $('#msg-perigo').textContent = 'Dados apagados.';
+        if (categoria === 'MARCADORES' || categoria === 'TUDO') marcados = new Set();
+        if (categoria === 'CADERNOS' || categoria === 'TUDO') { anotadas = new Set(); cadernos = []; }
+        carregarContagensPerigo();
+        carregarPerfilCompleto();
+    } catch (e) {
+        $('#msg-perigo').textContent = e.message;
+    }
+}
+
+$('#btn-zerar-tudo').onclick = () => zerarDados('TUDO', 'tudo');
+
+$('#btn-excluir-conta').onclick = async () => {
+    const senha = prompt('Para excluir sua conta, digite sua senha. Esta ação não pode ser desfeita.');
+    if (!senha) return;
+    try {
+        await api('/perfil/excluir-conta', { method: 'POST', body: JSON.stringify({ senha }) });
+        alert('Sua conta foi excluída.');
+        sair();
+    } catch (e) {
+        $('#msg-perigo').textContent = e.message;
+    }
+};
+
+// Foto: reduz no navegador para ate 256px (leve e sem servico de arquivos).
+$('#input-foto').onchange = async () => {
+    const arquivo = $('#input-foto').files[0];
+    const msg = $('#msg-foto');
+    if (!arquivo) return;
+    try {
+        const url = await new Promise((ok, falha) => {
+            const img = new Image();
+            img.onload = () => {
+                const lado = 256;
+                const escala = Math.min(1, lado / Math.max(img.width, img.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * escala);
+                canvas.height = Math.round(img.height * escala);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                ok(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = () => falha(new Error('Não foi possível ler a imagem.'));
+            img.src = URL.createObjectURL(arquivo);
+        });
+        preencherPerfil(await api('/perfil/foto', { method: 'PUT', body: JSON.stringify({ foto: url }) }));
+        msg.textContent = '';
+    } catch (e) {
+        msg.textContent = e.message;
+    } finally {
+        $('#input-foto').value = '';
+    }
+};
+
+$('#btn-remover-foto').onclick = async () => {
+    try { preencherPerfil(await api('/perfil/foto', { method: 'DELETE' })); }
+    catch (e) { $('#msg-foto').textContent = e.message; }
+};
 
 $('#btn-conta').onclick = () => abrir('conta');
 
@@ -412,9 +582,14 @@ $('#btn-salvar-nome').onclick = async () => {
         return;
     }
     try {
-        perfilUsuario = await api('/perfil', { method: 'PUT', body: JSON.stringify({ nome }) });
-        atualizarUsuarioTopo(perfilUsuario.nome);
-        msg.textContent = 'Nome atualizado.';
+        const p = await api('/perfil/dados', {
+            method: 'PUT',
+            body: JSON.stringify({ nome, uf: $('#conta-uf').value, carreiraAlvo: $('#conta-carreira').value, bio: $('#conta-bio').value })
+        });
+        perfilUsuario.nome = nome;
+        atualizarUsuarioTopo(nome);
+        preencherPerfil(p);
+        msg.textContent = 'Alterações salvas.';
     } catch (e) {
         msg.textContent = e.message;
     }
@@ -459,8 +634,8 @@ $('#btn-salvar-senha').onclick = async () => {
     const msg = $('#msg-senha');
     const senhaAtual = $('#conta-senha-atual').value;
     const novaSenha = $('#conta-senha-nova').value;
-    if (novaSenha.length < 6) {
-        msg.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
+    if (!senhaValida(novaSenha)) {
+        msg.textContent = MENSAGEM_SENHA;
         return;
     }
     if (novaSenha !== $('#conta-senha-confirma').value) {
@@ -1166,7 +1341,7 @@ const ROTULOS_ETAPA = { CONCLUIDO: 'Concluído', EM_ANDAMENTO: 'Em andamento', P
 async function cartaoObjetivo() {
     let o;
     try {
-        o = await api('/objetivo');
+        o = await api('/objetivo', { semAvisoPro: true });
     } catch {
         return null;
     }
@@ -1776,7 +1951,7 @@ async function carregarInicio() {
 // Selo com a quantidade pendente, no menu.
 async function atualizarSeloRevisao() {
     try {
-        const r = await api('/revisoes/resumo');
+        const r = await api('/revisoes/resumo', { semAvisoPro: true });
         const selo = $('#selo-revisao');
         selo.textContent = r.paraHoje;
         selo.classList.toggle('hidden', r.paraHoje === 0);
@@ -1990,6 +2165,7 @@ function primeiroNome(nome) {
 async function carregarDashboard() {
     const alvo = $('#painel-dashboard');
     alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+    let painelLimitado = false;
 
     try {
         // Busca tudo em paralelo: a tela só depende do conjunto completo.
@@ -1997,14 +2173,22 @@ async function carregarDashboard() {
             perfilUsuario ? Promise.resolve(perfilUsuario) : api('/perfil'),
             api('/engajamento'),
             api('/estatisticas'),
-            api('/estatisticas/assuntos'),
-            api('/estatisticas/evolucao?dias=30'),
+            // Recursos Pro: no gratuito vem vazio e o painel mostra o convite.
+            api('/estatisticas/assuntos', { semAvisoPro: true }).catch(e => { if (e.pro) { painelLimitado = true; return []; } throw e; }),
+            api('/estatisticas/evolucao?dias=30', { semAvisoPro: true }).catch(e => { if (e.pro) { painelLimitado = true; return []; } throw e; }),
             api('/engajamento/mapa?dias=182'),
             api('/videoaulas/sugestoes?limite=3').catch(() => [])
         ]);
 
         alvo.innerHTML = '';
         alvo.appendChild(criar(`<h1 class="saudacao">${saudacao()}, ${escapar(primeiroNome(perfil.nome))}!</h1>`));
+        if (painelLimitado) {
+            const convite = criar(`<div class="card convite-pro"><div><strong>Painel completo no Pro</strong>
+                <span class="sub">Desempenho por assunto, evolução no tempo e radar de competências.</span></div>
+                <button class="primario">Ver planos</button></div>`);
+            convite.querySelector('button').onclick = () => abrir('planos');
+            alvo.appendChild(convite);
+        }
 
         const grade = criar('<div class="grade-painel"></div>');
         const principal = criar('<div class="coluna-principal"></div>');
@@ -2483,3 +2667,254 @@ $('#btn-fechar-revisao').onclick = () => {
     importacaoEmRevisao = null;
     carregarImportacoes();
 };
+
+
+// ---------- plano Pro ----------
+
+let planosPro = [];
+let periodoEscolhido = 'MENSAL';
+
+function mostrarAvisoPro(texto) {
+    $('#aviso-pro-texto').textContent = texto;
+    $('#aviso-pro').classList.remove('hidden');
+}
+$('#aviso-pro-fechar').onclick = () => $('#aviso-pro').classList.add('hidden');
+$('#aviso-pro-ver').onclick = () => {
+    $('#aviso-pro').classList.add('hidden');
+    abrir('planos');
+};
+
+async function carregarPlanos() {
+    try {
+        const r = await api('/planos');
+        planosPro = r.planos;
+        const limite = `${r.simuladosGratisPorMes} simulados por mês`;
+        $('#beneficio-simulados-gratis').textContent = `Simulados cronometrados (${limite})`;
+        $('#tabela-simulados-gratis').textContent = limite;
+        const mensal = planosPro.find(p => p.codigo === 'MENSAL');
+        const anual = planosPro.find(p => p.codigo === 'ANUAL');
+        if (mensal && anual) {
+            const economia = Math.round(100 - (anual.precoMensalCentavos / mensal.precoCentavos) * 100);
+            $('#economia-anual').textContent = economia > 0 ? `-${economia}%` : '';
+        }
+        mostrarPreco();
+    } catch (e) {
+        $('#msg-assinar').textContent = e.message;
+    }
+
+    const status = $('#status-pro');
+    status.classList.toggle('hidden', !perfilUsuario?.pro);
+    if (perfilUsuario?.pro) {
+        status.innerHTML = perfilUsuario.proAte
+            ? `<strong>Seu Pro está ativo até ${dataBr(perfilUsuario.proAte)}.</strong> <span class="sub">Comprar de novo soma os dias ao período atual.</span>`
+            : '<strong>Conta de administrador: todos os recursos Pro liberados.</strong>';
+    }
+}
+
+function mostrarPreco() {
+    const plano = planosPro.find(p => p.codigo === periodoEscolhido);
+    if (!plano) return;
+    const mensal = planosPro.find(p => p.codigo === 'MENSAL');
+    $('#preco-pro').textContent = reais(plano.codigo === 'MENSAL' ? plano.precoCentavos : plano.precoMensalCentavos);
+    $('#preco-pro-sufixo').textContent = '/mês';
+    $('#preco-pro-detalhe').textContent = plano.codigo === 'MENSAL'
+        ? '30 dias de acesso'
+        : `${reais(plano.precoCentavos)} por ${plano.dias} dias` +
+          (mensal ? ` · economize ${reais(Math.round(mensal.precoCentavos * plano.dias / 30) - plano.precoCentavos)}` : '');
+    ['#btn-assinar', '#btn-assinar-rodape'].forEach(sel => { $(sel).textContent = `Assinar ${plano.nome} →`; });
+}
+
+document.querySelectorAll('#seletor-periodo button').forEach(btn => {
+    btn.onclick = () => {
+        periodoEscolhido = btn.dataset.periodo;
+        document.querySelectorAll('#seletor-periodo button').forEach(b => b.classList.toggle('ativo', b === btn));
+        mostrarPreco();
+    };
+});
+
+async function assinar() {
+    const msg = $('#msg-assinar');
+    msg.textContent = 'Abrindo o pagamento…';
+    try {
+        const r = await api('/pagamentos/checkout', { method: 'POST', body: JSON.stringify({ plano: periodoEscolhido }) });
+        window.location.href = r.url;   // pagina segura do Stripe
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+}
+$('#btn-assinar').onclick = assinar;
+$('#btn-assinar-rodape').onclick = assinar;
+
+// Volta do Stripe: ?pagamento=sucesso ou ?pagamento=cancelado.
+const retornoPagamento = new URLSearchParams(location.search).get('pagamento');
+if (retornoPagamento) {
+    history.replaceState(null, '', location.pathname);
+    window.addEventListener('load', () => setTimeout(() => {
+        if (!token) return;
+        abrir('planos');
+        $('#msg-assinar').textContent = retornoPagamento === 'sucesso'
+            ? 'Pagamento recebido! Cartão libera o Pro em instantes; boleto, quando o banco confirmar. Atualize a página em alguns segundos.'
+            : 'Pagamento cancelado. Nada foi cobrado.';
+    }, 800));
+}
+
+// ---------- rodape, paginas legais e contato ----------
+
+// Preencha antes de publicar: dados da empresa (Termos e Privacidade) e contato.
+// Campos vazios nao aparecem no site. Redes: { instagram: 'https://...', tiktok: '...', facebook: '...', x: '...' }
+const EMPRESA = {
+    nome: '',            // ex.: 'Nome da Ltda, CNPJ 00.000.000/0001-00'
+    email: '',           // ex.: 'contato@seudominio.com.br'
+    redes: {}
+};
+const DATA_POLITICAS = '2026-09-26';
+
+(function prepararRodapeELegal() {
+    $('#rodape-ano').textContent = new Date().getFullYear();
+    document.querySelectorAll('.empresa-nome').forEach(el => { el.textContent = EMPRESA.nome || 'Concursos Platform'; });
+    document.querySelectorAll('.empresa-email').forEach(el => { el.textContent = EMPRESA.email || 'o formulário "Solicitar conteúdo", dentro da plataforma'; });
+    document.querySelectorAll('.data-legal').forEach(el => {
+        el.textContent = new Date(DATA_POLITICAS + 'T00:00:00').toLocaleDateString('pt-BR');
+    });
+
+    if (EMPRESA.email) {
+        const link = $('#rodape-email');
+        link.textContent = EMPRESA.email;
+        link.href = 'mailto:' + EMPRESA.email;
+        link.classList.remove('hidden');
+    }
+    const nomes = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', x: 'X', youtube: 'YouTube', linkedin: 'LinkedIn' };
+    Object.entries(EMPRESA.redes).forEach(([rede, url]) => {
+        if (!url) return;
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = nomes[rede] || rede;
+        $('#rodape-redes').appendChild(a);
+    });
+})();
+
+// Paginas publicas: abrem mesmo sem login.
+const PAGINAS_PUBLICAS = ['termos', 'privacidade', 'cookies'];
+
+document.querySelectorAll('[data-ir]').forEach(link => {
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        const destino = link.dataset.ir;
+        if (!token && !PAGINAS_PUBLICAS.includes(destino)) {
+            document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+            $('#tela-login').classList.remove('hidden');
+            return;
+        }
+        abrir(destino);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+document.querySelectorAll('.voltar-legal').forEach(btn => {
+    btn.onclick = () => {
+        if (token) {
+            abrir('inicio');
+        } else {
+            document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+            $('#tela-login').classList.remove('hidden');
+        }
+    };
+});
+
+// Colunas do rodape que so fazem sentido logado.
+function atualizarRodape() {
+    document.querySelectorAll('.so-logado').forEach(el => el.classList.toggle('hidden', !token));
+}
+atualizarRodape();
+
+// ---------- pedidos de conteudo ----------
+
+const ROTULO_SOLICITACAO = { NOVA: 'Recebido', EM_ANALISE: 'Em análise', ATENDIDA: 'Atendido', RECUSADA: 'Não atendido' };
+
+async function carregarSolicitacoes() {
+    const alvo = $('#lista-solicitacoes');
+    try {
+        const lista = await api('/solicitacoes');
+        alvo.innerHTML = lista.length ? '' : '<div class="vazio">Você ainda não fez pedidos.</div>';
+        lista.forEach(s => alvo.appendChild(criar(`
+            <div class="card item-solicitacao">
+                <div class="topo-importacao">
+                    <div><strong>${escapar(s.concurso)} · ${escapar(s.materia)}</strong>
+                        <p class="sub">${s.cargo ? escapar(s.cargo) + ' · ' : ''}${new Date(s.criadoEm).toLocaleDateString('pt-BR')}</p></div>
+                    <span class="etiqueta-situacao status-sol-${s.status.toLowerCase()}">${ROTULO_SOLICITACAO[s.status] || s.status}</span>
+                </div>
+                ${s.resposta ? `<p class="resposta-solicitacao"><strong>Resposta:</strong> ${escapar(s.resposta)}</p>` : ''}
+            </div>`)));
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+$('#btn-enviar-solicitacao').onclick = async () => {
+    const msg = $('#msg-solicitacao');
+    const corpo = {
+        concurso: $('#sol-concurso').value.trim(),
+        cargo: $('#sol-cargo').value.trim(),
+        materia: $('#sol-materia').value.trim(),
+        linkEdital: $('#sol-link').value.trim(),
+        detalhes: $('#sol-detalhes').value.trim()
+    };
+    if (!corpo.concurso || !corpo.materia) {
+        msg.textContent = 'Informe pelo menos o concurso e a matéria.';
+        return;
+    }
+    const botao = $('#btn-enviar-solicitacao');
+    botao.disabled = true;
+    try {
+        await api('/solicitacoes', { method: 'POST', body: JSON.stringify(corpo) });
+        ['#sol-concurso', '#sol-cargo', '#sol-materia', '#sol-link', '#sol-detalhes'].forEach(sel => { $(sel).value = ''; });
+        msg.textContent = 'Pedido enviado. Obrigado! Você acompanha a resposta aqui.';
+        carregarSolicitacoes();
+    } catch (e) {
+        msg.textContent = e.message;
+    } finally {
+        botao.disabled = false;
+    }
+};
+
+// Admin: fila de pedidos na tela de importacao.
+async function carregarSolicitacoesAdmin() {
+    const alvo = $('#admin-solicitacoes');
+    const status = $('#filtro-solicitacoes').value;
+    try {
+        const lista = await api('/admin/solicitacoes' + (status ? '?status=' + status : ''));
+        alvo.innerHTML = lista.length ? '' : '<div class="vazio">Nenhum pedido.</div>';
+        lista.forEach(s => {
+            const item = criar(`
+                <div class="item-solicitacao-admin">
+                    <div><strong>${escapar(s.concurso)} · ${escapar(s.materia)}</strong>
+                        <p class="sub">${s.cargo ? escapar(s.cargo) + ' · ' : ''}${escapar(s.emailSolicitante || 'conta excluída')} ·
+                        ${new Date(s.criadoEm).toLocaleDateString('pt-BR')}
+                        ${s.linkEdital ? ` · <a href="${escapar(s.linkEdital)}" target="_blank" rel="noopener noreferrer">edital</a>` : ''}</p>
+                        ${s.detalhes ? `<p class="sub">${escapar(s.detalhes)}</p>` : ''}</div>
+                    <div class="acoes-solicitacao">
+                        <select>${Object.entries(ROTULO_SOLICITACAO).map(([v, r]) =>
+                            `<option value="${v}" ${v === s.status ? 'selected' : ''}>${r}</option>`).join('')}</select>
+                        <input placeholder="Resposta para o aluno (opcional)" maxlength="500">
+                        <button class="secundario">Salvar</button>
+                    </div>
+                </div>`);
+            item.querySelector('input').value = s.resposta || '';
+            item.querySelector('button').onclick = async () => {
+                try {
+                    await api(`/admin/solicitacoes/${s.id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ status: item.querySelector('select').value, resposta: item.querySelector('input').value })
+                    });
+                    item.querySelector('button').textContent = 'Salvo ✓';
+                } catch (e) { alert(e.message); }
+            };
+            alvo.appendChild(item);
+        });
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+$('#filtro-solicitacoes').onchange = carregarSolicitacoesAdmin;

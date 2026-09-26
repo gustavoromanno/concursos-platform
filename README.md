@@ -78,8 +78,14 @@ O administrador envia o PDF de uma prova e do gabarito de um concurso anterior. 
 
 As inéditas passam por um validador automático (formato, gabarito único, explicação, e bloqueio de texto parecido demais com a original) e depois por uma **fila de revisão**: só o que o admin aprova é publicado, ligado ao concurso e ao cargo de origem — e aparece nos filtros **Concurso**, **Cargo** e **Origem**.
 
+### 💳 Plano Pro (pré-pago)
+Gratuito: banco de questões autorais, filtros, correção com explicação, cadernos, marcadores, meta, ofensiva e simulados com limite mensal.
+Pro (30, 90 ou 365 dias, via **Stripe Checkout** com cartão, boleto e Pix): questões inéditas das provas, simulados ilimitados, revisão espaçada, anotações, objetivo de estudo e painel completo.
+
+Sem cobrança recorrente: os dias se somam a cada compra. A liberação acontece pelo **webhook** do Stripe, com assinatura verificada e cada evento processado uma única vez; reembolsos (direito de arrependimento de 7 dias) devolvem os dias. Recursos Pro respondem **402** para quem não é Pro, e o frontend oferece os planos.
+
 ### 👤 Conta
-Alteração de nome e de senha (com confirmação da senha atual).
+Foto, dados pessoais, força do perfil, resumo de uso, troca de senha, assinatura e histórico de pagamentos, e **zona de perigo**: zerar dados por categoria ou excluir a conta (os registros de pagamento ficam, sem vínculo, por obrigação fiscal).
 
 ### 🎨 Interface
 Menu superior com ícones, modo claro e noturno, layout responsivo — HTML, CSS e JavaScript puros, sem framework nem etapa de build.
@@ -99,7 +105,7 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V19| DB
+    FW[Flyway] -->|migrations V1…V21| DB
 ```
 
 ```
@@ -108,6 +114,7 @@ src/main/java/com/gustavo/concursos
 ├── service         # regras de negócio (SM-2, ofensiva, objetivo)
 ├── importacao      # importação de provas, geração com IA e fila de revisão
 ├── ia              # cliente da API da Anthropic
+├── pro             # plano Pro: acesso (402), planos, pagamentos e webhook do Stripe
 ├── specification   # filtros dinâmicos de questões
 ├── repository      # Spring Data JPA + consultas nativas
 ├── entity          # modelo JPA
@@ -115,7 +122,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V19 (Flyway)
+├── db/migration    # V1 a V21 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
@@ -225,7 +232,8 @@ Todas as rotas, exceto `/auth/**` e `/health`, exigem `Authorization: Bearer <to
 | Engajamento | `GET /engajamento` · `PUT /engajamento/meta` · `GET /engajamento/mapa` |
 | Objetivo | `GET/PUT/DELETE /objetivo` |
 | Organização | `/cadernos` · `/marcadores` · `/videoaulas` |
-| Conta | `GET/PUT /perfil` · `PUT /perfil/senha` (exige a senha atual) |
+| Conta | `GET/PUT /perfil` · `PUT /perfil/senha` · `GET /perfil/completo` · `PUT /perfil/dados` · `PUT/DELETE /perfil/foto` · `DELETE /perfil/dados-estudo/{categoria}` · `POST /perfil/excluir-conta` |
+| Plano Pro | `GET /planos` · `POST /pagamentos/checkout` · `GET /pagamentos` · `POST /pagamentos/webhook` (Stripe) |
 | Concursos | `GET /concursos` · `GET /concursos/{id}` · `GET /provas/{id}` |
 | Admin | `POST /questoes` · `DELETE /questoes/{id}` · `POST/DELETE /concursos…` · `POST/DELETE /videoaulas` |
 
@@ -249,6 +257,7 @@ DB_USERNAME  = usuario
 DB_PASSWORD  = senha
 JWT_SECRET   = string-aleatoria-com-no-minimo-64-caracteres
 ANTHROPIC_API_KEY = chave-da-api   # opcional: só a importação de provas usa
+STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / APP_URL_BASE   # opcionais: pagamentos do plano Pro
 ```
 
 2. Suba a aplicação:
