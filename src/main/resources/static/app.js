@@ -219,8 +219,7 @@ function sair() {
     perfilUsuario = null;
     $('#usuario-topo').textContent = '';
     $('#topo').classList.add('hidden');
-    document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-    $('#tela-login').classList.remove('hidden');
+    mostrarLanding();
     atualizarRodape();
 }
 
@@ -403,6 +402,7 @@ function abrir(tela) {
     if (tela === 'planos') carregarPlanos();
     if (tela === 'solicitar') carregarSolicitacoes();
     if (tela === 'importacoes') carregarSolicitacoesAdmin();
+    if (tela === 'admin') carregarPainelAdmin();
     if (tela === 'importacoes') carregarImportacoes();
 }
 
@@ -2419,10 +2419,14 @@ function paleta(i) {
 
 // ---------- inicio ----------
 
-if (token) {
+const tokenRedefinicao = new URLSearchParams(location.search).get('redefinir');
+if (tokenRedefinicao) {
+    history.replaceState(null, '', location.pathname);
+    mostrarTela('redefinir');
+} else if (token) {
     entrarNoApp();
 } else {
-    $('#tela-login').classList.remove('hidden');
+    mostrarLanding();
 }
 
 
@@ -2803,8 +2807,7 @@ document.querySelectorAll('[data-ir]').forEach(link => {
         e.preventDefault();
         const destino = link.dataset.ir;
         if (!token && !PAGINAS_PUBLICAS.includes(destino)) {
-            document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-            $('#tela-login').classList.remove('hidden');
+            mostrarTela('login');
             return;
         }
         abrir(destino);
@@ -2817,8 +2820,7 @@ document.querySelectorAll('.voltar-legal').forEach(btn => {
         if (token) {
             abrir('inicio');
         } else {
-            document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-            $('#tela-login').classList.remove('hidden');
+            mostrarLanding();
         }
     };
 });
@@ -2918,3 +2920,163 @@ async function carregarSolicitacoesAdmin() {
     }
 }
 $('#filtro-solicitacoes').onchange = carregarSolicitacoesAdmin;
+
+
+// ---------- pagina inicial publica ----------
+
+// Mostra uma tela fora do app logado (landing, login, nova senha).
+function mostrarTela(nome) {
+    document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+    $('#tela-' + nome).classList.remove('hidden');
+    window.scrollTo(0, 0);
+}
+
+async function mostrarLanding() {
+    mostrarTela('landing');
+    try {
+        const n = await api('/publico/numeros');
+        const fmt = v => v.toLocaleString('pt-BR');
+        $('#lnd-questoes').textContent = fmt(n.questoes);
+        $('#lnd-bancas').textContent = fmt(n.bancas);
+        $('#lnd-disciplinas').textContent = fmt(n.disciplinas);
+        $('#lnd-concursos').textContent = fmt(n.concursos);
+        $('#landing-selo-questoes').textContent = `${fmt(n.questoes)} questões autorais de concursos`;
+    } catch { /* os numeros sao enfeite: a pagina funciona sem eles */ }
+    try {
+        const r = await api('/planos');
+        const mensal = r.planos.find(p => p.codigo === 'MENSAL');
+        const anual = r.planos.find(p => p.codigo === 'ANUAL');
+        if (mensal) $('#lnd-preco').textContent = reais(mensal.precoCentavos);
+        if (anual) $('#lnd-preco-anual').textContent = `ou ${reais(anual.precoMensalCentavos)}/mês no plano anual`;
+        document.querySelectorAll('.lnd-simulados-gratis').forEach(el => {
+            el.textContent = `${r.simuladosGratisPorMes} simulados por mês`;
+        });
+    } catch { /* idem */ }
+}
+
+function irParaLogin(cadastro) {
+    mostrarTela('login');
+    if (cadastro !== modoRegistro) $('#btn-alternar').click();
+    $('#caixa-esqueci').classList.add('hidden');
+    $(cadastro ? '#reg-nome' : '#login-email').focus();
+}
+document.querySelectorAll('.ir-login').forEach(b => { b.onclick = () => irParaLogin(false); });
+document.querySelectorAll('.ir-cadastro').forEach(b => { b.onclick = () => irParaLogin(true); });
+document.querySelectorAll('.ir-landing').forEach(b => { b.onclick = () => mostrarLanding(); });
+document.querySelectorAll('.links-landing a').forEach(a => {
+    a.onclick = e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+    };
+});
+
+// ---------- esqueci minha senha ----------
+
+$('#btn-esqueci').onclick = () => {
+    $('#caixa-esqueci').classList.toggle('hidden');
+    $('#esqueci-email').value = $('#login-email').value;
+    $('#msg-esqueci').textContent = '';
+};
+
+$('#btn-enviar-esqueci').onclick = async () => {
+    const email = $('#esqueci-email').value.trim();
+    const msg = $('#msg-esqueci');
+    if (!email) { msg.textContent = 'Informe seu e-mail.'; return; }
+    const botao = $('#btn-enviar-esqueci');
+    botao.disabled = true;
+    try {
+        const r = await api('/auth/esqueci-senha', { method: 'POST', body: JSON.stringify({ email }) });
+        msg.textContent = r.message;
+    } catch (e) {
+        msg.textContent = e.message;
+    } finally {
+        botao.disabled = false;
+    }
+};
+
+$('#btn-redefinir').onclick = async () => {
+    const msg = $('#msg-redefinir');
+    const novaSenha = $('#redef-senha').value;
+    if (!senhaValida(novaSenha)) { msg.textContent = MENSAGEM_SENHA; return; }
+    if (novaSenha !== $('#redef-confirma').value) { msg.textContent = 'As senhas não coincidem.'; return; }
+    try {
+        const r = await api('/auth/redefinir-senha', { method: 'POST', body: JSON.stringify({ token: tokenRedefinicao, novaSenha }) });
+        msg.textContent = r.message;
+        setTimeout(() => irParaLogin(false), 1500);
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+};
+
+// ---------- painel do administrador ----------
+
+async function carregarPainelAdmin() {
+    try {
+        const p = await api('/admin/painel');
+        const cartoes = [
+            ['Usuários', p.usuarios.toLocaleString('pt-BR'), `+${p.novos7dias} em 7 dias · +${p.novos30dias} em 30`],
+            ['Ativos (7 dias)', p.ativos7dias, `${p.respostas30dias.toLocaleString('pt-BR')} respostas em 30 dias`],
+            ['Pro ativos', p.proAtivos, p.usuarios ? `${Math.round(p.proAtivos * 100 / p.usuarios)}% dos usuários` : ''],
+            ['Receita do mês', reais(p.receitaMesCentavos), `${p.vendasMes} vendas · ${p.reembolsosMes} reembolsos`],
+            ['Questões', p.questoes.toLocaleString('pt-BR'), `${p.ineditas} inéditas`],
+            ['Aceitam e-mail', p.aceitamMarketing, 'consentimento para promoções']
+        ];
+        $('#admin-numeros').innerHTML = cartoes.map(([t, v, d]) =>
+            `<div class="card numero-admin"><span class="rotulo">${t}</span><strong>${v}</strong><span class="sub">${d}</span></div>`).join('');
+
+        $('#admin-pagamentos').innerHTML = p.ultimosPagamentos.length ? `
+            <table class="tabela-pagamentos"><thead><tr><th>Data</th><th>E-mail</th><th>Plano</th><th>Valor</th><th>Situação</th></tr></thead>
+            <tbody>${p.ultimosPagamentos.map(x => `<tr><td>${dataBr(x.criadoEm)}</td><td>${escapar(x.email)}</td>
+                <td>${ROTULO_PLANO[x.plano] || x.plano}</td><td>${reais(x.valorCentavos)}</td>
+                <td>${ROTULO_PAGAMENTO[x.status] || x.status}</td></tr>`).join('')}</tbody></table>`
+            : '<div class="vazio">Nenhum pagamento ainda.</div>';
+
+        $('#admin-pendencias').innerHTML = `
+            <p><strong>${p.rascunhosPendentes}</strong> questões inéditas aguardando revisão</p>
+            <p><strong>${p.pedidosNovos}</strong> pedidos de conteúdo novos</p>`;
+    } catch (e) {
+        $('#admin-numeros').innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+    buscarUsuariosAdmin();
+}
+
+let buscaAdminTimer = null;
+$('#admin-busca').oninput = () => {
+    clearTimeout(buscaAdminTimer);
+    buscaAdminTimer = setTimeout(buscarUsuariosAdmin, 350);
+};
+
+async function buscarUsuariosAdmin() {
+    const alvo = $('#admin-usuarios');
+    try {
+        const lista = await api('/admin/usuarios?busca=' + encodeURIComponent($('#admin-busca').value.trim()));
+        alvo.innerHTML = lista.length ? '' : '<div class="vazio">Nenhum usuário encontrado.</div>';
+        lista.forEach(u => {
+            const pro = u.papel === 'ADMIN' || (u.proAte && new Date(u.proAte) > new Date());
+            const linha = criar(`
+                <div class="linha-usuario-admin">
+                    <div><strong>${escapar(u.nome)}</strong> ${u.papel === 'ADMIN' ? '<span class="selo-plano pro">ADMIN</span>' : ''}
+                        <p class="sub">${escapar(u.email)} · desde ${dataBr(u.criadoEm)} · ${u.respondidas} respostas ·
+                        ${pro ? (u.proAte ? 'Pro até ' + dataBr(u.proAte) : 'Pro') : 'Gratuito'}</p></div>
+                    <div class="acoes-solicitacao">
+                        <input type="number" min="1" max="730" value="30" title="Dias de Pro">
+                        <button class="secundario conceder">Dar dias de Pro</button>
+                        ${u.proAte ? '<button class="link remover">Remover Pro</button>' : ''}
+                    </div>
+                </div>`);
+            const ajustar = async dias => {
+                try {
+                    await api(`/admin/usuarios/${u.id}/pro`, { method: 'POST', body: JSON.stringify({ dias }) });
+                    buscarUsuariosAdmin();
+                } catch (e) { alert(e.message); }
+            };
+            linha.querySelector('.conceder').onclick = () => ajustar(Number(linha.querySelector('input').value));
+            linha.querySelector('.remover')?.addEventListener('click', () => {
+                if (confirm(`Remover o Pro de ${u.email}?`)) ajustar(0);
+            });
+            alvo.appendChild(linha);
+        });
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}

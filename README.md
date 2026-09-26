@@ -87,6 +87,12 @@ Sem cobrança recorrente: os dias se somam a cada compra. A liberação acontece
 ### 👤 Conta
 Foto, dados pessoais, força do perfil, resumo de uso, troca de senha, assinatura e histórico de pagamentos, e **zona de perigo**: zerar dados por categoria ou excluir a conta (os registros de pagamento ficam, sem vínculo, por obrigação fiscal).
 
+### 🔑 Esqueci minha senha
+Link de uso único por e-mail (Resend), válido por 30 minutos, com só o hash guardado no banco e resposta idêntica exista ou não a conta.
+
+### 🛡️ Painel do administrador
+Usuários, ativos, Pro, receita do mês, pagamentos recentes, pendências de revisão e pedidos, busca de usuários e concessão manual de dias de Pro.
+
 ### 🎨 Interface
 Menu superior com ícones, modo claro e noturno, layout responsivo — HTML, CSS e JavaScript puros, sem framework nem etapa de build.
 
@@ -105,7 +111,7 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V21| DB
+    FW[Flyway] -->|migrations V1…V23| DB
 ```
 
 ```
@@ -122,7 +128,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V21 (Flyway)
+├── db/migration    # V1 a V23 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
@@ -258,6 +264,7 @@ DB_PASSWORD  = senha
 JWT_SECRET   = string-aleatoria-com-no-minimo-64-caracteres
 ANTHROPIC_API_KEY = chave-da-api   # opcional: só a importação de provas usa
 STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / APP_URL_BASE   # opcionais: pagamentos do plano Pro
+RESEND_API_KEY / EMAIL_REMETENTE   # opcionais: e-mail de redefinição de senha
 ```
 
 2. Suba a aplicação:

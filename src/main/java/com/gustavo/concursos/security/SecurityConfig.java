@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         // Webhook do Stripe: publico, mas so aceita eventos com assinatura valida.
                         .requestMatchers(HttpMethod.POST, "/pagamentos/webhook").permitAll()
+                        // Pagina inicial publica: numeros reais e precos dos planos.
+                        .requestMatchers(HttpMethod.GET, "/publico/**", "/planos").permitAll()
 
                         // Responder questão é de TODO usuário logado. Precisa vir
                         // antes da regra de admin, senão o padrão /questoes/**
