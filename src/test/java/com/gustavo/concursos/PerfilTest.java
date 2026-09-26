@@ -73,7 +73,7 @@ class PerfilTest {
 
         // Login real, pelo endpoint publico, com a senha nova.
         mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + EMAIL + "\",\"senha\":\"nova-senha-123\"}"))
+                        .content("{\"email\":\"" + EMAIL + "\",\"senha\":\"Nova-senha-123!\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty());
     }
