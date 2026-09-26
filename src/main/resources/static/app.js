@@ -278,7 +278,7 @@ function abrir(tela) {
         b.classList.toggle('ativo', b.dataset.tela === tela));
     $('#tela-' + tela).classList.remove('hidden');
 
-    if (tela === 'questoes') carregarQuestoes();
+    if (tela === 'questoes') carregarQuestoes(0);
     if (tela === 'inicio') carregarInicio();
     if (tela === 'revisao') carregarRevisao();
     if (tela === 'erradas') carregarErradas();
@@ -466,13 +466,19 @@ document.querySelectorAll('.chip[data-grupo]').forEach(chip => {
     };
 });
 
-async function carregarQuestoes() {
+const POR_PAGINA = 20;
+
+// pagina começa em 0 (convenção do Spring). Ordenar por id deixa a paginação
+// estável: sem ORDER BY, o banco pode repetir ou pular questões entre páginas.
+async function carregarQuestoes(pagina = 0) {
     const alvo = $('#lista-questoes');
     const resumo = $('#resumo-questoes');
+    const paginacao = $('#paginacao-questoes');
     alvo.innerHTML = '<div class="vazio">Carregando…</div>';
     resumo.textContent = '';
+    paginacao.innerHTML = '';
 
-    const params = new URLSearchParams({ size: 20 });
+    const params = new URLSearchParams({ size: POR_PAGINA, page: pagina, sort: 'id' });
     const filtros = {
         palavraChave: $('#f-palavra').value.trim(),
         disciplinaId: $('#f-disciplina').value,
@@ -487,23 +493,52 @@ async function carregarQuestoes() {
     Object.entries(filtros).forEach(([chave, valor]) => { if (valor) params.set(chave, valor); });
 
     try {
-        const pagina = await api('/questoes?' + params);
+        const resultado = await api('/questoes?' + params);
         alvo.innerHTML = '';
-        if (!pagina.content.length) {
+        if (!resultado.content.length) {
             alvo.appendChild(criar('<div class="vazio">Nenhuma questão encontrada com esses filtros.</div>'));
             return;
         }
-        const total = pagina.totalElements;
-        resumo.textContent = total > pagina.content.length
-            ? `${total} questões encontradas — mostrando as ${pagina.content.length} primeiras.`
-            : `${total} ${total === 1 ? 'questão encontrada' : 'questões encontradas'}.`;
-        pagina.content.forEach(q => alvo.appendChild(cardQuestao(q, responderDireto)));
+        const total = resultado.totalElements;
+        const inicio = resultado.number * POR_PAGINA + 1;
+        const fim = inicio + resultado.content.length - 1;
+        resumo.textContent = total === 1
+            ? '1 questão encontrada.'
+            : `${total} questões encontradas${resultado.totalPages > 1 ? ` — exibindo ${inicio} a ${fim}` : ''}.`;
+        resultado.content.forEach(q => alvo.appendChild(cardQuestao(q, responderDireto)));
+        montarPaginacao(paginacao, resultado);
     } catch (e) {
         alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
 }
 
-$('#f-palavra').onkeydown = e => { if (e.key === 'Enter') carregarQuestoes(); };
+// Anterior / numeros / Proxima. Mostra ate 5 numeros em volta da pagina atual.
+function montarPaginacao(alvo, resultado) {
+    alvo.innerHTML = '';
+    const totalPaginas = resultado.totalPages;
+    if (totalPaginas <= 1) return;
+
+    const atual = resultado.number;
+    const botao = (rotulo, pagina, { ativo = false, desabilitado = false } = {}) => {
+        const b = criar(`<button class="pagina${ativo ? ' ativa' : ''}">${rotulo}</button>`);
+        b.disabled = desabilitado || ativo;
+        if (!b.disabled) b.onclick = () => {
+            carregarQuestoes(pagina);
+            $('#resumo-questoes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        return b;
+    };
+
+    alvo.appendChild(botao('‹ Anterior', atual - 1, { desabilitado: atual === 0 }));
+    const inicio = Math.max(0, Math.min(atual - 2, totalPaginas - 5));
+    const fim = Math.min(totalPaginas, inicio + 5);
+    for (let p = inicio; p < fim; p++) {
+        alvo.appendChild(botao(String(p + 1), p, { ativo: p === atual }));
+    }
+    alvo.appendChild(botao('Próxima ›', atual + 1, { desabilitado: atual >= totalPaginas - 1 }));
+}
+
+$('#f-palavra').onkeydown = e => { if (e.key === 'Enter') carregarQuestoes(0); };
 
 $('#btn-limpar-filtros').onclick = () => {
     $('#f-palavra').value = '';
@@ -519,7 +554,8 @@ $('#btn-gerar-simulado').onclick = () => {
     abrir('simulado');
 };
 
-$('#btn-filtrar').onclick = carregarQuestoes;
+// Arrow function: onclick passaria o evento como "pagina".
+$('#btn-filtrar').onclick = () => carregarQuestoes(0);
 
 async function carregarErradas() {
     const alvo = $('#lista-erradas');
