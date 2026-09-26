@@ -30,4 +30,19 @@ public class Usuario {
     // USUARIO (padrão) ou ADMIN. Só ADMIN cadastra e remove conteúdo.
     @Column(nullable = false, length = 20)
     private String papel = "USUARIO";
+
+    // Consentimento para e-mails promocionais (LGPD): desmarcado ate a pessoa aceitar.
+    @Column(name = "aceita_marketing", nullable = false)
+    private boolean aceitaMarketing;
+
+    @Column(name = "marketing_atualizado_em")
+    private java.time.LocalDateTime marketingAtualizadoEm;
+
+    @Column(name = "criado_em", nullable = false)
+    private java.time.LocalDateTime criadoEm = java.time.LocalDateTime.now();
+
+    // E-mail sempre minusculo e sem espacos: e a chave de login.
+    public static String normalizarEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase(java.util.Locale.ROOT);
+    }
 }

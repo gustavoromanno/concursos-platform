@@ -12,6 +12,8 @@ public class Questao {
 
     public static final String MULTIPLA_ESCOLHA = "MULTIPLA_ESCOLHA";
     public static final String CERTO_ERRADO = "CERTO_ERRADO";
+    public static final String ORIGEM_AUTORAL = "AUTORAL";
+    public static final String ORIGEM_IA = "IA";
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,6 +51,19 @@ public class Questao {
 
     @Column(columnDefinition = "TEXT")
     private String explicacao;
+
+    // Concurso e cargo de origem (questoes geradas a partir de provas antigas).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "concurso_id")
+    private Concurso concurso;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cargo_id")
+    private ConcursoCargo cargo;
+
+    // AUTORAL ou IA.
+    @Column(nullable = false, length = 20)
+    private String origem = ORIGEM_AUTORAL;
 
     @OneToMany(mappedBy = "questao", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem ASC")

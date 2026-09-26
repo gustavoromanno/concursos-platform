@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ConcursoCargoRepository extends JpaRepository<ConcursoCargo, Long> {
     List<ConcursoCargo> findByConcursoIdOrderByOrdemAsc(Long concursoId);
+
+    java.util.Optional<ConcursoCargo> findFirstByConcursoIdAndNomeIgnoreCase(Long concursoId, String nome);
 }

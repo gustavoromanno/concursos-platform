@@ -1474,3 +1474,47 @@ main:has(#tela-login:not(.hidden)) {
 #tela-conta input:disabled { background: var(--trilho); color: var(--suave); }
 .acoes-conta { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
 .acoes-conta .primario { width: auto; }
+
+/* Filtros: oito campos em duas linhas de quatro */
+.grade-filtros { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .grade-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.selo-inedita { background: var(--dourado); color: #12201D; }
+
+/* Importacao de provas */
+.grade-importacao { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 700px) { .grade-importacao { grid-template-columns: 1fr; } }
+.grade-importacao input[type=file] { padding: 8px; }
+.card-importacao .topo-importacao { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.card-importacao .topo-importacao .sub { margin: 2px 0 0; font-size: 12px; }
+.card-importacao .barra { margin: 12px 0 4px; }
+.numeros-importacao { margin: 10px 0 0; font-size: 12px; }
+.acoes-importacao { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.acoes-importacao .primario, .acoes-importacao .secundario { width: auto; padding: 8px 18px; font-size: 13px; }
+.acoes-revisao { display: flex; gap: 12px; align-items: center; }
+.acoes-revisao .primario { width: auto; padding: 8px 18px; font-size: 13px; }
+.status-erro { background: var(--superficie-erro); color: var(--erro); }
+.status-concluida { background: var(--superficie-ok); color: var(--verde-2); }
+.status-extraindo, .status-gerando, .status-aguardando { background: #FCF7EE; color: #9A7228; }
+[data-tema="escuro"] .status-extraindo, [data-tema="escuro"] .status-gerando,
+[data-tema="escuro"] .status-aguardando { background: #2E2718; color: var(--dourado); }
+
+.alternativas-rascunho { list-style: none; padding: 0; margin: 10px 0; }
+.alternativas-rascunho li { padding: 7px 10px; border-radius: var(--raio-p); margin-bottom: 4px; background: var(--fundo); font-size: 14px; }
+.alternativas-rascunho li.alt-correta { background: var(--superficie-ok); color: var(--verde-2); font-weight: 500; }
+.explicacao-rascunho { font-size: 14px; color: var(--suave); }
+.original-rascunho { font-size: 13px; color: var(--suave); margin-top: 6px; }
+.original-rascunho summary { cursor: pointer; }
+.linha-alternativa { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.linha-alternativa input[type=radio] { width: auto; margin: 0; }
+.linha-alternativa .ed-texto { margin: 0; }
+.card-rascunho textarea {
+    display: block; width: 100%; margin-top: 4px; padding: 9px 11px;
+    border: 1px solid var(--borda); border-radius: var(--raio-p);
+    background: var(--card); color: var(--texto); font-family: inherit; font-size: 14px; resize: vertical;
+}
+
+/* Cadastro e preferencias */
+.linha-checkbox { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--texto); cursor: pointer; margin: 6px 0 12px; }
+.linha-checkbox input { width: auto; margin: 2px 0 0; flex-shrink: 0; }
+.dica-senha { font-size: 12px; margin: -6px 0 10px; }
+.primario:disabled { opacity: .6; cursor: wait; }

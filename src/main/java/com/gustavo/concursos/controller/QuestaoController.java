@@ -64,6 +64,9 @@ public class QuestaoController {
             @RequestParam(required = false) String situacao,
             @RequestParam(required = false) Boolean comAnotacoes,
             @RequestParam(required = false) String dificuldade,
+            @RequestParam(required = false) Long concursoId,
+            @RequestParam(required = false) Long cargoId,
+            @RequestParam(required = false) String origem,
             Pageable pageable,
             Authentication authentication
     ) {
@@ -79,7 +82,10 @@ public class QuestaoController {
                 .and(QuestaoSpecification.comComentarios(comComentarios))
                 .and(filtroSituacao(situacao, authentication))
                 .and(filtroAnotacoes(comAnotacoes, authentication))
-                .and(filtroDificuldade(dificuldade));
+                .and(filtroDificuldade(dificuldade))
+                .and(QuestaoSpecification.concursoId(concursoId))
+                .and(QuestaoSpecification.cargoId(cargoId))
+                .and(QuestaoSpecification.origem(origem));
 
         return questaoRepository.findAll(filtro, pageable).map(QuestaoResponseDTO::fromEntity);
     }

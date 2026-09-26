@@ -7,4 +7,7 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
+
+    // Lista para e-mail promocional: SO quem deu consentimento.
+    java.util.List<Usuario> findByAceitaMarketingTrueOrderByCriadoEmAsc();
 }

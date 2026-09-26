@@ -69,6 +69,15 @@ O projeto cobre o ciclo completo de uma aplicação real: modelagem e migrations
 ### 🏛️ Concursos
 Catálogo com cronograma de etapas, cargos (vagas e salário), conteúdo programático e provas anteriores resolvíveis na numeração original.
 
+### 📥 Importação de provas antigas (admin)
+O administrador envia o PDF de uma prova e do gabarito de um concurso anterior. Em segundo plano, a API da Anthropic (Claude):
+
+1. identifica o concurso, a banca e o cargo e os cadastra (ex.: *Bacen 2013 · Analista*);
+2. extrai as questões e cruza com o gabarito — essas **originais ficam privadas**, só como referência;
+3. gera questões **inéditas** no mesmo assunto, formato e estilo da banca.
+
+As inéditas passam por um validador automático (formato, gabarito único, explicação, e bloqueio de texto parecido demais com a original) e depois por uma **fila de revisão**: só o que o admin aprova é publicado, ligado ao concurso e ao cargo de origem — e aparece nos filtros **Concurso**, **Cargo** e **Origem**.
+
 ### 👤 Conta
 Alteração de nome e de senha (com confirmação da senha atual).
 
@@ -90,13 +99,15 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V18| DB
+    FW[Flyway] -->|migrations V1…V19| DB
 ```
 
 ```
 src/main/java/com/gustavo/concursos
 ├── controller      # endpoints REST
 ├── service         # regras de negócio (SM-2, ofensiva, objetivo)
+├── importacao      # importação de provas, geração com IA e fila de revisão
+├── ia              # cliente da API da Anthropic
 ├── specification   # filtros dinâmicos de questões
 ├── repository      # Spring Data JPA + consultas nativas
 ├── entity          # modelo JPA
@@ -104,7 +115,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V18 (Flyway)
+├── db/migration    # V1 a V19 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
@@ -191,6 +202,8 @@ Os testes rodam contra **H2 em memória**, sem banco externo, e são executados 
 | `QuestaoFiltroTest` | Filtros novos montam consultas válidas e o JSON de paginação mantém o formato usado pela tela |
 | `AnotacaoTest` | Salvar, ler e apagar; filtro "minhas anotações"; anotação invisível para outros usuários |
 | `PerfilTest` | Troca de nome; troca de senha com login real usando a senha nova; senha atual errada não altera nada |
+| `ValidadorQuestaoGeradaTest` | Formato, gabarito único, Certo/Errado normalizado e bloqueio de cópia da original |
+| `ImportacaoTest` | Fluxo completo com IA simulada: extração, geração, originais nunca públicas, revisão e filtros |
 
 ---
 
@@ -204,6 +217,7 @@ Todas as rotas, exceto `/auth/**` e `/health`, exigem `Authorization: Bearer <to
 | Questões | `GET /questoes` (filtros + paginação) · `POST /questoes/{id}/responder` · `GET /questoes/erradas` |
 | Comunidade | `GET/POST /questoes/{id}/comentarios` · `GET /questoes/{id}/estatisticas` |
 | Anotações | `GET/PUT/DELETE /questoes/{id}/anotacao` · `GET /anotacoes/ids` |
+| Importação (admin) | `POST/GET /admin/importacoes` · `POST /admin/importacoes/{id}/reprocessar` · `GET /admin/importacoes/{id}/rascunhos` · `POST /admin/rascunhos/{id}/aprovar` |
 | Catálogo | `GET /disciplinas` · `GET /bancas` · `GET /orgaos` |
 | Simulado | `POST /simulados` · `POST /simulados/{id}/questoes/{questaoId}/responder` · `POST /simulados/{id}/finalizar` |
 | Revisão | `GET /revisoes/hoje` · `GET /revisoes/resumo` |
@@ -234,6 +248,7 @@ DB_URL       = jdbc:postgresql://host/banco?sslmode=require
 DB_USERNAME  = usuario
 DB_PASSWORD  = senha
 JWT_SECRET   = string-aleatoria-com-no-minimo-64-caracteres
+ANTHROPIC_API_KEY = chave-da-api   # opcional: só a importação de provas usa
 ```
 
 2. Suba a aplicação:

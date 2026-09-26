@@ -66,6 +66,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/concursos/**", "/videoaulas/**", "/cargos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/concursos/**").hasRole("ADMIN")
 
+                        // Importacao de provas e fila de revisao: so ADMIN.
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 // Sem token (ou token invalido) -> 401. Logado sem permissao -> 403 (padrao).
