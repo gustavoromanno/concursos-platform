@@ -35,6 +35,7 @@
     <button data-tela="cadernos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg><span>Cadernos</span></button>
     <button data-tela="marcadores"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><span>Marcadores</span></button>
     <button data-tela="videoaulas"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><span>Videoaulas</span></button>
+    <button data-tela="importacoes" class="so-admin hidden"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg><span>Importar provas</span></button>
   </nav>
   <div class="acoes-topo">
     <button id="btn-tema" class="btn-tema" title="Alternar modo claro/noturno" aria-label="Alternar tema"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
@@ -57,10 +58,17 @@
       <p class="sub">Banco de questões para estudo de concursos</p>
 
       <div id="campos-registro" class="hidden">
-        <label>Nome<input id="reg-nome" type="text" autocomplete="name"></label>
+        <label>Nome<input id="reg-nome" type="text" autocomplete="name" maxlength="150"></label>
       </div>
       <label>E-mail<input id="login-email" type="email" autocomplete="email"></label>
       <label>Senha<input id="login-senha" type="password" autocomplete="current-password"></label>
+      <div id="extras-registro" class="hidden">
+        <p class="sub dica-senha">A senha precisa ter pelo menos 6 caracteres.</p>
+        <label class="linha-checkbox">
+          <input id="reg-marketing" type="checkbox">
+          <span>Quero receber novidades, dicas de estudo e promoções por e-mail. Posso cancelar quando quiser em "Minha conta".</span>
+        </label>
+      </div>
 
       <button id="btn-entrar" class="primario">Entrar</button>
       <p class="sub">
@@ -98,6 +106,8 @@
         <label><span class="rotulo-oculto">Banca</span><select id="f-banca"><option value="">Banca</option></select></label>
         <label><span class="rotulo-oculto">Órgão</span><select id="f-orgao"><option value="">Órgão</option></select></label>
         <label><span class="rotulo-oculto">Ano</span><select id="f-ano"><option value="">Ano</option></select></label>
+        <label><span class="rotulo-oculto">Concurso</span><select id="f-concurso"><option value="">Concurso</option></select></label>
+        <label><span class="rotulo-oculto">Cargo</span><select id="f-cargo" disabled><option value="">Cargo</option></select></label>
       </div>
 
       <div class="grupos-filtros">
@@ -117,6 +127,11 @@
           <button type="button" class="chip" data-grupo="dificuldade" data-valor="MEDIA">Média</button>
           <button type="button" class="chip" data-grupo="dificuldade" data-valor="DIFICIL">Difícil</button>
           <button type="button" class="chip" data-grupo="dificuldade" data-valor="MUITO_DIFICIL">Muito difícil</button>
+        </fieldset>
+        <fieldset class="grupo-chips">
+          <legend>Origem <span class="dica-legenda" title="Inéditas: criadas por IA a partir de provas antigas e revisadas antes de publicar. Autorais: escritas diretamente para a plataforma.">ⓘ</span></legend>
+          <button type="button" class="chip" data-grupo="origem" data-valor="IA">Inéditas das provas</button>
+          <button type="button" class="chip" data-grupo="origem" data-valor="AUTORAL">Autorais</button>
         </fieldset>
         <fieldset class="grupo-chips">
           <legend>Minhas questões</legend>
@@ -272,6 +287,47 @@
   </section>
 
   <!-- DASHBOARD -->
+  <section id="tela-importacoes" class="hidden">
+    <div class="cabecalho-tela">
+      <span class="icone-tela"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg></span>
+      <div>
+        <h1>Importar provas</h1>
+        <p class="sub">Envie a prova e o gabarito de um concurso anterior. As questões originais ficam privadas,
+          como referência; o site recebe só as inéditas que você aprovar.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Nova importação</h2>
+      <div class="grade-importacao">
+        <label>PDF da prova<input id="imp-prova" type="file" accept="application/pdf,.pdf"></label>
+        <label>PDF do gabarito<input id="imp-gabarito" type="file" accept="application/pdf,.pdf"></label>
+        <label>Cargo <span class="sub">(opcional; ajuda quando o gabarito traz vários cargos)</span>
+          <input id="imp-cargo" maxlength="150" placeholder="Ex.: Analista - Área 1"></label>
+        <label>Inéditas por questão da prova
+          <select id="imp-ineditas"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+      </div>
+      <div class="acoes-conta">
+        <button id="btn-importar" class="primario">Enviar e processar</button>
+        <span id="msg-importar" class="sub"></span>
+      </div>
+    </div>
+
+    <div class="topo-secao"><h2>Importações</h2><button id="btn-atualizar-importacoes" class="link">Atualizar</button></div>
+    <div id="lista-importacoes"></div>
+
+    <div id="painel-revisao" class="hidden">
+      <div class="topo-secao">
+        <h2 id="titulo-revisao">Revisão</h2>
+        <div class="acoes-revisao">
+          <button id="btn-aprovar-todos" class="primario">Aprovar todas as pendentes</button>
+          <button id="btn-fechar-revisao" class="link">Fechar</button>
+        </div>
+      </div>
+      <div id="lista-rascunhos"></div>
+    </div>
+  </section>
+
   <section id="tela-conta" class="hidden">
     <div class="cabecalho-tela">
       <span class="icone-tela"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></span>
@@ -288,6 +344,24 @@
       <div class="acoes-conta">
         <button id="btn-salvar-nome" class="primario">Salvar nome</button>
         <span id="msg-nome" class="sub"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Comunicações</h2>
+      <label class="linha-checkbox">
+        <input id="conta-marketing" type="checkbox">
+        <span>Quero receber novidades, dicas de estudo e promoções por e-mail.</span>
+      </label>
+      <span id="msg-marketing" class="sub"></span>
+    </div>
+
+    <div class="card so-admin hidden">
+      <h2>Administração</h2>
+      <p class="sub">Lista de contatos para e-mail promocional — só pessoas que marcaram que aceitam receber.</p>
+      <div class="acoes-conta">
+        <button id="btn-exportar-contatos" class="secundario">Baixar lista (CSV)</button>
+        <span id="msg-exportar" class="sub"></span>
       </div>
     </div>
 

@@ -13,6 +13,7 @@ public record QuestaoResponseDTO(
         Integer ano,
         String assunto,
         String tipo,
+        String origem,
         List<AlternativaResponseDTO> alternativas
 ) {
     public static QuestaoResponseDTO fromEntity(Questao questao) {
@@ -25,6 +26,7 @@ public record QuestaoResponseDTO(
                 questao.getAno(),
                 questao.getAssunto(),
                 questao.getTipo(),
+                questao.getOrigem(),
                 questao.getAlternativas().stream()
                         .map(AlternativaResponseDTO::fromEntity)
                         .toList()

@@ -1,5 +1,9 @@
 package com.gustavo.concursos.controller;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.server.ResponseStatusException;
+import java.time.LocalDateTime;
+
 import com.gustavo.concursos.dto.LoginRequestDTO;
 import com.gustavo.concursos.dto.LoginResponseDTO;
 import com.gustavo.concursos.dto.RegistroRequestDTO;
@@ -37,15 +41,29 @@ public class AuthController {
 
     @PostMapping("/registrar")
     public ResponseEntity<Void> registrar(@Valid @RequestBody RegistroRequestDTO request) {
-        if (usuarioRepository.findByEmail(request.email()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        String email = Usuario.normalizarEmail(request.email());
+        if (usuarioRepository.findByEmail(email).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Já existe uma conta com este e-mail. Use \"Fazer login\".");
         }
 
         Usuario usuario = new Usuario();
-        usuario.setNome(request.nome());
-        usuario.setEmail(request.email());
+        usuario.setNome(request.nome().strip());
+        usuario.setEmail(email);
         usuario.setSenhaHash(passwordEncoder.encode(request.senha()));
-        usuarioRepository.save(usuario);
+        if (Boolean.TRUE.equals(request.aceitaMarketing())) {
+            usuario.setAceitaMarketing(true);
+            usuario.setMarketingAtualizadoEm(LocalDateTime.now());
+        }
+
+        try {
+            usuarioRepository.saveAndFlush(usuario);
+        } catch (DataIntegrityViolationException e) {
+            // Dois envios quase simultaneos do mesmo cadastro (duplo clique, conexao
+            // lenta): o segundo bate na restricao de e-mail unico do banco.
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Já existe uma conta com este e-mail. Use \"Fazer login\".");
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -53,11 +71,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         // Lanca excecao automaticamente (tratada pelo Spring como 401) se a senha estiver errada.
+        String email = Usuario.normalizarEmail(request.email());
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.senha())
+                new UsernamePasswordAuthenticationToken(email, request.senha())
         );
 
-        String token = jwtService.gerarToken(request.email());
+        String token = jwtService.gerarToken(email);
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 }

@@ -31,4 +31,6 @@ public interface AssuntoRepository extends JpaRepository<Assunto, Long> {
         ORDER BY a.nome ASC
         """)
     List<AssuntoPlano> listarTodosPlano();
+
+    java.util.Optional<Assunto> findFirstByDisciplinaIdAndNomeIgnoreCase(Long disciplinaId, String nome);
 }

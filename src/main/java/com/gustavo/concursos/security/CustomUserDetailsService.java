@@ -22,8 +22,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado: " + email));
+        // Tenta o e-mail padronizado (o normal) e, por compatibilidade, o exato:
+        // contas antigas que colidiam na padronizacao ficaram como estavam.
+        Usuario usuario = usuarioRepository.findByEmail(Usuario.normalizarEmail(email))
+                .or(() -> usuarioRepository.findByEmail(email))
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado"));
 
         // O Spring Security espera o prefixo "ROLE_" nas autoridades;
         // hasRole("ADMIN") procura por "ROLE_ADMIN".

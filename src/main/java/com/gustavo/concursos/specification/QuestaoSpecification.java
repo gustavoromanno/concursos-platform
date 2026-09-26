@@ -81,4 +81,21 @@ public class QuestaoSpecification {
         return (root, query, cb) ->
                 (ids == null || ids.isEmpty()) ? null : cb.not(root.get("id").in(ids));
     }
+
+    // Concurso e cargo de origem (questoes geradas a partir de provas antigas).
+    public static Specification<Questao> concursoId(Long concursoId) {
+        return (root, query, cb) ->
+                concursoId == null ? null : cb.equal(root.get("concurso").get("id"), concursoId);
+    }
+
+    public static Specification<Questao> cargoId(Long cargoId) {
+        return (root, query, cb) ->
+                cargoId == null ? null : cb.equal(root.get("cargo").get("id"), cargoId);
+    }
+
+    // AUTORAL ou IA.
+    public static Specification<Questao> origem(String origem) {
+        return (root, query, cb) ->
+                (origem == null || origem.isBlank()) ? null : cb.equal(root.get("origem"), origem);
+    }
 }

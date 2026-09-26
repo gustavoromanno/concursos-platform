@@ -28,7 +28,7 @@ public class PerfilController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public record PerfilDTO(Long id, String nome, String email) {}
+    public record PerfilDTO(Long id, String nome, String email, String papel, boolean aceitaMarketing) {}
 
     public record AlterarNomeDTO(@NotBlank @Size(max = 150) String nome) {}
 
@@ -71,8 +71,21 @@ public class PerfilController {
         return ResponseEntity.noContent().build();
     }
 
+    public record PreferenciaMarketingDTO(@jakarta.validation.constraints.NotNull Boolean aceita) {}
+
+    // PUT /perfil/marketing — a pessoa aceita ou deixa de aceitar e-mails promocionais.
+    @Transactional
+    @PutMapping("/perfil/marketing")
+    public PerfilDTO alterarMarketing(@Valid @RequestBody PreferenciaMarketingDTO request, Authentication authentication) {
+        Usuario u = usuarioLogado(authentication);
+        u.setAceitaMarketing(request.aceita());
+        u.setMarketingAtualizadoEm(java.time.LocalDateTime.now());
+        usuarioRepository.save(u);
+        return paraDTO(u);
+    }
+
     private PerfilDTO paraDTO(Usuario u) {
-        return new PerfilDTO(u.getId(), u.getNome(), u.getEmail());
+        return new PerfilDTO(u.getId(), u.getNome(), u.getEmail(), u.getPapel(), u.isAceitaMarketing());
     }
 
     private Usuario usuarioLogado(Authentication authentication) {

@@ -100,6 +100,16 @@ class PerfilTest {
     }
 
     @Test
+    @WithMockUser(username = EMAIL)
+    void aceitaEDepoisRecusaEmailsPromocionais() throws Exception {
+        mvc.perform(put("/perfil/marketing").contentType(MediaType.APPLICATION_JSON).content("{\"aceita\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.aceitaMarketing").value(true));
+        mvc.perform(put("/perfil/marketing").contentType(MediaType.APPLICATION_JSON).content("{\"aceita\":false}"))
+                .andExpect(jsonPath("$.aceitaMarketing").value(false));
+    }
+
+    @Test
     void semTokenRecebe401() throws Exception {
         mvc.perform(put("/perfil").contentType(MediaType.APPLICATION_JSON).content("{\"nome\":\"x\"}"))
                 .andExpect(status().isUnauthorized());

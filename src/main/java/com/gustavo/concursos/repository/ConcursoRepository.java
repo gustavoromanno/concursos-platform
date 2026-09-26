@@ -8,4 +8,6 @@ import java.util.List;
 public interface ConcursoRepository extends JpaRepository<Concurso, Long> {
     List<Concurso> findAllByOrderByAnoDescNomeAsc();
     List<Concurso> findBySituacaoOrderByAnoDescNomeAsc(String situacao);
+
+    java.util.Optional<Concurso> findFirstByNomeIgnoreCaseAndAno(String nome, Integer ano);
 }

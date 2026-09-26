@@ -9,6 +9,9 @@ let cronometro = null;
 let disciplinas = [];   // catalogo carregado uma vez apos o login
 let marcados = new Set();  // ids das questoes marcadas pelo usuario
 let anotadas = new Set();  // ids das questoes com anotacao do usuario
+let concursosFiltro = [];  // concursos (com cargos) do filtro de questoes
+let atualizacaoImportacoes = null;  // timer de atualizacao da tela de importacao
+let importacaoEmRevisao = null;
 let cadernos = [];         // cadernos do usuario, para o menu de salvar
 let perfilUsuario = null;  // nome e email de quem esta logado
 
@@ -48,10 +51,11 @@ aplicarTema(temaAtual());
 // ---------- infraestrutura ----------
 
 async function api(caminho, opcoes = {}) {
+    const ehFormulario = opcoes.body instanceof FormData;
     const resp = await fetch(API + caminho, {
         ...opcoes,
         headers: {
-            'Content-Type': 'application/json',
+            ...(ehFormulario ? {} : { 'Content-Type': 'application/json' }),
             ...(token ? { Authorization: 'Bearer ' + token } : {}),
             ...(opcoes.headers || {})
         }
@@ -100,6 +104,8 @@ const escapar = txt => String(txt ?? '').replace(/[&<>"]/g, c =>
 $('#btn-alternar').onclick = () => {
     modoRegistro = !modoRegistro;
     $('#campos-registro').classList.toggle('hidden', !modoRegistro);
+    $('#extras-registro').classList.toggle('hidden', !modoRegistro);
+    $('#login-senha').autocomplete = modoRegistro ? 'new-password' : 'current-password';
     $('#btn-entrar').textContent = modoRegistro ? 'Criar conta' : 'Entrar';
     $('#alternar-texto').textContent = modoRegistro ? 'Já tem conta?' : 'Não tem conta?';
     $('#btn-alternar').textContent = modoRegistro ? 'Fazer login' : 'Criar conta';
@@ -107,17 +113,26 @@ $('#btn-alternar').onclick = () => {
 };
 
 $('#btn-entrar').onclick = async () => {
-    const email = $('#login-email').value.trim();
+    const botao = $('#btn-entrar');
+    if (botao.disabled) return;   // evita cadastro duplicado por duplo clique
+
+    const email = $('#login-email').value.trim().toLowerCase();
     const senha = $('#login-senha').value;
-    $('#login-erro').textContent = '';
+    const erro = $('#login-erro');
+    erro.textContent = '';
+
+    const textoOriginal = botao.textContent;
+    botao.disabled = true;
+    botao.textContent = modoRegistro ? 'Criando conta…' : 'Entrando…';
 
     try {
         if (modoRegistro) {
             const nome = $('#reg-nome').value.trim();
             if (!nome) throw new Error('Informe seu nome');
+            if (senha.length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres');
             await api('/auth/registrar', {
                 method: 'POST',
-                body: JSON.stringify({ nome, email, senha })
+                body: JSON.stringify({ nome, email, senha, aceitaMarketing: $('#reg-marketing').checked })
             });
         }
 
@@ -130,9 +145,17 @@ $('#btn-entrar').onclick = async () => {
         localStorage.setItem('token', token);
         await entrarNoApp();
     } catch (e) {
-        $('#login-erro').textContent = e.message;
+        erro.textContent = e.message;
+    } finally {
+        botao.disabled = false;
+        botao.textContent = textoOriginal;
     }
 };
+
+// Enter no formulario de login/cadastro envia.
+['#login-email', '#login-senha', '#reg-nome'].forEach(sel => {
+    $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-entrar').click(); });
+});
 
 function sair() {
     token = null;
@@ -202,6 +225,18 @@ async function carregarCatalogo() {
         bancas.forEach(b => selBancaSimulado.appendChild(
             criar(`<option value="${b.id}">${escapar(b.nome)}</option>`)));
     } catch { /* filtro opcional */ }
+    // Concursos e cargos para o filtro (ex.: "Bacen 2013" > "Analista").
+    try {
+        concursosFiltro = await api('/concursos');
+        const selConcurso = $('#f-concurso');
+        selConcurso.innerHTML = '<option value="">Concurso</option>';
+        concursosFiltro.forEach(c => selConcurso.appendChild(
+            criar(`<option value="${c.id}">${escapar(c.nome)}</option>`)));
+    } catch {
+        concursosFiltro = [];
+    }
+    atualizarCargosFiltro();
+
     const selAno = $('#f-ano');
     selAno.innerHTML = '<option value="">Ano</option>';
     for (let ano = new Date().getFullYear(); ano >= 2010; ano--) {
@@ -221,6 +256,8 @@ async function carregarEstadoPessoal() {
     try {
         perfilUsuario = await api('/perfil');
         atualizarUsuarioTopo(perfilUsuario.nome);
+        document.querySelectorAll('.so-admin').forEach(el =>
+            el.classList.toggle('hidden', perfilUsuario.papel !== 'ADMIN'));
     } catch {
         perfilUsuario = null;
     }
@@ -269,6 +306,19 @@ function atualizarAssuntosFiltro() {
 }
 
 $('#f-disciplina').onchange = atualizarAssuntosFiltro;
+
+
+// "Cargo" so habilita depois de escolher o concurso, com os cargos dele.
+function atualizarCargosFiltro() {
+    const sel = $('#f-cargo');
+    const concurso = concursosFiltro.find(c => String(c.id) === $('#f-concurso').value);
+    sel.innerHTML = '<option value="">Cargo</option>';
+    (concurso?.cargos || []).forEach(c => sel.appendChild(
+        criar(`<option value="${c.id}">${escapar(c.nome)}</option>`)));
+    sel.disabled = !concurso || !(concurso.cargos || []).length;
+}
+
+$('#f-concurso').onchange = atualizarCargosFiltro;
 $('#v-disciplina').onchange = () => atualizarAssuntos('#v-disciplina', '#v-assunto', 'Geral da disciplina');
 
 // ---------- navegacao ----------
@@ -294,6 +344,7 @@ function abrir(tela) {
     if (tela === 'videoaulas') carregarVideoaulas();
     if (tela === 'dashboard') carregarDashboard();
     if (tela === 'conta') carregarConta();
+    if (tela === 'importacoes') carregarImportacoes();
 }
 
 // ---------- minha conta ----------
@@ -308,6 +359,8 @@ function atualizarUsuarioTopo(nome) {
 }
 
 function carregarConta() {
+    $('#conta-marketing').checked = !!perfilUsuario?.aceitaMarketing;
+    $('#msg-marketing').textContent = '';
     $('#conta-nome').value = perfilUsuario?.nome || '';
     $('#conta-email').value = perfilUsuario?.email || '';
     ['#msg-nome', '#msg-senha'].forEach(sel => { $(sel).textContent = ''; });
@@ -327,6 +380,41 @@ $('#btn-salvar-nome').onclick = async () => {
         perfilUsuario = await api('/perfil', { method: 'PUT', body: JSON.stringify({ nome }) });
         atualizarUsuarioTopo(perfilUsuario.nome);
         msg.textContent = 'Nome atualizado.';
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+};
+
+$('#conta-marketing').onchange = async () => {
+    const caixa = $('#conta-marketing');
+    const msg = $('#msg-marketing');
+    try {
+        perfilUsuario = await api('/perfil/marketing', {
+            method: 'PUT', body: JSON.stringify({ aceita: caixa.checked })
+        });
+        msg.textContent = caixa.checked ? 'Você vai receber nossas novidades.' : 'Você não vai mais receber e-mails promocionais.';
+    } catch (e) {
+        caixa.checked = !caixa.checked;
+        msg.textContent = e.message;
+    }
+};
+
+// Baixa o CSV com o token (um link simples nao enviaria a autenticacao).
+$('#btn-exportar-contatos').onclick = async () => {
+    const msg = $('#msg-exportar');
+    msg.textContent = 'Gerando…';
+    try {
+        const resp = await fetch(API + '/admin/usuarios/contatos-marketing.csv', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!resp.ok) throw new Error(resp.status === 403 ? 'Você não tem permissão para esta ação.' : 'Não foi possível gerar a lista.');
+        const url = URL.createObjectURL(await resp.blob());
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'contatos-marketing.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+        msg.textContent = '';
     } catch (e) {
         msg.textContent = e.message;
     }
@@ -359,7 +447,7 @@ function cardQuestao(questao, aoResponder, opcoes = {}) {
     const card = criar(`
         <div class="card">
             <div class="cabecalho-questao">
-                <div class="meta">${escapar(questao.disciplina)} · ${escapar(questao.banca)}${questao.orgao ? ' · ' + escapar(questao.orgao) : ''} · ${questao.ano}${questao.assunto ? ' · ' + escapar(questao.assunto) : ''}${questao.tipo === 'CERTO_ERRADO' ? ' <span class="selo-tipo">C/E</span>' : ''}</div>
+                <div class="meta">${escapar(questao.disciplina)} · ${escapar(questao.banca)}${questao.orgao ? ' · ' + escapar(questao.orgao) : ''} · ${questao.ano}${questao.assunto ? ' · ' + escapar(questao.assunto) : ''}${questao.tipo === 'CERTO_ERRADO' ? ' <span class="selo-tipo">C/E</span>' : ''}${questao.origem === 'IA' ? ' <span class="selo-tipo selo-inedita" title="Criada por IA a partir de uma prova antiga e revisada antes de publicar">INÉDITA</span>' : ''}</div>
                 <div class="acoes-questao"></div>
             </div>
             <div class="enunciado">${escapar(questao.enunciado)}</div>
@@ -616,6 +704,9 @@ async function carregarQuestoes(pagina = 0) {
         bancaId: $('#f-banca').value,
         orgaoId: $('#f-orgao').value,
         ano: $('#f-ano').value,
+        concursoId: $('#f-concurso').value,
+        cargoId: $('#f-cargo').value,
+        origem: chipAtivo('origem'),
         tipo: chipAtivo('tipo'),
         comComentarios: chipAtivo('comentarios'),
         comAnotacoes: chipAtivo('anotacoes'),
@@ -678,8 +769,9 @@ $('#f-palavra').onkeydown = e => { if (e.key === 'Enter') carregarQuestoes(0); }
 
 $('#btn-limpar-filtros').onclick = () => {
     $('#f-palavra').value = '';
-    ['#f-disciplina', '#f-banca', '#f-orgao', '#f-ano'].forEach(sel => { $(sel).value = ''; });
+    ['#f-disciplina', '#f-banca', '#f-orgao', '#f-ano', '#f-concurso'].forEach(sel => { $(sel).value = ''; });
     atualizarAssuntosFiltro();
+    atualizarCargosFiltro();
     document.querySelectorAll('.chip.ativo').forEach(c => c.classList.remove('ativo'));
     carregarQuestoes();
 };
@@ -2113,3 +2205,246 @@ if (token) {
 } else {
     $('#tela-login').classList.remove('hidden');
 }
+
+
+// ---------- importacao de provas (admin) ----------
+
+const ROTULO_STATUS_IMPORTACAO = {
+    AGUARDANDO: 'Na fila', EXTRAINDO: 'Lendo a prova', GERANDO: 'Gerando inéditas',
+    CONCLUIDA: 'Concluída', ERRO: 'Erro'
+};
+
+async function carregarImportacoes() {
+    const alvo = $('#lista-importacoes');
+    try {
+        const lista = await api('/admin/importacoes');
+        alvo.innerHTML = '';
+        if (!lista.length) {
+            alvo.appendChild(criar('<div class="vazio">Nenhuma prova importada ainda.</div>'));
+        }
+        lista.forEach(imp => alvo.appendChild(cardImportacao(imp)));
+
+        // Enquanto houver importacao rodando, atualiza sozinho a cada 5 segundos.
+        clearTimeout(atualizacaoImportacoes);
+        const rodando = lista.some(i => ['AGUARDANDO', 'EXTRAINDO', 'GERANDO'].includes(i.status));
+        if (rodando && !$('#tela-importacoes').classList.contains('hidden')) {
+            atualizacaoImportacoes = setTimeout(carregarImportacoes, 5000);
+        }
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+function cardImportacao(imp) {
+    const rodando = ['AGUARDANDO', 'EXTRAINDO', 'GERANDO'].includes(imp.status);
+    const titulo = imp.concurso
+        ? `${escapar(imp.concurso)}${imp.cargo ? ' · ' + escapar(imp.cargo) : ''}`
+        : escapar(imp.arquivoProva || 'Prova');
+    const card = criar(`
+        <div class="card card-importacao">
+            <div class="topo-importacao">
+                <div>
+                    <strong>${titulo}</strong>
+                    <p class="sub">${escapar(imp.arquivoProva || '')} · ${new Date(imp.criadoEm).toLocaleString('pt-BR')}</p>
+                </div>
+                <span class="etiqueta-situacao status-${imp.status.toLowerCase()}">${ROTULO_STATUS_IMPORTACAO[imp.status] || imp.status}</span>
+            </div>
+            ${rodando ? `<div class="barra"><div style="width:${imp.progresso}%"></div></div>
+                         <p class="sub">${escapar(imp.etapa || '')}</p>` : ''}
+            ${imp.status === 'ERRO' ? `<p class="erro">${escapar(imp.mensagemErro || 'Falhou')}</p>` : ''}
+            <div class="numeros-importacao sub">
+                ${imp.questoesLidas} questões lidas · ${imp.pendentes} pendentes · ${imp.aprovadas} aprovadas · ${imp.descartadas} descartadas
+                · ${(imp.tokensEntrada + imp.tokensSaida).toLocaleString('pt-BR')} tokens
+            </div>
+            <div class="acoes-importacao"></div>
+        </div>
+    `);
+    const acoes = card.querySelector('.acoes-importacao');
+    if (imp.pendentes > 0) {
+        const revisar = criar(`<button class="primario">Revisar ${imp.pendentes} pendente${imp.pendentes > 1 ? 's' : ''}</button>`);
+        revisar.onclick = () => abrirRevisao(imp);
+        acoes.appendChild(revisar);
+    }
+    if (imp.status === 'ERRO') {
+        const reprocessar = criar('<button class="secundario">Reprocessar</button>');
+        reprocessar.onclick = async () => {
+            try { await api(`/admin/importacoes/${imp.id}/reprocessar`, { method: 'POST' }); }
+            catch (e) { alert(e.message); }
+            carregarImportacoes();
+        };
+        acoes.appendChild(reprocessar);
+    }
+    if (!rodando) {
+        const excluir = criar('<button class="link">Excluir importação</button>');
+        excluir.onclick = async () => {
+            if (!confirm('Excluir a importação? As questões já aprovadas continuam no site.')) return;
+            try { await api(`/admin/importacoes/${imp.id}`, { method: 'DELETE' }); }
+            catch (e) { alert(e.message); }
+            carregarImportacoes();
+        };
+        acoes.appendChild(excluir);
+    }
+    return card;
+}
+
+$('#btn-importar').onclick = async () => {
+    const msg = $('#msg-importar');
+    const prova = $('#imp-prova').files[0];
+    const gabarito = $('#imp-gabarito').files[0];
+    if (!prova || !gabarito) {
+        msg.textContent = 'Escolha o PDF da prova e o do gabarito.';
+        return;
+    }
+    const dados = new FormData();
+    dados.append('prova', prova);
+    dados.append('gabarito', gabarito);
+    dados.append('cargo', $('#imp-cargo').value.trim());
+    dados.append('ineditas', $('#imp-ineditas').value);
+
+    const botao = $('#btn-importar');
+    botao.disabled = true;
+    msg.textContent = 'Enviando…';
+    try {
+        await api('/admin/importacoes', { method: 'POST', body: dados });
+        msg.textContent = 'Enviada. O processamento leva alguns minutos; acompanhe abaixo.';
+        ['#imp-prova', '#imp-gabarito', '#imp-cargo'].forEach(sel => { $(sel).value = ''; });
+        carregarImportacoes();
+    } catch (e) {
+        msg.textContent = e.message;
+    } finally {
+        botao.disabled = false;
+    }
+};
+
+$('#btn-atualizar-importacoes').onclick = carregarImportacoes;
+
+// ---------- fila de revisao ----------
+
+async function abrirRevisao(imp) {
+    importacaoEmRevisao = imp;
+    $('#painel-revisao').classList.remove('hidden');
+    $('#titulo-revisao').textContent = `Revisão · ${imp.concurso || ''}${imp.cargo ? ' · ' + imp.cargo : ''}`;
+    await carregarRascunhos();
+    $('#painel-revisao').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function carregarRascunhos() {
+    const alvo = $('#lista-rascunhos');
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+    try {
+        const rascunhos = await api(`/admin/importacoes/${importacaoEmRevisao.id}/rascunhos`);
+        alvo.innerHTML = '';
+        if (!rascunhos.length) {
+            alvo.appendChild(criar('<div class="vazio">Nada pendente nesta importação.</div>'));
+        }
+        rascunhos.forEach(r => alvo.appendChild(cardRascunho(r)));
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+function cardRascunho(r) {
+    const letras = 'ABCDE';
+    const alternativas = r.alternativas.map((a, i) => `
+        <li class="${a.correta ? 'alt-correta' : ''}">${r.tipo === 'CERTO_ERRADO' ? '' : letras[i] + ') '}${escapar(a.texto)}${a.correta ? ' ✓' : ''}</li>`).join('');
+    const card = criar(`
+        <div class="card card-rascunho">
+            <div class="meta">${escapar(r.disciplina)}${r.assunto ? ' · ' + escapar(r.assunto) : ''}
+                ${r.tipo === 'CERTO_ERRADO' ? ' <span class="selo-tipo">C/E</span>' : ''}
+                ${r.baseNumero ? ` · inspirada na questão ${r.baseNumero} da prova` : ''}</div>
+            <div class="enunciado">${escapar(r.enunciado)}</div>
+            <ul class="alternativas-rascunho">${alternativas}</ul>
+            <p class="explicacao-rascunho"><strong>Explicação:</strong> ${escapar(r.explicacao || '')}</p>
+            ${r.baseEnunciado ? `<details class="original-rascunho"><summary>Ver a questão original (privada)</summary>
+                <p>${escapar(r.baseEnunciado)}</p></details>` : ''}
+            <div class="acoes-importacao">
+                <button class="primario aprovar">Aprovar</button>
+                <button class="secundario editar">Editar</button>
+                <button class="link descartar">Descartar</button>
+                <span class="sub status-rascunho"></span>
+            </div>
+        </div>
+    `);
+    const status = card.querySelector('.status-rascunho');
+    card.querySelector('.aprovar').onclick = async () => {
+        try {
+            await api(`/admin/rascunhos/${r.id}/aprovar`, { method: 'POST' });
+            card.remove();
+        } catch (e) { status.textContent = e.message; }
+    };
+    card.querySelector('.descartar').onclick = async () => {
+        try {
+            await api(`/admin/rascunhos/${r.id}/descartar`, { method: 'POST' });
+            card.remove();
+        } catch (e) { status.textContent = e.message; }
+    };
+    card.querySelector('.editar').onclick = () => card.replaceWith(editorRascunho(r));
+    return card;
+}
+
+function editorRascunho(r) {
+    const editor = criar(`
+        <div class="card card-rascunho">
+            <label>Enunciado<textarea class="ed-enunciado" rows="4"></textarea></label>
+            <div class="ed-alternativas"></div>
+            <label>Explicação<textarea class="ed-explicacao" rows="3"></textarea></label>
+            <div class="acoes-importacao">
+                <button class="primario salvar">Salvar</button>
+                <button class="link cancelar">Cancelar</button>
+                <span class="sub status-rascunho"></span>
+            </div>
+        </div>
+    `);
+    editor.querySelector('.ed-enunciado').value = r.enunciado;
+    editor.querySelector('.ed-explicacao').value = r.explicacao || '';
+    const caixa = editor.querySelector('.ed-alternativas');
+    r.alternativas.forEach((a, i) => {
+        const linha = criar(`
+            <div class="linha-alternativa">
+                <input type="radio" name="correta-${r.id}" ${a.correta ? 'checked' : ''} title="Marcar como correta">
+                <input class="ed-texto" ${r.tipo === 'CERTO_ERRADO' ? 'disabled' : ''}>
+            </div>`);
+        linha.querySelector('.ed-texto').value = a.texto;
+        caixa.appendChild(linha);
+    });
+
+    editor.querySelector('.cancelar').onclick = () => editor.replaceWith(cardRascunho(r));
+    editor.querySelector('.salvar').onclick = async () => {
+        const linhas = [...caixa.querySelectorAll('.linha-alternativa')];
+        const corpo = {
+            tipo: r.tipo, disciplina: r.disciplina, assunto: r.assunto,
+            enunciado: editor.querySelector('.ed-enunciado').value,
+            explicacao: editor.querySelector('.ed-explicacao').value,
+            alternativas: linhas.map(l => ({
+                texto: l.querySelector('.ed-texto').value,
+                correta: l.querySelector('input[type=radio]').checked
+            }))
+        };
+        try {
+            const atualizado = await api(`/admin/rascunhos/${r.id}`, { method: 'PUT', body: JSON.stringify(corpo) });
+            editor.replaceWith(cardRascunho(atualizado));
+        } catch (e) {
+            editor.querySelector('.status-rascunho').textContent = e.message;
+        }
+    };
+    return editor;
+}
+
+$('#btn-aprovar-todos').onclick = async () => {
+    if (!importacaoEmRevisao) return;
+    if (!confirm('Publicar todas as questões pendentes desta importação?')) return;
+    try {
+        const r = await api(`/admin/importacoes/${importacaoEmRevisao.id}/aprovar-todos`, { method: 'POST' });
+        alert(`${r.aprovadas} questão(ões) publicada(s).`);
+        await carregarRascunhos();
+        carregarImportacoes();
+    } catch (e) {
+        alert(e.message);
+    }
+};
+
+$('#btn-fechar-revisao').onclick = () => {
+    $('#painel-revisao').classList.add('hidden');
+    importacaoEmRevisao = null;
+    carregarImportacoes();
+};
