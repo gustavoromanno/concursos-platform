@@ -27,6 +27,7 @@ DISCIPLINAS_POR_LOTE = {
     "2": ["Direito Constitucional", "Noções de Informática"],
     "3": [],
     "4": ["Conhecimentos Bancários", "Matemática Financeira"],
+    "5": ["Ética no Serviço Público"],
 }
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
@@ -34,6 +35,7 @@ CARGO_EXEMPLO = "Analista Administrativo"
 
 CESPE, FGV = "CESPE/CEBRASPE", "FGV"
 BANC, MFIN = "Conhecimentos Bancários", "Matemática Financeira"
+ETICA = "Ética no Serviço Público"
 PORT, DADM, DCON, INFO, RLM = (
     "Língua Portuguesa", "Direito Administrativo", "Direito Constitucional",
     "Noções de Informática", "Raciocínio Lógico",
@@ -535,7 +537,93 @@ LOTE_4 = [
 ]
 
 
-LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4}
+LOTE_5 = [
+    # ------------------------------------------------------------------
+    # Etica no Servico Publico (Decreto 1.171/1994 e Decreto 6.029/2007)
+    # ------------------------------------------------------------------
+    me(ETICA, "Código de Ética (Decreto 1.171/1994)", CESPE, 2024,
+       "Segundo o Código de Ética Profissional do Servidor Público Civil do Poder Executivo Federal, a pena aplicável ao servidor pela Comissão de Ética é a de",
+       ["censura.", "advertência.", "suspensão.", "demissão.", "multa."],
+       "Decreto 1.171/1994, Capítulo II, XXII: a pena aplicável pela Comissão de Ética é a censura, fundamentada no parecer assinado por todos os integrantes, com ciência do faltoso. Advertência, suspensão e demissão são penas disciplinares da Lei 8.112/1990, aplicadas em outro processo."),
+    me(ETICA, "Código de Ética (Decreto 1.171/1994)", FGV, 2023,
+       "Para fins de apuração do comprometimento ético, o Código de Ética do servidor do Executivo federal considera servidor público",
+       ["todo aquele que, por força de lei, contrato ou qualquer ato jurídico, preste serviços de natureza permanente, temporária ou excepcional, ainda que sem retribuição financeira.",
+        "apenas o ocupante de cargo de provimento efetivo.",
+        "apenas o servidor estável, após o estágio probatório.",
+        "somente quem recebe remuneração dos cofres públicos.",
+        "apenas o ocupante de cargo em comissão ou função de confiança."],
+       "Decreto 1.171/1994, XXIV: o conceito é amplo e alcança quem presta serviço ao Estado, ainda que transitoriamente e sem retribuição financeira, desde que ligado a órgão ou entidade pública."),
+    ce(ETICA, "Código de Ética (Decreto 1.171/1994)", CESPE, 2025,
+       "Salvo nos casos de segurança nacional, investigações policiais ou interesse superior do Estado, a publicidade de qualquer ato administrativo constitui requisito de eficácia e moralidade, e sua omissão configura comprometimento ético contra o bem comum.",
+       True,
+       "É a regra deontológica VII do Decreto 1.171/1994. As exceções dependem de processo previamente declarado sigiloso, nos termos da lei."),
+    ce(ETICA, "Código de Ética (Decreto 1.171/1994)", CESPE, 2024,
+       "Deixar o cidadão à espera de solução que compete ao seu setor, permitindo a formação de longas filas, é atitude contra a ética e causa grave dano moral aos usuários dos serviços públicos.",
+       True,
+       "Regra deontológica X: além de atitude antiética e ato de desumanidade, o atraso injustificado é principalmente grave dano moral aos usuários."),
+    ce(ETICA, "Código de Ética (Decreto 1.171/1994)", CESPE, 2023,
+       "O servidor pode omitir a verdade quando ela for contrária aos interesses da própria Administração Pública.",
+       False,
+       "Regra deontológica VIII: o servidor não pode omitir nem falsear a verdade, ainda que contrária aos interesses da própria pessoa interessada ou da Administração."),
+    ce(ETICA, "Código de Ética (Decreto 1.171/1994)", CESPE, 2025,
+       "É vedado ao servidor público usar do cargo ou função, facilidades, amizades, tempo, posição e influências para obter qualquer favorecimento, para si ou para outrem.",
+       True,
+       "Está entre as vedações do Capítulo I, Seção III, XV, alínea a, do Decreto 1.171/1994."),
+    ce(ETICA, "Comissões de Ética", CESPE, 2024,
+       "A pena de censura aplicada pela Comissão de Ética deve constar de parecer fundamentado, assinado por todos os seus integrantes, com ciência do faltoso.",
+       True,
+       "Decreto 1.171/1994, XXII. A censura é a única penalidade do Código de Ética."),
+    ce(ETICA, "Comissões de Ética", CESPE, 2023,
+       "A Comissão de Ética pode aplicar ao servidor a pena de demissão quando a falta ética for grave.",
+       False,
+       "A Comissão de Ética só aplica censura. A demissão é penalidade disciplinar da Lei 8.112/1990, aplicada em processo administrativo disciplinar."),
+
+    # ------------------------------------------------------------------
+    # Lingua Portuguesa
+    # ------------------------------------------------------------------
+    ce(PORT, "Crase", CESPE, 2024,
+       "Na frase \"Fui à Curitiba para a prova\", o uso do acento grave está de acordo com a norma-padrão.",
+       False,
+       "Curitiba não admite artigo (\"venho de Curitiba\", e não \"da Curitiba\"), então não há crase: \"Fui a Curitiba\". Compare com \"Fui à Bahia\" (\"venho da Bahia\")."),
+    ce(PORT, "Concordância verbal", CESPE, 2025,
+       "A frase \"Fazem dez anos que ele estuda para concursos\" está correta, pois o verbo concorda com \"dez anos\".",
+       False,
+       "O verbo \"fazer\" indicando tempo decorrido é impessoal e fica no singular: \"Faz dez anos\"."),
+    ce(PORT, "Regência verbal", CESPE, 2023,
+       "No sentido de acarretar, o verbo \"implicar\" é transitivo direto, como em \"A mudança implica novos custos\".",
+       True,
+       "Nesse sentido, a norma-padrão pede objeto direto; a construção \"implica em\" é considerada desvio."),
+    ce(PORT, "Ortografia", CESPE, 2024,
+       "\"A fim de\" indica finalidade, enquanto \"afim\" significa semelhante ou que tem afinidade.",
+       True,
+       "Ex.: \"Estudou a fim de passar\" (finalidade); \"disciplinas afins\" (semelhantes)."),
+    ce(PORT, "Semântica", CESPE, 2025,
+       "Em \"Embora estivesse cansado, continuou estudando\", a conjunção \"embora\" introduz ideia de concessão.",
+       True,
+       "Concessão é um fato que poderia impedir o outro, mas não impede. Outras conjunções concessivas: ainda que, mesmo que, conquanto."),
+    me(PORT, "Pontuação", FGV, 2024,
+       "Assinale a frase corretamente pontuada.",
+       ["Os candidatos aprovados serão convocados em março.", "Os candidatos aprovados, serão convocados em março.",
+        "Os candidatos, aprovados serão convocados em março.", "Os candidatos aprovados serão, convocados em março.",
+        "Os candidatos aprovados serão convocados, em março."],
+       "Não se separa por vírgula o sujeito (\"os candidatos aprovados\") do verbo, nem o verbo de seus complementos. A última opção separa, sem motivo, uma circunstância de tempo breve e no fim da oração."),
+    me(PORT, "Ortografia", CESPE, 2023,
+       "Assinale a frase em que o termo destacado está empregado corretamente.",
+       ["Ele se comportou MAL durante a entrevista.", "Ele é um MAL candidato.", "Ele falou MAU da banca examinadora.",
+        "Há MAL entendidos no edital.", "Ele tem um MAU hábito de chegar MAU humorado."],
+       "\"Mal\" é advérbio (oposto de bem): comportou-se mal, falou mal. \"Mau\" é adjetivo (oposto de bom): mau candidato, mau hábito. \"Mal-entendidos\" tem hífen e \"mal-humorado\" também."),
+    me(PORT, "Ortografia", FGV, 2025,
+       "Assinale a frase em que \"há\" e \"a\" estão empregados corretamente.",
+       ["Estudo para concursos há dois anos e farei a prova daqui a um mês.",
+        "Estudo para concursos a dois anos e farei a prova daqui há um mês.",
+        "Estudo para concursos há dois anos e farei a prova daqui há um mês.",
+        "Estudo para concursos a dois anos e farei a prova daqui a um mês.",
+        "Estudo para concursos à dois anos e farei a prova daqui à um mês."],
+       "\"Há\" (verbo haver) indica tempo passado: há dois anos. \"A\" (preposição) indica tempo futuro ou distância: daqui a um mês."),
+]
+
+
+LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5}
 
 
 def sql(texto):

@@ -29,7 +29,7 @@ public class PerfilController {
     }
 
     public record PerfilDTO(Long id, String nome, String email, String papel, boolean aceitaMarketing,
-                            boolean pro, java.time.LocalDateTime proAte) {}
+                            boolean pro, java.time.LocalDateTime proAte, boolean lembreteRevisao) {}
 
     public record AlterarNomeDTO(@NotBlank @Size(max = 150) String nome) {}
 
@@ -88,9 +88,21 @@ public class PerfilController {
         return paraDTO(u);
     }
 
+    public record PreferenciaLembreteDTO(@jakarta.validation.constraints.NotNull Boolean ativo) {}
+
+    // PUT /perfil/lembrete — liga/desliga o e-mail diario das revisoes.
+    @Transactional
+    @PutMapping("/perfil/lembrete")
+    public PerfilDTO alterarLembrete(@Valid @RequestBody PreferenciaLembreteDTO request, Authentication authentication) {
+        Usuario u = usuarioLogado(authentication);
+        u.setLembreteRevisao(request.ativo());
+        usuarioRepository.save(u);
+        return paraDTO(u);
+    }
+
     private PerfilDTO paraDTO(Usuario u) {
         return new PerfilDTO(u.getId(), u.getNome(), u.getEmail(), u.getPapel(), u.isAceitaMarketing(),
-                u.ehPro(), "ADMIN".equals(u.getPapel()) ? null : u.getProAte());
+                u.ehPro(), "ADMIN".equals(u.getPapel()) ? null : u.getProAte(), u.isLembreteRevisao());
     }
 
     private Usuario usuarioLogado(Authentication authentication) {
