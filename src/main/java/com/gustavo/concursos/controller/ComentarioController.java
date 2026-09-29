@@ -86,7 +86,9 @@ public class ComentarioController {
         Comentario comentario = comentarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario nao encontrado"));
 
-        if (!comentario.getUsuario().getId().equals(usuario.getId())) {
+        // O autor apaga o proprio comentario; o ADMIN modera qualquer um.
+        boolean admin = "ADMIN".equals(usuario.getPapel());
+        if (!admin && !comentario.getUsuario().getId().equals(usuario.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Voce so pode apagar os seus comentarios");
         }
 

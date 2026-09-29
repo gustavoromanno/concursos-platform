@@ -419,6 +419,8 @@ function atualizarUsuarioTopo(nome) {
 
 function carregarConta() {
     $('#conta-marketing').checked = !!perfilUsuario?.aceitaMarketing;
+    $('#conta-lembrete').checked = !!perfilUsuario?.lembreteRevisao;
+    $('#msg-lembrete').textContent = '';
     ['#msg-marketing', '#msg-nome', '#msg-senha', '#msg-foto', '#msg-perigo'].forEach(sel => { $(sel).textContent = ''; });
     $('#conta-nome').value = perfilUsuario?.nome || '';
     $('#conta-email').value = perfilUsuario?.email || '';
@@ -1725,7 +1727,8 @@ async function recarregarComentarios(questaoId, conteudo) {
                     <p>${escapar(c.texto)}</p>
                 </div>
             `);
-            if (c.meu) {
+            // Admin ve o botao em todos os comentarios (moderacao).
+            if (c.meu || perfilUsuario?.papel === 'ADMIN') {
                 const apagar = criar('<button class="acao excluir">apagar</button>');
                 apagar.onclick = async () => {
                     await api('/comentarios/' + c.id, { method: 'DELETE' });
@@ -3373,4 +3376,20 @@ $('#btn-salvar-filtro').onclick = async () => {
         await api('/filtros', { method: 'POST', body: JSON.stringify({ nome: nome.trim(), parametros }) });
         carregarFiltrosSalvos();
     } catch (e) { alert(e.message); }
+};
+
+
+// Lembrete diario de revisao (so faz efeito para quem e Pro).
+$('#conta-lembrete').onchange = async () => {
+    const caixa = $('#conta-lembrete');
+    const msg = $('#msg-lembrete');
+    try {
+        perfilUsuario = await api('/perfil/lembrete', { method: 'PUT', body: JSON.stringify({ ativo: caixa.checked }) });
+        msg.textContent = !caixa.checked ? 'Lembrete desligado.'
+            : perfilUsuario.pro ? 'Pronto: você recebe um e-mail às 8h nos dias com revisão.'
+            : 'Ativado. Os lembretes começam quando o seu plano Pro estiver ativo.';
+    } catch (e) {
+        caixa.checked = !caixa.checked;
+        msg.textContent = e.message;
+    }
 };

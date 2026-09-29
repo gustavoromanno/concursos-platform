@@ -57,6 +57,10 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String foto;
 
+    // Lembrete diario por e-mail das revisoes do dia (opt-in).
+    @Column(name = "lembrete_revisao", nullable = false)
+    private boolean lembreteRevisao;
+
     // Codigo do link "nao quero mais receber" dos e-mails promocionais.
     @Column(name = "token_descadastro", length = 64)
     private String tokenDescadastro;

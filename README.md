@@ -96,6 +96,9 @@ Usuários, ativos, Pro, receita do mês, pagamentos recentes, pendências de rev
 ### 🧹 Qualidade do conteúdo
 Alunos avisam erros (gabarito, enunciado confuso, lei desatualizada) em cada questão; o admin vê a fila e corrige no editor de questões (texto, explicação e gabarito, sem perder o histórico de respostas).
 
+### 🔔 Lembrete de revisão
+E-mail diário às 8h, só para quem ativou, é Pro e tem revisões vencendo no dia.
+
 ### 💾 Filtros salvos
 Combinações de filtros guardadas com um nome e aplicadas com um clique.
 
@@ -120,7 +123,7 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V27| DB
+    FW[Flyway] -->|migrations V1…V29| DB
 ```
 
 ```
@@ -137,7 +140,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V27 (Flyway)
+├── db/migration    # V1 a V29 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
