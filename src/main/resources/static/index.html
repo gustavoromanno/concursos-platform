@@ -257,6 +257,7 @@
     </div>
 
     <div class="card painel-filtros">
+      <div id="filtros-salvos" class="filtros-salvos"></div>
       <div class="grade-filtros">
         <label class="campo-busca">
           <span class="rotulo-oculto">Palavra-chave</span>
@@ -308,6 +309,7 @@
         <button id="btn-filtrar" class="primario">Filtrar questões</button>
         <span class="espaco"></span>
         <button id="btn-gerar-simulado" class="primario secundario-forte">+ Gerar simulado</button>
+        <button id="btn-salvar-filtro" class="secundario">Salvar filtro</button>
         <button id="btn-limpar-filtros" class="secundario"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Limpar</button>
       </div>
     </div>
@@ -613,6 +615,20 @@
         <button class="secundario" data-ir="importacoes">Abrir importações e pedidos</button>
       </div>
     </div>
+    <div class="card">
+      <div class="topo-secao"><h2>Editar questão</h2>
+        <div class="acoes-solicitacao"><input id="editar-id" type="number" min="1" placeholder="Nº da questão"><button id="btn-abrir-editor" class="secundario">Abrir</button></div>
+      </div>
+      <div id="editor-questao"></div>
+    </div>
+
+    <div class="card">
+      <div class="topo-secao"><h2>Erros reportados</h2>
+        <select id="filtro-reportes"><option value="NOVO">Novos</option><option value="">Todos</option><option value="RESOLVIDO">Resolvidos</option><option value="DESCARTADO">Descartados</option></select>
+      </div>
+      <div id="admin-reportes"></div>
+    </div>
+
     <div class="card">
       <h2>E-mail promocional</h2>
       <p class="sub">Vai só para quem aceitou receber (<strong id="camp-destinatarios">0</strong> pessoas). Cada e-mail leva o link "Não quero mais receber".</p>

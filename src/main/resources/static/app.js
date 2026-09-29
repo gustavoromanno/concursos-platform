@@ -389,7 +389,7 @@ function abrir(tela) {
         b.classList.toggle('ativo', b.dataset.tela === tela));
     $('#tela-' + tela).classList.remove('hidden');
 
-    if (tela === 'questoes') carregarQuestoes(0);
+    if (tela === 'questoes') { carregarQuestoes(0); carregarFiltrosSalvos(); }
     if (tela === 'inicio') carregarInicio();
     if (tela === 'revisao') carregarRevisao();
     if (tela === 'erradas') carregarErradas();
@@ -715,6 +715,10 @@ function montarAcoes(alvo, questao, opcoes) {
     const salvar = criar('<button class="acao" title="Salvar em caderno">+ caderno</button>');
     salvar.onclick = () => abrirMenuCadernos(salvar, questao);
     alvo.appendChild(salvar);
+
+    const reportar = criar('<button class="acao" title="Encontrou um erro nesta questão? Avise">⚑ erro</button>');
+    reportar.onclick = () => abrirReporte(reportar, questao);
+    alvo.appendChild(reportar);
 
     const anotar = criar('<button class="acao" title="Minha anotação (só você vê)">✎ anotação</button>');
     anotar.classList.toggle('ativa', anotadas.has(questao.id));
@@ -3033,6 +3037,7 @@ async function carregarPainelAdmin() {
 
         $('#camp-destinatarios').textContent = p.aceitamMarketing;
         carregarCampanhas();
+        carregarReportes();
 
         $('#admin-pendencias').innerHTML = `
             <p><strong>${p.rascunhosPendentes}</strong> questões inéditas aguardando revisão</p>
@@ -3185,3 +3190,187 @@ document.querySelectorAll('.btn-instalar').forEach(b => {
     };
     $('#tela-landing').prepend(dica);
 })();
+
+
+// ---------- reportar erro na questao ----------
+
+const MOTIVOS_REPORTE = { GABARITO: 'Gabarito errado', ENUNCIADO: 'Enunciado confuso ou com erro', DESATUALIZADA: 'Desatualizada (lei mudou)', OUTRO: 'Outro' };
+
+function abrirReporte(botao, questao) {
+    const card = botao.closest('.card');
+    const aberto = card.querySelector('.painel-reporte');
+    if (aberto) { aberto.remove(); return; }
+    const painel = criar(`
+        <div class="painel-anotacao painel-reporte">
+            <label class="rotulo">O que está errado?
+                <select>${Object.entries(MOTIVOS_REPORTE).map(([v, r]) => `<option value="${v}">${r}</option>`).join('')}</select>
+            </label>
+            <label class="rotulo">Detalhes (opcional)<textarea rows="2" maxlength="1000" placeholder="Ex.: a alternativa correta é a C, pelo art. 37…"></textarea></label>
+            <div class="acoes-anotacao"><button class="primario">Enviar aviso</button><span class="sub status-anotacao"></span></div>
+        </div>`);
+    card.querySelector('.enunciado').after(painel);
+    painel.querySelector('button').onclick = async () => {
+        const status = painel.querySelector('.status-anotacao');
+        try {
+            await api(`/questoes/${questao.id}/reportes`, {
+                method: 'POST',
+                body: JSON.stringify({ motivo: painel.querySelector('select').value, descricao: painel.querySelector('textarea').value })
+            });
+            status.textContent = 'Obrigado! Vamos revisar esta questão.';
+            painel.querySelector('button').disabled = true;
+        } catch (e) { status.textContent = e.message; }
+    };
+}
+
+// Admin: fila de erros reportados.
+async function carregarReportes() {
+    const alvo = $('#admin-reportes');
+    const status = $('#filtro-reportes').value;
+    try {
+        const lista = await api('/admin/reportes' + (status ? '?status=' + status : ''));
+        alvo.innerHTML = lista.length ? '' : '<div class="vazio">Nenhum aviso.</div>';
+        lista.forEach(r => {
+            const item = criar(`
+                <div class="item-solicitacao-admin">
+                    <div><strong>Questão #${r.questaoId} · ${MOTIVOS_REPORTE[r.motivo] || r.motivo}</strong>
+                        <p class="sub">${escapar(r.enunciado)}</p>
+                        ${r.descricao ? `<p class="sub"><em>“${escapar(r.descricao)}”</em></p>` : ''}
+                        <p class="sub">${escapar(r.email || 'conta excluída')} · ${dataBr(r.criadoEm)} · ${r.status}</p></div>
+                    <div class="acoes-solicitacao">
+                        <button class="secundario editar-questao">Editar questão</button>
+                        <button class="secundario resolver">Resolvido</button>
+                        <button class="link descartar">Descartar</button>
+                    </div>
+                </div>`);
+            const mudar = async novo => {
+                try {
+                    await api(`/admin/reportes/${r.id}`, { method: 'PUT', body: JSON.stringify({ status: novo }) });
+                    carregarReportes();
+                } catch (e) { alert(e.message); }
+            };
+            item.querySelector('.resolver').onclick = () => mudar('RESOLVIDO');
+            item.querySelector('.descartar').onclick = () => mudar('DESCARTADO');
+            item.querySelector('.editar-questao').onclick = () => abrirEditorQuestao(r.questaoId);
+            alvo.appendChild(item);
+        });
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+$('#filtro-reportes').onchange = carregarReportes;
+
+
+// ---------- editor de questoes (admin) ----------
+
+async function abrirEditorQuestao(id) {
+    const alvo = $('#editor-questao');
+    $('#editar-id').value = id;
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    try {
+        const q = await api(`/admin/questoes/${id}`);
+        const letras = 'ABCDE';
+        const ce = q.tipo === 'CERTO_ERRADO';
+        alvo.innerHTML = '';
+        const editor = criar(`
+            <div class="card-rascunho">
+                <p class="sub">${escapar(q.disciplina)} · ${escapar(q.banca)} · ${q.ano}${q.origem === 'IA' ? ' · inédita' : ''}</p>
+                <label>Enunciado<textarea class="ed-enunciado" rows="4"></textarea></label>
+                <div class="ed-alternativas">${q.alternativas.map((a, i) => `
+                    <div class="linha-alternativa">
+                        <input type="radio" name="gab-${q.id}" ${a.correta ? 'checked' : ''} title="Correta">
+                        <span>${ce ? '' : letras[i] + ')'}</span>
+                        <input class="ed-texto" ${ce ? 'disabled' : ''}>
+                    </div>`).join('')}</div>
+                <label>Explicação<textarea class="ed-explicacao" rows="3"></textarea></label>
+                <div class="acoes-importacao"><button class="primario salvar">Salvar correção</button><span class="sub status-rascunho"></span></div>
+            </div>`);
+        editor.querySelector('.ed-enunciado').value = q.enunciado;
+        editor.querySelector('.ed-explicacao').value = q.explicacao || '';
+        editor.querySelectorAll('.ed-texto').forEach((el, i) => { el.value = q.alternativas[i].texto; });
+        editor.querySelector('.salvar').onclick = async () => {
+            const linhas = [...editor.querySelectorAll('.linha-alternativa')];
+            const corpo = {
+                enunciado: editor.querySelector('.ed-enunciado').value,
+                explicacao: editor.querySelector('.ed-explicacao').value,
+                alternativas: linhas.map((l, i) => ({
+                    id: q.alternativas[i].id,
+                    texto: l.querySelector('.ed-texto').value,
+                    correta: l.querySelector('input[type=radio]').checked
+                }))
+            };
+            try {
+                await api(`/admin/questoes/${q.id}`, { method: 'PUT', body: JSON.stringify(corpo) });
+                editor.querySelector('.status-rascunho').textContent = 'Questão corrigida ✓';
+            } catch (e) { editor.querySelector('.status-rascunho').textContent = e.message; }
+        };
+        alvo.appendChild(editor);
+    } catch (e) {
+        alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+    }
+}
+
+$('#btn-abrir-editor').onclick = () => {
+    const id = Number($('#editar-id').value);
+    if (id > 0) abrirEditorQuestao(id);
+};
+
+
+// ---------- filtros salvos ----------
+
+// Campos e grupos de chips que compoem um filtro (mesmos nomes da API).
+const CAMPOS_FILTRO = { palavraChave: '#f-palavra', disciplinaId: '#f-disciplina', assuntoId: '#f-assunto-id',
+    bancaId: '#f-banca', orgaoId: '#f-orgao', ano: '#f-ano', concursoId: '#f-concurso', cargoId: '#f-cargo' };
+const CHIPS_FILTRO = { tipo: 'tipo', comComentarios: 'comentarios', comAnotacoes: 'anotacoes',
+    dificuldade: 'dificuldade', origem: 'origem', situacao: 'situacao' };
+
+function filtroAtual() {
+    const p = new URLSearchParams();
+    Object.entries(CAMPOS_FILTRO).forEach(([chave, sel]) => { const v = $(sel).value.trim(); if (v) p.set(chave, v); });
+    Object.entries(CHIPS_FILTRO).forEach(([chave, grupo]) => { const v = chipAtivo(grupo); if (v) p.set(chave, v); });
+    return p;
+}
+
+function aplicarFiltro(parametros) {
+    const p = new URLSearchParams(parametros);
+    document.querySelectorAll('.chip.ativo').forEach(c => c.classList.remove('ativo'));
+    ['#f-palavra', '#f-disciplina', '#f-banca', '#f-orgao', '#f-ano', '#f-concurso'].forEach(sel => { $(sel).value = ''; });
+    $('#f-disciplina').value = p.get('disciplinaId') || '';
+    atualizarAssuntosFiltro();
+    $('#f-concurso').value = p.get('concursoId') || '';
+    atualizarCargosFiltro();
+    Object.entries(CAMPOS_FILTRO).forEach(([chave, sel]) => { if (p.has(chave)) $(sel).value = p.get(chave); });
+    Object.entries(CHIPS_FILTRO).forEach(([chave, grupo]) => {
+        if (!p.has(chave)) return;
+        document.querySelector(`.chip[data-grupo="${grupo}"][data-valor="${p.get(chave)}"]`)?.classList.add('ativo');
+    });
+    carregarQuestoes(0);
+}
+
+async function carregarFiltrosSalvos() {
+    const alvo = $('#filtros-salvos');
+    try {
+        const lista = await api('/filtros');
+        alvo.innerHTML = lista.length ? '<span class="rotulo">Meus filtros:</span>' : '';
+        lista.forEach(f => {
+            const chip = criar(`<span class="chip-filtro"><button class="link usar">${escapar(f.nome)}</button><button class="link apagar" title="Apagar">×</button></span>`);
+            chip.querySelector('.usar').onclick = () => aplicarFiltro(f.parametros);
+            chip.querySelector('.apagar').onclick = async () => {
+                if (!confirm(`Apagar o filtro "${f.nome}"?`)) return;
+                try { await api(`/filtros/${f.id}`, { method: 'DELETE' }); carregarFiltrosSalvos(); } catch (e) { alert(e.message); }
+            };
+            alvo.appendChild(chip);
+        });
+    } catch { alvo.innerHTML = ''; }
+}
+
+$('#btn-salvar-filtro').onclick = async () => {
+    const parametros = filtroAtual().toString();
+    if (!parametros) { alert('Escolha ao menos um filtro antes de salvar.'); return; }
+    const nome = prompt('Nome para este filtro (ex.: "Bacen · CESPE · erradas"):');
+    if (!nome || !nome.trim()) return;
+    try {
+        await api('/filtros', { method: 'POST', body: JSON.stringify({ nome: nome.trim(), parametros }) });
+        carregarFiltrosSalvos();
+    } catch (e) { alert(e.message); }
+};

@@ -1759,3 +1759,14 @@ main:has(#tela-landing:not(.hidden)) { max-width: 1120px; }
 .acoes-topo-landing .secundario { width: auto; padding: 9px 16px; }
 .dica-ios { background: var(--superficie); border-left: 3px solid var(--dourado); padding: 10px 14px;
     border-radius: var(--raio-m); font-size: 13px; margin-bottom: 12px; }
+
+/* Filtros salvos e aviso de erro */
+.filtros-salvos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.filtros-salvos:empty { display: none; }
+.chip-filtro { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--raio-pilula);
+    background: var(--superficie); font-size: 13px; }
+.chip-filtro .link { font-size: 13px; text-decoration: none; }
+.chip-filtro .apagar { color: var(--suave); font-size: 15px; }
+.painel-reporte { border-left-color: var(--erro); }
+.painel-reporte select { margin-top: 6px; }
+#editar-id { width: 140px; margin: 0; }
