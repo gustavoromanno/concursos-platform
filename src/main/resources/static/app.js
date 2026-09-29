@@ -3031,6 +3031,9 @@ async function carregarPainelAdmin() {
                 <td>${ROTULO_PAGAMENTO[x.status] || x.status}</td></tr>`).join('')}</tbody></table>`
             : '<div class="vazio">Nenhum pagamento ainda.</div>';
 
+        $('#camp-destinatarios').textContent = p.aceitamMarketing;
+        carregarCampanhas();
+
         $('#admin-pendencias').innerHTML = `
             <p><strong>${p.rascunhosPendentes}</strong> questões inéditas aguardando revisão</p>
             <p><strong>${p.pedidosNovos}</strong> pedidos de conteúdo novos</p>`;
@@ -3080,3 +3083,105 @@ async function buscarUsuariosAdmin() {
         alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
 }
+
+
+// ---------- e-mail promocional (admin) ----------
+
+async function carregarCampanhas() {
+    try {
+        const lista = await api('/admin/campanhas');
+        $('#lista-campanhas').innerHTML = lista.length ? `
+            <table class="tabela-pagamentos"><thead><tr><th>Data</th><th>Assunto</th><th>Enviados</th><th>Situação</th></tr></thead>
+            <tbody>${lista.map(c => `<tr><td>${dataBr(c.criadoEm)}</td><td>${escapar(c.assunto)}</td>
+                <td>${c.enviados} de ${c.destinatarios}</td><td>${c.status === 'CONCLUIDA' ? 'Concluída' : 'Enviando…'}</td></tr>`).join('')}</tbody></table>` : '';
+    } catch { /* lista opcional */ }
+}
+
+function dadosCampanha() {
+    const assunto = $('#camp-assunto').value.trim();
+    const mensagem = $('#camp-mensagem').value.trim();
+    if (!assunto || !mensagem) {
+        $('#msg-camp').textContent = 'Preencha o assunto e a mensagem.';
+        return null;
+    }
+    return { assunto, mensagem };
+}
+
+$('#btn-camp-teste').onclick = async () => {
+    const dados = dadosCampanha();
+    if (!dados) return;
+    try {
+        await api('/admin/campanhas/teste', { method: 'POST', body: JSON.stringify(dados) });
+        $('#msg-camp').textContent = 'Teste enviado para o seu e-mail.';
+    } catch (e) { $('#msg-camp').textContent = e.message; }
+};
+
+$('#btn-camp-enviar').onclick = async () => {
+    const dados = dadosCampanha();
+    if (!dados) return;
+    const n = $('#camp-destinatarios').textContent;
+    if (!confirm(`Enviar "${dados.assunto}" para ${n} pessoa(s)? Não dá para cancelar depois.`)) return;
+    try {
+        await api('/admin/campanhas', { method: 'POST', body: JSON.stringify(dados) });
+        $('#msg-camp').textContent = 'Envio iniciado. Acompanhe na lista abaixo.';
+        ['#camp-assunto', '#camp-mensagem'].forEach(sel => { $(sel).value = ''; });
+        carregarCampanhas();
+        setTimeout(carregarCampanhas, 5000);
+    } catch (e) { $('#msg-camp').textContent = e.message; }
+};
+
+// ---------- marca, app instalavel (PWA) ----------
+
+// Nome vem do servidor (APP_NOME): trocar a marca nao exige mexer no codigo.
+(async function aplicarMarca() {
+    try {
+        const { nome } = await api('/publico/config');
+        if (!nome) return;
+        document.querySelectorAll('.nome-marca').forEach(el => { el.textContent = nome; });
+        if (!EMPRESA.nome) document.querySelectorAll('.empresa-nome').forEach(el => { el.textContent = nome; });
+        document.title = document.title.replace('Concursos Platform', nome);
+    } catch { /* mantem o nome padrao do HTML */ }
+})();
+
+// Service worker: permite instalar e abrir a interface sem internet.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+
+// Botao "Instalar app": aparece quando o navegador oferece a instalacao (Android/Chrome/Edge).
+let pedidoInstalacao = null;
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    pedidoInstalacao = e;
+    document.querySelectorAll('.btn-instalar').forEach(b => b.classList.remove('hidden'));
+});
+window.addEventListener('appinstalled', () => {
+    document.querySelectorAll('.btn-instalar').forEach(b => b.classList.add('hidden'));
+});
+document.querySelectorAll('.btn-instalar').forEach(b => {
+    b.addEventListener('click', async e => {
+        e.preventDefault();
+        if (pedidoInstalacao) {
+            pedidoInstalacao.prompt();
+            await pedidoInstalacao.userChoice;
+            pedidoInstalacao = null;
+            document.querySelectorAll('.btn-instalar').forEach(x => x.classList.add('hidden'));
+        }
+    });
+});
+
+// iPhone/iPad (Safari) nao dispara o evento acima: mostra a dica uma vez, na pagina inicial.
+(function dicaIos() {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const instalado = window.navigator.standalone === true;
+    let jaMostrou = false;
+    try { jaMostrou = localStorage.getItem('dica-ios') === '1'; } catch { /* sem armazenamento */ }
+    if (!ios || instalado || jaMostrou) return;
+    const dica = criar(`<div class="dica-ios">Para instalar no iPhone: toque em <strong>Compartilhar</strong> e depois em
+        <strong>Adicionar à Tela de Início</strong>. <button class="link">Entendi</button></div>`);
+    dica.querySelector('button').onclick = () => {
+        dica.remove();
+        try { localStorage.setItem('dica-ios', '1'); } catch { /* ok */ }
+    };
+    $('#tela-landing').prepend(dica);
+})();

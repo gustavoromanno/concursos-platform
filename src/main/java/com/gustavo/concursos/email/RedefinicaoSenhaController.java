@@ -44,14 +44,17 @@ public class RedefinicaoSenhaController {
     private final EmailCliente email;
     private final String urlBase;
     private final SecureRandom aleatorio = new SecureRandom();
+    private final String nomeMarca;
 
     public RedefinicaoSenhaController(
             UsuarioRepository usuarioRepository,
             TokenRedefinicaoRepository tokenRepository,
             PasswordEncoder passwordEncoder,
             EmailCliente email,
-            @Value("${app.url-base:http://localhost:8080}") String urlBase
+            @Value("${app.url-base:http://localhost:8080}") String urlBase,
+            @Value("${app.nome:Concursos Platform}") String nomeMarca
     ) {
+        this.nomeMarca = nomeMarca;
         this.usuarioRepository = usuarioRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -87,12 +90,12 @@ public class RedefinicaoSenhaController {
             tokenRepository.save(t);
 
             String link = urlBase + "/?redefinir=" + token;
-            email.enviar(u.getEmail(), "Crie uma nova senha — Concursos Platform", """
+            email.enviar(u.getEmail(), "Crie uma nova senha — " + nomeMarca, """
                     <p>Olá, %s!</p>
-                    <p>Recebemos um pedido para criar uma nova senha na Concursos Platform.</p>
+                    <p>Recebemos um pedido para criar uma nova senha na %s.</p>
                     <p><a href="%s">Clique aqui para criar sua nova senha</a>. O link vale por %d minutos e só pode ser usado uma vez.</p>
                     <p>Se não foi você, ignore este e-mail: sua senha continua a mesma.</p>
-                    """.formatted(escapar(u.getNome()), link, VALIDADE_MINUTOS));
+                    """.formatted(escapar(u.getNome()), escapar(nomeMarca), link, VALIDADE_MINUTOS));
         });
         return Map.of("message", RESPOSTA_PADRAO);
     }

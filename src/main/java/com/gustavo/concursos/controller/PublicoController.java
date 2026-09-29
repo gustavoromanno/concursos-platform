@@ -11,9 +11,18 @@ import java.util.Map;
 public class PublicoController {
 
     private final JdbcTemplate jdbc;
+    private final String nomeMarca;
 
-    public PublicoController(JdbcTemplate jdbc) {
+    public PublicoController(JdbcTemplate jdbc,
+                             @org.springframework.beans.factory.annotation.Value("${app.nome:Concursos Platform}") String nomeMarca) {
         this.jdbc = jdbc;
+        this.nomeMarca = nomeMarca;
+    }
+
+    // Nome da marca num lugar so: trocar APP_NOME no Render muda o site inteiro.
+    @GetMapping("/publico/config")
+    public Map<String, String> config() {
+        return Map.of("nome", nomeMarca);
     }
 
     @GetMapping("/publico/numeros")

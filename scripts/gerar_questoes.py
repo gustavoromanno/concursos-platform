@@ -3,7 +3,7 @@ Gera uma migration Flyway com um lote de questoes AUTORAIS.
 
 Uso:
     python scripts/gerar_questoes.py <lote> <arquivo de saida>
-    python scripts/gerar_questoes.py 3 src/main/resources/db/migration/V18__lote_questoes_3.sql
+    python scripts/gerar_questoes.py 4 src/main/resources/db/migration/V24__lote_questoes_4.sql
 
 O numero da migration (V15, V18...) nao precisa seguir o numero do lote: vale o
 proximo numero livre na pasta de migrations no momento em que o lote e criado.
@@ -26,12 +26,14 @@ import sys
 DISCIPLINAS_POR_LOTE = {
     "2": ["Direito Constitucional", "Noções de Informática"],
     "3": [],
+    "4": ["Conhecimentos Bancários", "Matemática Financeira"],
 }
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
 CARGO_EXEMPLO = "Analista Administrativo"
 
 CESPE, FGV = "CESPE/CEBRASPE", "FGV"
+BANC, MFIN = "Conhecimentos Bancários", "Matemática Financeira"
 PORT, DADM, DCON, INFO, RLM = (
     "Língua Portuguesa", "Direito Administrativo", "Direito Constitucional",
     "Noções de Informática", "Raciocínio Lógico",
@@ -424,7 +426,116 @@ LOTE_3 = [
        "0,30 × V = 60, logo V = 60 / 0,30 = 200."),
 ]
 
-LOTES = {"2": LOTE_2, "3": LOTE_3}
+LOTE_4 = [
+    # ------------------------------------------------------------------
+    # Conhecimentos Bancarios
+    # ------------------------------------------------------------------
+    me(BANC, "Sistema Financeiro Nacional", CESPE, 2024,
+       "No Sistema Financeiro Nacional, o órgão normativo máximo, responsável por fixar as diretrizes das políticas monetária, creditícia e cambial, é o",
+       ["Conselho Monetário Nacional.", "Banco Central do Brasil.", "Comissão de Valores Mobiliários.",
+        "Superintendência de Seguros Privados.", "Tesouro Nacional."],
+       "O CMN é o órgão normativo máximo do SFN (Lei 4.595/1964). O Banco Central executa e fiscaliza as normas do CMN; a CVM regula o mercado de valores mobiliários; a Susep, o de seguros."),
+    me(BANC, "Sistema Financeiro Nacional", FGV, 2023,
+       "Integra o Conselho Monetário Nacional:",
+       ["o Presidente do Banco Central do Brasil.", "o Presidente da Comissão de Valores Mobiliários.",
+        "o Presidente do Banco do Brasil.", "o Presidente da Federação Brasileira de Bancos.",
+        "o Ministro-Chefe da Casa Civil."],
+       "O CMN é composto pelo Ministro da Fazenda, que o preside, pelo Ministro do Planejamento e Orçamento e pelo Presidente do Banco Central do Brasil. Dirigentes de bancos, da CVM ou de associações do setor não integram o Conselho."),
+    me(BANC, "Garantias do sistema financeiro", CESPE, 2025,
+       "O Fundo Garantidor de Créditos (FGC) garante os depósitos e investimentos cobertos até o limite, por CPF ou CNPJ e por instituição (ou conglomerado), de",
+       ["R$ 250 mil.", "R$ 100 mil.", "R$ 70 mil.", "R$ 500 mil.", "R$ 1 milhão."],
+       "O limite é de R$ 250 mil por pessoa e por instituição ou conglomerado. Há ainda um teto global de R$ 1 milhão por pessoa, a cada período de quatro anos, somando todas as instituições."),
+    me(BANC, "Política monetária", FGV, 2024,
+       "O órgão do Banco Central responsável por definir a meta da taxa Selic é o",
+       ["Comitê de Política Monetária (Copom).", "Conselho Monetário Nacional (CMN).",
+        "Conselho de Controle de Atividades Financeiras (Coaf).", "Tesouro Nacional.", "Conselho de Recursos do SFN."],
+       "O Copom, formado pela diretoria do Banco Central, fixa a meta da Selic em reuniões periódicas. O CMN define a meta de inflação que o Copom persegue."),
+    me(BANC, "Mercado de capitais", CESPE, 2023,
+       "A autarquia responsável por regular e fiscalizar o mercado de valores mobiliários, como ações e debêntures, é a",
+       ["Comissão de Valores Mobiliários.", "Superintendência de Seguros Privados.",
+        "Superintendência Nacional de Previdência Complementar.", "Caixa Econômica Federal.", "Receita Federal."],
+       "A CVM (Lei 6.385/1976) disciplina e fiscaliza o mercado de valores mobiliários. Susep e Previc cuidam de seguros e de previdência complementar fechada."),
+    me(BANC, "Prevenção à lavagem de dinheiro", FGV, 2025,
+       "As três fases clássicas do processo de lavagem de dinheiro são",
+       ["colocação, ocultação e integração.", "captação, aplicação e resgate.",
+        "emissão, circulação e liquidação.", "ocultação, fracionamento e saque.", "depósito, transferência e consumo."],
+       "Na colocação, o dinheiro ilícito entra no sistema; na ocultação (ou estratificação), movimentações dificultam rastrear a origem; na integração, os recursos voltam à economia com aparência lícita."),
+    me(BANC, "Política monetária", CESPE, 2024,
+       "O instrumento de política monetária pelo qual o Banco Central exige que os bancos mantenham parte dos depósitos recolhida junto a ele é o",
+       ["recolhimento compulsório.", "redesconto.", "open market.", "câmbio flutuante.", "superávit primário."],
+       "O compulsório retira parte dos depósitos da capacidade de empréstimo dos bancos. Redesconto é o empréstimo do BC aos bancos; open market é a compra e venda de títulos públicos."),
+    ce(BANC, "Sistema Financeiro Nacional", CESPE, 2024,
+       "O Banco Central do Brasil é autarquia de natureza especial, e sua autonomia está prevista em lei complementar.",
+       True,
+       "A Lei Complementar 179/2021 definiu o BC como autarquia de natureza especial, sem vinculação a ministério e com mandatos fixos para presidente e diretores."),
+    ce(BANC, "Sistema Financeiro Nacional", CESPE, 2023,
+       "O Conselho Monetário Nacional é presidido pelo presidente do Banco Central do Brasil.",
+       False,
+       "O CMN é presidido pelo Ministro da Fazenda. O presidente do Banco Central é um dos seus integrantes."),
+    ce(BANC, "Garantias do sistema financeiro", CESPE, 2025,
+       "O Fundo Garantidor de Créditos é entidade pública mantida com recursos do Tesouro Nacional.",
+       False,
+       "O FGC é entidade privada, sem fins lucrativos, mantida por contribuições das instituições financeiras associadas."),
+    ce(BANC, "Política monetária", CESPE, 2024,
+       "O aumento da alíquota do recolhimento compulsório tende a reduzir a quantidade de recursos que os bancos têm disponível para conceder empréstimos.",
+       True,
+       "Com mais recursos retidos no Banco Central, sobra menos para emprestar: é uma medida contracionista."),
+    ce(BANC, "Garantias do sistema financeiro", CESPE, 2023,
+       "Os depósitos em caderneta de poupança estão entre os créditos cobertos pela garantia do FGC, observados os limites.",
+       True,
+       "Poupança, depósitos à vista e a prazo (como CDB), letras de câmbio e LCI/LCA estão entre os créditos garantidos pelo FGC."),
+    ce(BANC, "Produtos e serviços bancários", CESPE, 2025,
+       "O Pix é um arranjo de pagamentos instituído pelo Banco Central do Brasil.",
+       True,
+       "O Pix foi criado e é gerido pelo Banco Central, que define suas regras e opera a infraestrutura de liquidação."),
+
+    # ------------------------------------------------------------------
+    # Matematica Financeira
+    # ------------------------------------------------------------------
+    me(MFIN, "Juros compostos", FGV, 2024,
+       "Um capital de R$ 1.000,00 foi aplicado a juros compostos de 10% ao mês. Após 2 meses, o montante é",
+       ["R$ 1.210,00.", "R$ 1.200,00.", "R$ 1.100,00.", "R$ 1.221,00.", "R$ 1.020,00."],
+       "M = C × (1 + i)^n = 1.000 × 1,1² = 1.000 × 1,21 = R$ 1.210,00. Os R$ 1.200,00 seriam o montante em juros simples."),
+    me(MFIN, "Juros simples", CESPE, 2023,
+       "Aplicado a juros simples de 5% ao mês por 4 meses, um capital rendeu R$ 400,00 de juros. Esse capital era de",
+       ["R$ 2.000,00.", "R$ 1.600,00.", "R$ 8.000,00.", "R$ 2.500,00.", "R$ 400,00."],
+       "J = C × i × t → 400 = C × 0,05 × 4 → C = 400 / 0,20 = R$ 2.000,00."),
+    me(MFIN, "Taxas equivalentes", FGV, 2025,
+       "No regime de juros compostos, a taxa anual equivalente a 1% ao mês é de, aproximadamente,",
+       ["12,68%.", "12%.", "12,5%.", "13,2%.", "11,36%."],
+       "(1,01)^12 ≈ 1,1268, ou seja, cerca de 12,68% ao ano. Os 12% seriam a taxa proporcional, que só vale em juros simples."),
+    me(MFIN, "Taxas equivalentes", CESPE, 2024,
+       "Uma taxa nominal de 12% ao ano, com capitalização mensal, corresponde a uma taxa efetiva mensal de",
+       ["1%.", "12%.", "0,5%.", "1,2%.", "0,95%."],
+       "Na taxa nominal, a taxa do período de capitalização é a proporcional: 12% / 12 = 1% ao mês."),
+    me(MFIN, "Descontos", FGV, 2023,
+       "Um título de R$ 5.000,00 foi descontado 2 meses antes do vencimento, com desconto comercial simples à taxa de 3% ao mês. O valor do desconto é",
+       ["R$ 300,00.", "R$ 150,00.", "R$ 600,00.", "R$ 283,02.", "R$ 4.700,00."],
+       "No desconto comercial (por fora), D = N × i × t = 5.000 × 0,03 × 2 = R$ 300,00. O valor recebido é R$ 4.700,00."),
+    me(MFIN, "Juros simples", CESPE, 2025,
+       "O montante de R$ 2.000,00 aplicados a juros simples de 2% ao mês, durante 6 meses, é",
+       ["R$ 2.240,00.", "R$ 2.252,32.", "R$ 2.120,00.", "R$ 2.400,00.", "R$ 2.024,00."],
+       "J = 2.000 × 0,02 × 6 = R$ 240,00; M = 2.000 + 240 = R$ 2.240,00. O valor de R$ 2.252,32 seria em juros compostos."),
+    ce(MFIN, "Juros simples", CESPE, 2024,
+       "No regime de juros simples, os juros de cada período são calculados sempre sobre o capital inicial.",
+       True,
+       "Essa é a característica dos juros simples: não há juros sobre juros, e o crescimento do montante é linear."),
+    ce(MFIN, "Juros compostos", CESPE, 2023,
+       "Para prazos superiores a um período, a mesma taxa rende menos juros no regime composto do que no regime simples.",
+       False,
+       "É o contrário: acima de um período, os juros compostos rendem mais, porque incidem também sobre os juros já acumulados."),
+    ce(MFIN, "Taxas equivalentes", CESPE, 2025,
+       "Em juros simples, a taxa de 2% ao mês é proporcional à taxa de 24% ao ano.",
+       True,
+       "Em juros simples, taxas proporcionais são equivalentes: 2% × 12 = 24%."),
+    ce(MFIN, "Juros compostos", CESPE, 2024,
+       "Em juros compostos, uma taxa de 21% em dois meses corresponde a 10% ao mês.",
+       True,
+       "1,10 × 1,10 = 1,21, ou seja, 21% no bimestre."),
+]
+
+
+LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4}
 
 
 def sql(texto):

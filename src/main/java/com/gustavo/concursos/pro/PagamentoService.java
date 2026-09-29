@@ -23,14 +23,17 @@ public class PagamentoService {
     private final Planos planos;
     private final StripeCliente stripe;
     private final String urlBase;
+    private final String nomeMarca;
 
     public PagamentoService(
             PagamentoRepository pagamentoRepository,
             UsuarioRepository usuarioRepository,
             Planos planos,
             StripeCliente stripe,
-            @Value("${app.url-base:http://localhost:8080}") String urlBase
+            @Value("${app.url-base:http://localhost:8080}") String urlBase,
+            @Value("${app.nome:Concursos Platform}") String nomeMarca
     ) {
+        this.nomeMarca = nomeMarca;
         this.pagamentoRepository = pagamentoRepository;
         this.usuarioRepository = usuarioRepository;
         this.planos = planos;
@@ -53,7 +56,7 @@ public class PagamentoService {
         pagamentoRepository.save(p);
 
         StripeCliente.Sessao sessao = stripe.criarCheckout(p.getId(), usuario.getEmail(),
-                "Concursos Platform — " + plano.nome() + " (" + plano.dias() + " dias)",
+                nomeMarca + " — " + plano.nome() + " (" + plano.dias() + " dias)",
                 plano.precoCentavos(),
                 urlBase + "/?pagamento=sucesso", urlBase + "/?pagamento=cancelado");
         p.setStripeSessaoId(sessao.id());

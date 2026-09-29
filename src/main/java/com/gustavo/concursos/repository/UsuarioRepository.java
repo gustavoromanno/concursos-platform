@@ -10,4 +10,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // Lista para e-mail promocional: SO quem deu consentimento.
     java.util.List<Usuario> findByAceitaMarketingTrueOrderByCriadoEmAsc();
+
+    java.util.Optional<Usuario> findByTokenDescadastro(String tokenDescadastro);
 }
