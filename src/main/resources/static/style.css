@@ -1753,3 +1753,9 @@ main:has(#tela-landing:not(.hidden)) { max-width: 1120px; }
 .linha-usuario-admin .sub { margin: 2px 0 0; font-size: 12px; }
 .linha-usuario-admin input[type=number] { width: 80px; }
 @media (max-width: 800px) { .grade-admin-numeros { grid-template-columns: 1fr 1fr; } }
+
+/* App instalavel */
+.acoes-topo-landing { display: flex; gap: 10px; align-items: center; }
+.acoes-topo-landing .secundario { width: auto; padding: 9px 16px; }
+.dica-ios { background: var(--superficie); border-left: 3px solid var(--dourado); padding: 10px 14px;
+    border-radius: var(--raio-m); font-size: 13px; margin-bottom: 12px; }

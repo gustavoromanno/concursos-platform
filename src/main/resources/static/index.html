@@ -3,7 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Concursos Platform</title>
+<title>Concursos Platform — questões, simulados e revisão para concursos</title>
+<meta name="description" content="Banco de questões para concursos públicos: questões no estilo das bancas com explicação, simulados, revisão espaçada e acompanhamento de desempenho. Comece grátis.">
+<meta name="theme-color" content="#1F7A6B">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icones/icone.svg" type="image/svg+xml">
+<link rel="icon" href="/icones/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icones/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Concursos Platform — estude pelo que cai na prova">
+<meta property="og:description" content="Questões no estilo das bancas, correção com explicação, simulados e revisão no momento certo. Comece grátis.">
+<meta property="og:image" content="/icones/icone-512.png">
+<meta property="og:locale" content="pt_BR">
 <script>
   // Roda antes da renderização para a tela não piscar em branco ao recarregar
   // já no modo noturno. Sem preferência salva, segue o sistema operacional.
@@ -24,7 +37,7 @@
 <body>
 
 <header id="topo" class="hidden">
-  <div class="marca"><svg class="ic marca-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m9 10 2 2 4-4"/></svg><strong>Concursos Platform</strong></div>
+  <div class="marca"><svg class="ic marca-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m9 10 2 2 4-4"/></svg><strong class="nome-marca">Concursos Platform</strong></div>
   <nav>
     <button data-tela="inicio"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Início</span></button>
     <button data-tela="dashboard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg><span>Desempenho</span></button>
@@ -56,13 +69,16 @@
   <!-- LOGIN -->
   <section id="tela-landing" class="hidden">
     <nav class="topo-landing">
-      <strong class="marca-landing">Concursos Platform</strong>
+      <strong class="marca-landing nome-marca">Concursos Platform</strong>
       <div class="links-landing">
         <a href="#landing-recursos">Funcionalidades</a>
         <a href="#landing-como">Como funciona</a>
         <a href="#landing-planos">Planos</a>
       </div>
-      <button class="primario ir-login">Acessar →</button>
+      <div class="acoes-topo-landing">
+        <button class="secundario btn-instalar hidden">Instalar app</button>
+        <button class="primario ir-login">Acessar →</button>
+      </div>
     </nav>
 
     <div class="hero hero-landing">
@@ -156,7 +172,7 @@
   <section id="tela-login" class="hidden">
     <div class="card centro">
       <button class="link ir-landing">← Voltar ao início</button>
-      <h1>Concursos Platform</h1>
+      <h1 class="nome-marca">Concursos Platform</h1>
       <p class="sub">Banco de questões para estudo de concursos</p>
 
       <div id="campos-registro" class="hidden">
@@ -598,6 +614,19 @@
       </div>
     </div>
     <div class="card">
+      <h2>E-mail promocional</h2>
+      <p class="sub">Vai só para quem aceitou receber (<strong id="camp-destinatarios">0</strong> pessoas). Cada e-mail leva o link "Não quero mais receber".</p>
+      <label>Assunto<input id="camp-assunto" maxlength="150" placeholder="Ex.: Novo lote de questões do Bacen"></label>
+      <label>Mensagem<textarea id="camp-mensagem" rows="6" maxlength="10000" placeholder="Texto simples. Deixe uma linha em branco entre os parágrafos."></textarea></label>
+      <div class="acoes-conta">
+        <button id="btn-camp-teste" class="secundario">Enviar teste para mim</button>
+        <button id="btn-camp-enviar" class="primario">Enviar para todos</button>
+        <span id="msg-camp" class="sub"></span>
+      </div>
+      <div id="lista-campanhas"></div>
+    </div>
+
+    <div class="card">
       <div class="topo-secao"><h2>Usuários</h2>
         <input id="admin-busca" type="search" placeholder="Buscar por nome ou e-mail" class="busca-admin"></div>
       <div id="admin-usuarios"></div>
@@ -819,9 +848,10 @@
       <span class="rodape-titulo">Contato</span>
       <a id="rodape-email" class="hidden" href="#"></a>
       <div id="rodape-redes" class="rodape-redes"></div>
+      <a href="#" id="rodape-instalar" class="btn-instalar hidden">Instalar o app</a>
     </div>
   </div>
-  <p class="rodape-copy sub">© <span id="rodape-ano"></span> Concursos Platform</p>
+  <p class="rodape-copy sub">© <span id="rodape-ano"></span> <span class="nome-marca">Concursos Platform</span></p>
 </footer>
 <div id="aviso-pro" class="aviso-pro hidden"><span id="aviso-pro-texto"></span><button id="aviso-pro-ver" class="primario">Ver planos</button><button id="aviso-pro-fechar" class="link">Fechar</button></div>
 <script src="app.js"></script>

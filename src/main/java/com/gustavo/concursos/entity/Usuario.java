@@ -57,6 +57,10 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String foto;
 
+    // Codigo do link "nao quero mais receber" dos e-mails promocionais.
+    @Column(name = "token_descadastro", length = 64)
+    private String tokenDescadastro;
+
     // ADMIN sempre tem tudo liberado.
     public boolean ehPro() {
         return "ADMIN".equals(papel) || (proAte != null && proAte.isAfter(java.time.LocalDateTime.now()));

@@ -42,13 +42,23 @@ public class ResendEmailCliente implements EmailCliente {
 
     @Override
     public void enviar(String para, String assunto, String html) {
+        enviar(para, assunto, html, Map.of());
+    }
+
+    @Override
+    public void enviar(String para, String assunto, String html, Map<String, String> cabecalhos) {
         if (chave == null || chave.isBlank()) {
             log.warn("RESEND_API_KEY nao configurada: e-mail \"{}\" para {} NAO foi enviado.", assunto, para);
             return;
         }
         try {
-            String corpo = json.writeValueAsString(Map.of(
-                    "from", remetente, "to", List.of(para), "subject", assunto, "html", html));
+            Map<String, Object> dados = new java.util.LinkedHashMap<>();
+            dados.put("from", remetente);
+            dados.put("to", List.of(para));
+            dados.put("subject", assunto);
+            dados.put("html", html);
+            if (!cabecalhos.isEmpty()) dados.put("headers", cabecalhos);
+            String corpo = json.writeValueAsString(dados);
             HttpRequest req = HttpRequest.newBuilder(URL)
                     .timeout(Duration.ofSeconds(20))
                     .header("Authorization", "Bearer " + chave)
