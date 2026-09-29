@@ -195,8 +195,10 @@ public class PerfilDadosController {
         Long id = u.getId();
         APAGAR.values().forEach(cmds -> executar(cmds, id));
         jdbc.update("DELETE FROM comentario WHERE usuario_id = ?", id);
+        jdbc.update("DELETE FROM filtro_salvo WHERE usuario_id = ?", id);
         jdbc.update("UPDATE pagamento SET usuario_id = NULL WHERE usuario_id = ?", id);
         jdbc.update("UPDATE solicitacao_conteudo SET usuario_id = NULL WHERE usuario_id = ?", id);
+        jdbc.update("UPDATE reporte_questao SET usuario_id = NULL WHERE usuario_id = ?", id);
         jdbc.update("DELETE FROM usuario WHERE id = ?", id);
         return ResponseEntity.noContent().build();
     }
