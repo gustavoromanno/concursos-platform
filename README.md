@@ -87,6 +87,9 @@ Sem cobrança recorrente: os dias se somam a cada compra. A liberação acontece
 ### 👤 Conta
 Foto, dados pessoais, força do perfil, resumo de uso, troca de senha, assinatura e histórico de pagamentos, e **zona de perigo**: zerar dados por categoria ou excluir a conta (os registros de pagamento ficam, sem vínculo, por obrigação fiscal).
 
+### ✅ Confirmação de e-mail e limite de login
+O cadastro só vale depois de clicar no link enviado por e-mail (48 h, uso único). Após 5 senhas erradas em 15 minutos (por e-mail e IP), o login bloqueia temporariamente.
+
 ### 🔑 Esqueci minha senha
 Link de uso único por e-mail (Resend), válido por 30 minutos, com só o hash guardado no banco e resposta idêntica exista ou não a conta.
 
@@ -123,7 +126,7 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V29| DB
+    FW[Flyway] -->|migrations V1…V30| DB
 ```
 
 ```
@@ -140,7 +143,7 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V29 (Flyway)
+├── db/migration    # V1 a V30 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
@@ -278,6 +281,7 @@ ANTHROPIC_API_KEY = chave-da-api   # opcional: só a importação de provas usa
 STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / APP_URL_BASE   # opcionais: pagamentos do plano Pro
 RESEND_API_KEY / EMAIL_REMETENTE   # opcionais: e-mail de redefinição de senha
 APP_NOME = Nome da Marca   # opcional: nome exibido no site, e-mails e checkout
+EXIGIR_CONFIRMACAO_EMAIL = false   # só em desenvolvimento, sem Resend
 ```
 
 2. Suba a aplicação:

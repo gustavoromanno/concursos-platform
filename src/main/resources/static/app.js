@@ -71,7 +71,11 @@ async function api(caminho, opcoes = {}) {
         throw new Error('E-mail ou senha incorretos.');
     }
     if (resp.status === 403) {
-        throw new Error('Você não tem permissão para esta ação.');
+        // Usa a mensagem do servidor quando houver (ex.: "Confirme seu e-mail para entrar").
+        const corpo = await resp.json().catch(() => ({}));
+        const erro = new Error(corpo.message || 'Você não tem permissão para esta ação.');
+        erro.status = 403;
+        throw erro;
     }
     if (resp.status === 402) {
         const corpo = await resp.json().catch(() => ({}));
@@ -184,10 +188,18 @@ $('#btn-entrar').onclick = async () => {
             if (!senhaValida(senha)) throw new Error(MENSAGEM_SENHA);
             const confirma = $('#reg-confirma-senha').value;
             if (senha !== confirma) throw new Error('As senhas não coincidem.');
-            await api('/auth/registrar', {
+            const cadastro = await api('/auth/registrar', {
                 method: 'POST',
                 body: JSON.stringify({ nome, email, senha, aceitaMarketing: $('#reg-marketing').checked })
             });
+            if (cadastro?.confirmacaoNecessaria) {
+                // Conta criada, mas so entra depois de confirmar pelo link do e-mail.
+                $('#btn-alternar').click();   // volta para o modo "Entrar"
+                $('#login-email').value = email;
+                erro.innerHTML = `<span class="aviso-ok">Conta criada! Enviamos um link de confirmação para <strong>${escapar(email)}</strong>.
+                    Confirme e depois entre aqui. (Confira também o spam.)</span>`;
+                return;
+            }
         }
 
         const dados = await api('/auth/login', {
@@ -2775,7 +2787,7 @@ if (retornoPagamento) {
 // Campos vazios nao aparecem no site. Redes: { instagram: 'https://...', tiktok: '...', facebook: '...', x: '...' }
 const EMPRESA = {
     nome: '',            // ex.: 'Nome da Ltda, CNPJ 00.000.000/0001-00'
-    email: '',           // ex.: 'contato@seudominio.com.br'
+    email: 'contatoromanno@gmail.com',
     redes: {}
 };
 const DATA_POLITICAS = '2026-09-26';
@@ -3068,11 +3080,13 @@ async function buscarUsuariosAdmin() {
                 <div class="linha-usuario-admin">
                     <div><strong>${escapar(u.nome)}</strong> ${u.papel === 'ADMIN' ? '<span class="selo-plano pro">ADMIN</span>' : ''}
                         <p class="sub">${escapar(u.email)} · desde ${dataBr(u.criadoEm)} · ${u.respondidas} respostas ·
-                        ${pro ? (u.proAte ? 'Pro até ' + dataBr(u.proAte) : 'Pro') : 'Gratuito'}</p></div>
+                        ${pro ? (u.proAte ? 'Pro até ' + dataBr(u.proAte) : 'Pro') : 'Gratuito'}
+                        ${u.emailConfirmado ? '' : ' · <strong>e-mail não confirmado</strong>'}</p></div>
                     <div class="acoes-solicitacao">
                         <input type="number" min="1" max="730" value="30" title="Dias de Pro">
                         <button class="secundario conceder">Dar dias de Pro</button>
                         ${u.proAte ? '<button class="link remover">Remover Pro</button>' : ''}
+                        ${u.emailConfirmado ? '' : '<button class="link confirmar-email">Confirmar e-mail</button>'}
                     </div>
                 </div>`);
             const ajustar = async dias => {
@@ -3082,6 +3096,10 @@ async function buscarUsuariosAdmin() {
                 } catch (e) { alert(e.message); }
             };
             linha.querySelector('.conceder').onclick = () => ajustar(Number(linha.querySelector('input').value));
+            linha.querySelector('.confirmar-email')?.addEventListener('click', async () => {
+                try { await api(`/admin/usuarios/${u.id}/confirmar-email`, { method: 'POST' }); buscarUsuariosAdmin(); }
+                catch (e) { alert(e.message); }
+            });
             linha.querySelector('.remover')?.addEventListener('click', () => {
                 if (confirm(`Remover o Pro de ${u.email}?`)) ajustar(0);
             });
@@ -3393,3 +3411,19 @@ $('#conta-lembrete').onchange = async () => {
         msg.textContent = e.message;
     }
 };
+
+
+// ---------- confirmacao de e-mail (link ?confirmar=TOKEN) ----------
+
+(async function confirmarEmailPeloLink() {
+    const tokenConfirmacao = new URLSearchParams(location.search).get('confirmar');
+    if (!tokenConfirmacao) return;
+    history.replaceState(null, '', location.pathname);
+    irParaLogin(false);
+    try {
+        const r = await api('/auth/confirmar-email', { method: 'POST', body: JSON.stringify({ token: tokenConfirmacao }) });
+        $('#login-erro').innerHTML = `<span class="aviso-ok">${escapar(r.message)}</span>`;
+    } catch (e) {
+        $('#login-erro').textContent = e.message;
+    }
+})();

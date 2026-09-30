@@ -1770,3 +1770,5 @@ main:has(#tela-landing:not(.hidden)) { max-width: 1120px; }
 .painel-reporte { border-left-color: var(--erro); }
 .painel-reporte select { margin-top: 6px; }
 #editar-id { width: 140px; margin: 0; }
+
+.aviso-ok { color: var(--verde-2); }

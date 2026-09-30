@@ -61,7 +61,7 @@ public class AdminPainelController {
         String termo = "%" + busca.trim().toLowerCase() + "%";
         return jdbc.queryForList("""
                 SELECT u.id, u.nome, u.email, u.papel, u.pro_ate AS "proAte", u.criado_em AS "criadoEm",
-                       u.aceita_marketing AS "aceitaMarketing",
+                       u.aceita_marketing AS "aceitaMarketing", u.email_confirmado AS "emailConfirmado",
                        (SELECT COUNT(*) FROM resposta r WHERE r.usuario_id = u.id) AS respondidas
                 FROM usuario u
                 WHERE LOWER(u.nome) LIKE ? OR LOWER(u.email) LIKE ?
@@ -99,5 +99,15 @@ public class AdminPainelController {
     private long n(String sql, Object... args) {
         Long v = jdbc.queryForObject(sql, Long.class, args);
         return v == null ? 0 : v;
+    }
+
+    // Plano B para quem nao recebeu o e-mail de confirmacao (suporte).
+    @Transactional
+    @PostMapping("/usuarios/{id}/confirmar-email")
+    public Map<String, Object> confirmarEmail(@PathVariable Long id) {
+        if (jdbc.update("UPDATE usuario SET email_confirmado = TRUE WHERE id = ?", id) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+        }
+        return Map.of("id", id, "emailConfirmado", true);
     }
 }
