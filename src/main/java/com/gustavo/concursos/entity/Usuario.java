@@ -57,6 +57,10 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String foto;
 
+    // Cadastro so vale depois de clicar no link enviado por e-mail.
+    @Column(name = "email_confirmado", nullable = false)
+    private boolean emailConfirmado;
+
     // Lembrete diario por e-mail das revisoes do dia (opt-in).
     @Column(name = "lembrete_revisao", nullable = false)
     private boolean lembreteRevisao;
