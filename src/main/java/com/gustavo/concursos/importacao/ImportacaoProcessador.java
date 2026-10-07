@@ -175,13 +175,18 @@ public class ImportacaoProcessador {
         String nomeCargo = meta.cargo().isBlank()
                 ? (imp.getCargoInformado() == null || imp.getCargoInformado().isBlank() ? "Cargo unico" : imp.getCargoInformado())
                 : meta.cargo();
-        ConcursoCargo cargo = cargoRepository.findFirstByConcursoIdAndNomeIgnoreCase(concurso.getId(), nomeCargo)
+        // Cargos ja cadastrados (ex.: por area, vindos do catalogo) tem preferencia:
+        // tenta o nome lido da prova e depois o que o admin informou no envio.
+        List<ConcursoCargo> existentes = cargoRepository.findByConcursoIdOrderByOrdemAsc(concurso.getId());
+        ConcursoCargo cargo = CargoCorrespondencia.encontrar(existentes, ConcursoCargo::getNome, meta.cargo())
+                .or(() -> CargoCorrespondencia.encontrar(existentes, ConcursoCargo::getNome, imp.getCargoInformado()))
+                .or(() -> cargoRepository.findFirstByConcursoIdAndNomeIgnoreCase(concurso.getId(), nomeCargo))
                 .orElseGet(() -> {
                     ConcursoCargo novo = new ConcursoCargo();
                     novo.setConcurso(concurso);
                     novo.setNome(nomeCargo);
                     novo.setNivel(meta.nivel());
-                    novo.setOrdem(cargoRepository.findByConcursoIdOrderByOrdemAsc(concurso.getId()).size() + 1);
+                    novo.setOrdem(existentes.size() + 1);
                     return cargoRepository.save(novo);
                 });
 
