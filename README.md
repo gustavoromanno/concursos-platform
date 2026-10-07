@@ -6,7 +6,8 @@
 
 [![CI](https://github.com/gustavoromanno/concursos-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavoromanno/concursos-platform/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-6DB33F)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F)
+![Testes](https://img.shields.io/badge/testes-136-2ea44f)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791)
 ![Deploy](https://img.shields.io/badge/deploy-Render-46E3B7)
 
@@ -35,7 +36,9 @@ Plataforma no estilo do Qconcursos, construída do zero como projeto pessoal e d
 
 A ideia nasceu de uma necessidade real: estudo para concurso e uso esse tipo de plataforma todos os dias. Isso deu clareza sobre o que de fato ajuda quem estuda — **encontrar a questão certa rápido, receber a correção na hora, revisar no momento em que está prestes a esquecer e enxergar onde está errando mais.**
 
-O projeto cobre o ciclo completo de uma aplicação real: modelagem e migrations, API REST com autenticação, regras de negócio testadas, interface web, integração contínua e deploy automatizado.
+O projeto cobre o ciclo completo de um produto real: modelagem e migrations, API REST com autenticação, regras de negócio testadas, interface web instalável como app, pagamentos, e-mails transacionais, painel administrativo, integração contínua e deploy automatizado.
+
+**Em números:** 151 questões autorais em 10 disciplinas · 30 migrations · 136 testes automatizados · deploy só com o CI verde.
 
 ---
 
@@ -44,7 +47,7 @@ O projeto cobre o ciclo completo de uma aplicação real: modelagem e migrations
 ### 🔎 Questões
 | Recurso | Detalhe |
 |---|---|
-| Filtros combináveis | Palavra-chave, disciplina, assunto, banca, órgão, ano, modalidade, dificuldade, "com comentários", "minhas anotações" e situação pessoal (resolvidas, não resolvidas, certas, erradas) |
+| Filtros combináveis | Palavra-chave, disciplina, assunto, banca, órgão, ano, concurso, cargo, origem, modalidade, dificuldade, "com comentários", "minhas anotações" e situação pessoal (resolvidas, não resolvidas, certas, erradas) — e podem ser salvos com um nome |
 | Modalidades | Múltipla escolha e Certo/Errado (formato CESPE) |
 | Correção imediata | Resultado e explicação do gabarito logo após responder; a listagem nunca expõe a alternativa correta |
 | Comunidade | Estatística de como os outros usuários responderam cada questão e comentários |
@@ -184,6 +187,11 @@ erDiagram
     USUARIO ||--o| OBJETIVO_USUARIO : define
     CONCURSO ||--o{ CONCURSO_CARGO : oferece
     CONCURSO_CARGO ||--o{ CARGO_DISCIPLINA : cobra
+    CONCURSO |o--o{ QUESTAO : origina
+    USUARIO ||--o{ PAGAMENTO : compra
+    IMPORTACAO_PROVA ||--o{ QUESTAO_BASE : extrai
+    IMPORTACAO_PROVA ||--o{ QUESTAO_RASCUNHO : gera
+    QUESTAO ||--o{ REPORTE_QUESTAO : recebe
 ```
 
 A **resposta** liga usuário, questão e alternativa escolhida, com data e hora. É a base de todas as estatísticas: acerto por disciplina, evolução, ofensiva, revisão e objetivo.
@@ -208,6 +216,16 @@ Questões Certo/Errado usam a mesma tabela de alternativas (duas linhas, "Certo"
 
 **Conteúdo autoral.** As questões são escritas no estilo das bancas, nunca copiadas de provas, que são protegidas por direito autoral. O gabarito de cada lote é distribuído entre as letras para não viciar a resposta.
 
+**Plano Pro por anotação.** Recursos pagos são marcados com `@RequerPro`; um interceptor responde **402** para quem não é Pro, e o frontend oferece os planos. O acesso é derivado de `pro_ate`, sem estado duplicado.
+
+**Pagamento que não se confia no navegador.** O Pro só é liberado pelo webhook do Stripe, com assinatura HMAC verificada, janela anti-replay e cada evento processado uma única vez. Reembolso devolve os dias. O registro do pagamento sobrevive à exclusão da conta (obrigação fiscal), sem vínculo com a pessoa.
+
+**Tokens de e-mail só como hash.** Links de confirmação e de redefinição de senha são de uso único, com validade curta, e o banco guarda apenas o SHA-256. As respostas não revelam quais e-mails estão cadastrados.
+
+**IA com trava de direito autoral.** Provas antigas servem só de referência: as originais ficam privadas, e as inéditas geradas passam por um validador (formato, gabarito único, e bloqueio por semelhança com o texto original) e por revisão humana antes de publicar.
+
+**LGPD na prática.** E-mail promocional só com consentimento (opt-in), link de descadastro individual em cada envio, exportação limitada a quem consentiu, e exclusão da conta pela própria pessoa.
+
 **Nada de dado inventado na interface.** Se não há dado real por trás, o componente não é construído — filtros e telas só aparecem quando o banco sustenta a informação.
 
 ---
@@ -218,7 +236,7 @@ Questões Certo/Errado usam a mesma tabela de alternativas (duas linhas, "Certo"
 mvn test
 ```
 
-Os testes rodam contra **H2 em memória**, sem banco externo, e são executados no **GitHub Actions a cada push**. O deploy só acontece se todos passarem.
+Os testes rodam contra **H2 em memória**, sem banco externo, e são executados no **GitHub Actions a cada push**, junto com uma verificação do frontend (o site é carregado num navegador simulado, e o CI falha se o JavaScript der erro ou buscar um elemento inexistente). O deploy só acontece se tudo passar.
 
 | Suíte | O que garante |
 |---|---|
@@ -232,16 +250,23 @@ Os testes rodam contra **H2 em memória**, sem banco externo, e são executados 
 | `PerfilTest` | Troca de nome; troca de senha com login real usando a senha nova; senha atual errada não altera nada |
 | `ValidadorQuestaoGeradaTest` | Formato, gabarito único, Certo/Errado normalizado e bloqueio de cópia da original |
 | `ImportacaoTest` | Fluxo completo com IA simulada: extração, geração, originais nunca públicas, revisão e filtros |
+| `CadastroTest` · `ConfirmacaoEmailTest` | E-mail sem diferença de caixa, mensagens claras, confirmação por link de uso único, bloqueio após senhas erradas |
+| `RedefinicaoSenhaTest` | Link de uso único, resposta igual para e-mail inexistente, limite por hora |
+| `AssinaturaWebhookTest` · `PlanoProTest` | Assinatura do Stripe, cartão e boleto, evento repetido, reembolso, limites do plano gratuito (402) |
+| `PerfilDadosTest` | Dados pessoais, foto, zerar dados por categoria e excluir conta preservando o registro fiscal |
+| `CampanhaEmailTest` · `LembreteRevisaoTest` | Envio só para quem consentiu, descadastro funcionando, lembrete só para quem ativou e tem revisão |
+| `AdminPainelTest` · `AdminQuestaoEditorTest` · `ReporteQuestaoTest` | Painel restrito ao admin, correção de questões e fila de erros reportados |
+| `SolicitacaoConteudoTest` · `FiltroSalvoTest` · `ModeracaoComentarioTest` · `PwaTest` | Pedidos de conteúdo, filtros salvos privados, moderação e arquivos públicos do app |
 
 ---
 
 ## API
 
-Todas as rotas, exceto `/auth/**` e `/health`, exigem `Authorization: Bearer <token>`.
+Todas as rotas exigem `Authorization: Bearer <token>`, exceto `/auth/**`, `/health`, `/publico/**`, `GET /planos` e o webhook do Stripe.
 
 | Área | Endpoints principais |
 |---|---|
-| Autenticação | `POST /auth/registrar` · `POST /auth/login` |
+| Autenticação | `POST /auth/registrar` · `POST /auth/login` · `POST /auth/confirmar-email` · `POST /auth/esqueci-senha` · `POST /auth/redefinir-senha` |
 | Questões | `GET /questoes` (filtros + paginação) · `POST /questoes/{id}/responder` · `GET /questoes/erradas` |
 | Comunidade | `GET/POST /questoes/{id}/comentarios` · `GET /questoes/{id}/estatisticas` |
 | Anotações | `GET/PUT/DELETE /questoes/{id}/anotacao` · `GET /anotacoes/ids` |
@@ -256,7 +281,9 @@ Todas as rotas, exceto `/auth/**` e `/health`, exigem `Authorization: Bearer <to
 | Conta | `GET/PUT /perfil` · `PUT /perfil/senha` · `GET /perfil/completo` · `PUT /perfil/dados` · `PUT/DELETE /perfil/foto` · `DELETE /perfil/dados-estudo/{categoria}` · `POST /perfil/excluir-conta` |
 | Plano Pro | `GET /planos` · `POST /pagamentos/checkout` · `GET /pagamentos` · `POST /pagamentos/webhook` (Stripe) |
 | Concursos | `GET /concursos` · `GET /concursos/{id}` · `GET /provas/{id}` |
-| Admin | `POST /questoes` · `DELETE /questoes/{id}` · `POST/DELETE /concursos…` · `POST/DELETE /videoaulas` |
+| Aluno | `POST /questoes/{id}/reportes` · `GET/POST /solicitacoes` · `GET/POST/DELETE /filtros` · `PUT /perfil/marketing` · `PUT /perfil/lembrete` |
+| Público | `GET /publico/numeros` · `GET /publico/config` · `GET /publico/descadastro` |
+| Admin | `GET /admin/painel` · `GET /admin/usuarios` · `POST /admin/usuarios/{id}/pro` · `GET/PUT /admin/questoes/{id}` · `GET/PUT /admin/reportes` · `GET/PUT /admin/solicitacoes` · `GET/POST /admin/campanhas` · `POST /questoes` · `POST/DELETE /concursos…` |
 
 Exemplo de busca:
 
@@ -302,9 +329,12 @@ python scripts/gerar_questoes.py <lote> src/main/resources/db/migration/V<n>__lo
 
 ## Próximos passos
 
-- [x] Anotações pessoais em cada questão
-- [x] Dificuldade calculada pela taxa de acerto da comunidade
-- [ ] Novos lotes de questões vinculadas a órgãos
+- [x] Anotações pessoais e dificuldade calculada pela comunidade
+- [x] Plano Pro com Stripe, e-mails com Resend, painel administrativo
+- [x] App instalável (PWA), confirmação de e-mail e limite de login
+- [ ] Catálogo de concursos a partir dos editais oficiais, com link da fonte
+- [ ] Primeiras provas importadas (Bacen) e novos lotes de questões
+- [ ] Definição da marca e publicação nas lojas de apps
 - [ ] Migração para Spring Boot 4
 
 ---
