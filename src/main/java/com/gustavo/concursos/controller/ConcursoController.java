@@ -4,6 +4,7 @@ import com.gustavo.concursos.dto.*;
 import com.gustavo.concursos.entity.*;
 import com.gustavo.concursos.repository.*;
 import jakarta.validation.Valid;
+import com.gustavo.concursos.service.SituacaoCalculadora;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,16 +41,21 @@ public class ConcursoController {
     @Transactional(readOnly = true)
     @GetMapping("/concursos")
     public List<ConcursoDTO> listar(@RequestParam(required = false) String situacao) {
-        List<Concurso> concursos = (situacao == null || situacao.isBlank())
-                ? concursoRepository.findAllByOrderByAnoDescNomeAsc()
-                : concursoRepository.findBySituacaoOrderByAnoDescNomeAsc(situacao);
-        return concursos.stream().map(this::paraDTO).toList();
+        // A situacao e calculada pela data (SituacaoCalculadora), entao o filtro
+        // tambem e aplicado depois do calculo, e nao na coluna gravada.
+        LocalDate hoje = SituacaoCalculadora.hoje();
+        return concursoRepository.findAllByOrderByAnoDescNomeAsc().stream()
+                .filter(c -> situacao == null || situacao.isBlank()
+                        || situacao.equals(SituacaoCalculadora.situacao(
+                                c.getSituacao(), c.getInscricoesDe(), c.getInscricoesAte(), hoje)))
+                .map(c -> paraDTO(c, hoje))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     @GetMapping("/concursos/{id}")
     public ConcursoDTO buscar(@PathVariable Long id) {
-        return paraDTO(carregar(id));
+        return paraDTO(carregar(id), SituacaoCalculadora.hoje());
     }
 
     @Transactional
@@ -67,7 +73,7 @@ public class ConcursoController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Banca nao encontrada")));
         }
         concursoRepository.save(c);
-        return ResponseEntity.status(HttpStatus.CREATED).body(paraDTO(c));
+        return ResponseEntity.status(HttpStatus.CREATED).body(paraDTO(c, SituacaoCalculadora.hoje()));
     }
 
     @Transactional
@@ -94,7 +100,7 @@ public class ConcursoController {
         etapa.setOrdem(request.ordem() != null ? request.ordem() : c.getEtapas().size() + 1);
         c.getEtapas().add(etapa);
         concursoRepository.save(c);
-        return ResponseEntity.status(HttpStatus.CREATED).body(paraDTO(c));
+        return ResponseEntity.status(HttpStatus.CREATED).body(paraDTO(c, SituacaoCalculadora.hoje()));
     }
 
     // --- cargos e conteúdo programático ---
@@ -134,7 +140,7 @@ public class ConcursoController {
 
         c.getCargos().add(cargo);
         concursoRepository.save(c);
-        return ResponseEntity.status(HttpStatus.CREATED).body(paraDTO(c));
+        return ResponseEntity.status(HttpStatus.CREATED).body(paraDTO(c, SituacaoCalculadora.hoje()));
     }
 
     @Transactional
@@ -171,7 +177,7 @@ public class ConcursoController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Concurso nao encontrado"));
     }
 
-    private ConcursoDTO paraDTO(Concurso c) {
+    private ConcursoDTO paraDTO(Concurso c, LocalDate hoje) {
         List<ConcursoDTO.ProvaResumoDTO> provas = c.getProvas().stream()
                 .map(p -> new ConcursoDTO.ProvaResumoDTO(
                         p.getId(), p.getCargo(), p.getNivel(), p.getAplicadaEm(), p.getQuestoes().size()))
@@ -179,9 +185,10 @@ public class ConcursoController {
 
         List<ConcursoDTO.EtapaResumoDTO> etapas = c.getEtapas().stream()
                 .map(e -> new ConcursoDTO.EtapaResumoDTO(
-                        e.getId(), e.getNome(), e.getDataPrevista(), e.getStatus(),
+                        e.getId(), e.getNome(), e.getDataPrevista(),
+                        SituacaoCalculadora.statusEtapa(e.getStatus(), e.getDataPrevista(), hoje),
                         e.getDataPrevista() == null ? null
-                                : (int) ChronoUnit.DAYS.between(LocalDate.now(), e.getDataPrevista())))
+                                : (int) ChronoUnit.DAYS.between(hoje, e.getDataPrevista())))
                 .toList();
 
         List<CargoDTO> cargos = c.getCargos().stream()
@@ -197,7 +204,9 @@ public class ConcursoController {
         return new ConcursoDTO(
                 c.getId(), c.getNome(), c.getOrgao(),
                 c.getBanca() != null ? c.getBanca().getNome() : null,
-                c.getAno(), c.getSituacao(), c.getVagas(),
+                c.getAno(),
+                SituacaoCalculadora.situacao(c.getSituacao(), c.getInscricoesDe(), c.getInscricoesAte(), hoje),
+                c.getVagas(),
                 c.getInscricoesDe(), c.getInscricoesAte(), c.getTaxa(),
                 c.getEditalUrl(), c.getObservacoes(),
                 provas, etapas, cargos

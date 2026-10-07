@@ -1,5 +1,6 @@
 package com.gustavo.concursos.controller;
 
+import com.gustavo.concursos.service.SituacaoCalculadora;
 import com.gustavo.concursos.dto.DefinirObjetivoDTO;
 import com.gustavo.concursos.dto.ObjetivoDTO;
 import com.gustavo.concursos.entity.Concurso;
@@ -122,7 +123,8 @@ public class ObjetivoController {
         return new ObjetivoDTO(
                 c.getId(), c.getNome(), c.getOrgao(),
                 c.getBanca() != null ? c.getBanca().getNome() : null,
-                c.getAno(), c.getSituacao(),
+                c.getAno(),
+                SituacaoCalculadora.situacao(c.getSituacao(), c.getInscricoesDe(), c.getInscricoesAte(), SituacaoCalculadora.hoje()),
                 cargo != null ? cargo.getId() : null,
                 cargo != null ? cargo.getNome() : null,
                 cargo != null ? cargo.getNivel() : null,
@@ -135,19 +137,23 @@ public class ObjetivoController {
     }
 
     // Primeira etapa ainda não concluída, com a contagem regressiva.
+    // Status calculado pela data (SituacaoCalculadora), nao o gravado.
     private ObjetivoDTO.EtapaDTO proximaEtapa(Concurso c) {
+        LocalDate hoje = SituacaoCalculadora.hoje();
         return c.getEtapas().stream()
-                .filter(e -> !"CONCLUIDO".equals(e.getStatus()))
+                .filter(e -> !SituacaoCalculadora.CONCLUIDO.equals(
+                        SituacaoCalculadora.statusEtapa(e.getStatus(), e.getDataPrevista(), hoje)))
                 .findFirst()
-                .map(this::paraEtapaDTO)
+                .map(e -> paraEtapaDTO(e, hoje))
                 .orElse(null);
     }
 
-    private ObjetivoDTO.EtapaDTO paraEtapaDTO(ConcursoEtapa e) {
+    private ObjetivoDTO.EtapaDTO paraEtapaDTO(ConcursoEtapa e, LocalDate hoje) {
         Integer dias = e.getDataPrevista() == null
                 ? null
-                : (int) ChronoUnit.DAYS.between(LocalDate.now(), e.getDataPrevista());
-        return new ObjetivoDTO.EtapaDTO(e.getNome(), e.getDataPrevista(), e.getStatus(), dias);
+                : (int) ChronoUnit.DAYS.between(hoje, e.getDataPrevista());
+        return new ObjetivoDTO.EtapaDTO(e.getNome(), e.getDataPrevista(),
+                SituacaoCalculadora.statusEtapa(e.getStatus(), e.getDataPrevista(), hoje), dias);
     }
 
     private Usuario usuarioLogado(Authentication authentication) {
