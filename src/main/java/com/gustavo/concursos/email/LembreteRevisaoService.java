@@ -31,7 +31,7 @@ public class LembreteRevisaoService {
 
     public LembreteRevisaoService(JdbcTemplate jdbc, EmailCliente email,
                                   @Value("${app.url-base:http://localhost:8080}") String urlBase,
-                                  @Value("${app.nome:Concursos Platform}") String nomeMarca) {
+                                  @Value("${app.nome:Romano Concursos}") String nomeMarca) {
         this.jdbc = jdbc;
         this.email = email;
         this.urlBase = urlBase.replaceAll("/+$", "");

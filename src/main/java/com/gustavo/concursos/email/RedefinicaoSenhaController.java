@@ -52,7 +52,7 @@ public class RedefinicaoSenhaController {
             PasswordEncoder passwordEncoder,
             EmailCliente email,
             @Value("${app.url-base:http://localhost:8080}") String urlBase,
-            @Value("${app.nome:Concursos Platform}") String nomeMarca
+            @Value("${app.nome:Romano Concursos}") String nomeMarca
     ) {
         this.nomeMarca = nomeMarca;
         this.usuarioRepository = usuarioRepository;
