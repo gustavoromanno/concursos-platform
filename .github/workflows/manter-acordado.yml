@@ -1,0 +1,32 @@
+name: Manter o site acordado
+
+# O plano gratuito do Render desliga o servico depois de ~15 min sem acesso, e o
+# proximo visitante espera ~1 min ele subir de novo. Este agendamento acessa a
+# pagina inicial a cada 10 min para evitar isso.
+#
+# Para ligar: Settings > Secrets and variables > Actions > aba Variables >
+# New repository variable  SITE_URL = endereco do site (ex.: https://xxx.onrender.com).
+# Sem a variavel, o job so avisa e termina.
+#
+# Acessa "/" (pagina estatica), e nao "/health": o /health consulta o banco e
+# manteria o Neon ligado o tempo todo, gastando as horas do plano gratuito.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  acessar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Acessar o site
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "Variavel SITE_URL nao configurada; nada a fazer."
+            exit 0
+          fi
+          curl -sS -o /dev/null -m 120 -w "HTTP %{http_code} em %{time_total}s\n" "$SITE_URL/" || true
