@@ -33,7 +33,7 @@ public class ConfirmacaoEmailService {
     public ConfirmacaoEmailService(TokenConfirmacaoRepository tokenRepository, UsuarioRepository usuarioRepository,
                                    EmailCliente email,
                                    @Value("${app.url-base:http://localhost:8080}") String urlBase,
-                                   @Value("${app.nome:Concursos Platform}") String nomeMarca,
+                                   @Value("${app.nome:Romano Concursos}") String nomeMarca,
                                    @Value("${app.exigir-confirmacao-email:true}") boolean exigir) {
         this.tokenRepository = tokenRepository;
         this.usuarioRepository = usuarioRepository;

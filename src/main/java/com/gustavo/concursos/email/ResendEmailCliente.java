@@ -32,7 +32,7 @@ public class ResendEmailCliente implements EmailCliente {
 
     public ResendEmailCliente(
             @Value("${email.resend.api-key:}") String chave,
-            @Value("${email.remetente:Concursos Platform <onboarding@resend.dev>}") String remetente,
+            @Value("${email.remetente:Romano Concursos <onboarding@resend.dev>}") String remetente,
             ObjectMapper json
     ) {
         this.chave = chave;

@@ -1956,7 +1956,7 @@ async function carregarInicio() {
 
         alvo.appendChild(criar(`
             <footer class="rodape-inicio">
-                <span>Concursos Platform</span>
+                <span class="nome-marca">Romano Concursos</span>
                 <span class="sub">Projeto pessoal em desenvolvimento · ${new Date().getFullYear()}</span>
             </footer>
         `));
@@ -2794,7 +2794,7 @@ const DATA_POLITICAS = '2026-09-26';
 
 (function prepararRodapeELegal() {
     $('#rodape-ano').textContent = new Date().getFullYear();
-    document.querySelectorAll('.empresa-nome').forEach(el => { el.textContent = EMPRESA.nome || 'Concursos Platform'; });
+    document.querySelectorAll('.empresa-nome').forEach(el => { el.textContent = EMPRESA.nome || 'Romano Concursos'; });
     document.querySelectorAll('.empresa-email').forEach(el => { el.textContent = EMPRESA.email || 'o formulário "Solicitar conteúdo", dentro da plataforma'; });
     document.querySelectorAll('.data-legal').forEach(el => {
         el.textContent = new Date(DATA_POLITICAS + 'T00:00:00').toLocaleDateString('pt-BR');
@@ -3165,7 +3165,7 @@ $('#btn-camp-enviar').onclick = async () => {
         if (!nome) return;
         document.querySelectorAll('.nome-marca').forEach(el => { el.textContent = nome; });
         if (!EMPRESA.nome) document.querySelectorAll('.empresa-nome').forEach(el => { el.textContent = nome; });
-        document.title = document.title.replace('Concursos Platform', nome);
+        document.title = document.title.replace('Romano Concursos', nome);
     } catch { /* mantem o nome padrao do HTML */ }
 })();
 

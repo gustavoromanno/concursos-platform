@@ -32,6 +32,6 @@ class PwaTest {
     void nomeDaMarcaVemDaConfiguracao() throws Exception {
         mvc.perform(get("/publico/config"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Concursos Platform"));
+                .andExpect(jsonPath("$.nome").value("Romano Concursos"));
     }
 }

@@ -31,7 +31,7 @@ public class PagamentoService {
             Planos planos,
             StripeCliente stripe,
             @Value("${app.url-base:http://localhost:8080}") String urlBase,
-            @Value("${app.nome:Concursos Platform}") String nomeMarca
+            @Value("${app.nome:Romano Concursos}") String nomeMarca
     ) {
         this.nomeMarca = nomeMarca;
         this.pagamentoRepository = pagamentoRepository;

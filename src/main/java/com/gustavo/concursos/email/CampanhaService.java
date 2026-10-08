@@ -36,7 +36,7 @@ public class CampanhaService {
             TransactionTemplate transacao,
             @Value("${app.url-base:http://localhost:8080}") String urlBase,
             @Value("${email.pausa-entre-envios-ms:600}") long pausaMs,
-            @Value("${app.nome:Concursos Platform}") String nomeMarca
+            @Value("${app.nome:Romano Concursos}") String nomeMarca
     ) {
         this.nomeMarca = nomeMarca;
         this.usuarioRepository = usuarioRepository;

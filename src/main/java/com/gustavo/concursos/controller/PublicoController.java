@@ -14,7 +14,7 @@ public class PublicoController {
     private final String nomeMarca;
 
     public PublicoController(JdbcTemplate jdbc,
-                             @org.springframework.beans.factory.annotation.Value("${app.nome:Concursos Platform}") String nomeMarca) {
+                             @org.springframework.beans.factory.annotation.Value("${app.nome:Romano Concursos}") String nomeMarca) {
         this.jdbc = jdbc;
         this.nomeMarca = nomeMarca;
     }
