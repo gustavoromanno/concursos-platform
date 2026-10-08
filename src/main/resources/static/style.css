@@ -1226,7 +1226,7 @@ main:has(#tela-login:not(.hidden)) {
 #topo.hidden { display: none !important; }
 
 #topo .marca { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-#topo .marca-icone { width: 24px; height: 24px; color: var(--dourado); }
+#topo .marca-icone { width: 30px; height: 30px; display: block; }
 #topo .marca strong {
     color: #fff;
     font-family: 'Jost', system-ui, sans-serif;
