@@ -26,4 +26,8 @@ COPY --from=build /app/target/*.jar app.jar
 
 # A plataforma de hospedagem define a porta pela variável PORT.
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java -XX:MaxRAMPercentage=75 -jar app.jar"]
+# Ajustes para a maquina pequena do plano gratuito (fracao de CPU, 512 MB):
+#   SerialGC          coletor de lixo de uma thread so, o mais leve para pouca CPU e memoria;
+#   TieredStopAtLevel so o compilador JIT rapido (C1): sobe bem mais depressa, ao custo de um
+#                     pouco de desempenho maximo, que este site nao chega a usar.
+ENTRYPOINT ["sh", "-c", "java -XX:MaxRAMPercentage=75 -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -jar app.jar"]

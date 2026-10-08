@@ -29,6 +29,7 @@ DISCIPLINAS_POR_LOTE = {
     "4": ["Conhecimentos Bancários", "Matemática Financeira"],
     "5": ["Ética no Serviço Público"],
     "6": ["Economia", "Estatística"],
+    "7": [],
 }
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
@@ -760,8 +761,134 @@ LOTE_6 = [
        "O complemento é sair coroa nas duas: 1/2 × 1/2 = 1/4. Logo, P(pelo menos uma cara) = 1 − 1/4 = 3/4."),
 ]
 
+LOTE_7 = [
+    # ------------------------------------------------------------------
+    # Lingua Portuguesa (estilo Cebraspe)
+    # ------------------------------------------------------------------
+    ce(PORT, "Vozes verbais", CESPE, 2025,
+       "Na frase \"O edital foi publicado pelo órgão ontem\", a forma verbal está na voz passiva analítica, e sua transposição para a voz ativa resulta em \"O órgão publicou o edital ontem\".",
+       True,
+       "Voz passiva analítica: verbo ser + particípio, com agente da passiva (\"pelo órgão\"). Na ativa, o agente vira sujeito e o sujeito paciente vira objeto direto, mantendo o tempo verbal (pretérito perfeito)."),
+    ce(PORT, "Vozes verbais", CESPE, 2026,
+       "Em \"Vendem-se apostilas usadas\", o verbo deveria estar no singular, pois o sujeito da oração é indeterminado.",
+       False,
+       "É voz passiva sintética: \"se\" é pronome apassivador e \"apostilas usadas\" é o sujeito, com o qual o verbo concorda. Equivale a \"Apostilas usadas são vendidas\"."),
+    ce(PORT, "Orações subordinadas", CESPE, 2025,
+       "Em \"Embora estivesse cansado, o candidato terminou a prova\", a oração introduzida por \"embora\" expressa ideia de concessão.",
+       True,
+       "\"Embora\" introduz oração subordinada adverbial concessiva: o fato (o cansaço) poderia impedir a ação principal, mas não impede."),
+    ce(PORT, "Orações subordinadas", CESPE, 2024,
+       "Na frase \"Os candidatos que estudaram foram aprovados\", se a oração \"que estudaram\" fosse isolada por vírgulas, o período passaria a indicar que todos os candidatos estudaram.",
+       True,
+       "Sem vírgulas, a oração adjetiva é restritiva: só os candidatos que estudaram foram aprovados. Entre vírgulas, vira explicativa e atribui a característica a todos os candidatos."),
+    me(PORT, "Coesão referencial", CESPE, 2025,
+       "No período \"O servidor apresentou o relatório ao diretor, que o aprovou sem ressalvas\", o pronome \"o\" em \"o aprovou\" retoma",
+       ["o relatório.", "o servidor.", "o diretor.", "a apresentação.", "as ressalvas."],
+       "\"Que\" retoma \"o diretor\" (sujeito de \"aprovou\"), e o pronome oblíquo \"o\" é o objeto direto, retomando \"o relatório\", aquilo que foi aprovado."),
+    ce(PORT, "Classes de palavras", CESPE, 2026,
+       "Em \"Ela chegou meio cansada\", a palavra \"meio\" é advérbio e, por isso, permanece invariável; seria incorreto escrever \"Ela chegou meia cansada\".",
+       True,
+       "Como advérbio (equivale a \"um pouco\"), \"meio\" não varia. Varia apenas como numeral ou adjetivo: \"meia hora\", \"meia porção\"."),
+    ce(PORT, "Classes de palavras", CESPE, 2025,
+       "Em \"Este é o motivo por que desisti\", a grafia separada de \"por que\" está correta, pois a expressão equivale a \"pelo qual\".",
+       True,
+       "\"Por que\" separado é preposição + pronome relativo (\"pelo qual\") ou aparece em perguntas. \"Porque\" junto é conjunção explicativa ou causal."),
+    me(PORT, "Tipologia textual", CESPE, 2024,
+       "O texto predominantemente dissertativo-argumentativo caracteriza-se por",
+       ["defender um ponto de vista com argumentos, para convencer o leitor.",
+        "relatar fatos em sequência temporal, com personagens e enredo.",
+        "caracterizar seres, objetos e ambientes por meio de detalhes sensoriais.",
+        "orientar o leitor, passo a passo, a executar um procedimento.",
+        "reproduzir diálogos entre personagens, sem a voz do autor."],
+       "A argumentação tem tese e argumentos. Relato com personagens é narração; caracterização é descrição; instruções passo a passo formam o texto injuntivo."),
+    ce(PORT, "Reescrita de frases", CESPE, 2025,
+       "A reescrita de \"Caso o candidato se atrase, não poderá entrar na sala\" como \"Se o candidato se atrasar, não poderá entrar na sala\" preserva o sentido e a correção gramatical do período.",
+       True,
+       "\"Caso\" e \"se\" são conjunções condicionais. A troca exige ajustar o verbo: \"caso\" pede presente do subjuntivo (atrase); \"se\", futuro do subjuntivo (atrasar)."),
+    ce(PORT, "Semântica", CESPE, 2026,
+       "No período \"O resultado foi ratificado pela banca\", a substituição de \"ratificado\" por \"retificado\" manteria o sentido original.",
+       False,
+       "São parônimos: ratificar é confirmar; retificar é corrigir. A troca altera o sentido: o resultado deixaria de ser confirmado e passaria a ser corrigido."),
 
-LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6}
+    # ------------------------------------------------------------------
+    # Raciocinio Logico
+    # ------------------------------------------------------------------
+    ce(RLM, "Lógica de argumentação", CESPE, 2025,
+       "O argumento \"Todo servidor é concursado. Paulo é concursado. Logo, Paulo é servidor\" é válido.",
+       False,
+       "É a falácia da afirmação do consequente: ser concursado é condição necessária para ser servidor, não suficiente. Paulo pode ser concursado sem ser servidor."),
+    ce(RLM, "Proposições e conectivos", CESPE, 2024,
+       "A proposição condicional \"p → q\" é falsa somente quando p é verdadeira e q é falsa.",
+       True,
+       "Na tabela-verdade da condicional, há um único caso falso: antecedente verdadeiro e consequente falso (V → F). Nos outros três, a condicional é verdadeira."),
+    me(RLM, "Conjuntos", CESPE, 2025,
+       "Em uma turma de 40 alunos, 25 estudam Português, 20 estudam Matemática e 8 estudam as duas disciplinas. O número de alunos que não estudam nenhuma das duas é",
+       ["3.", "0.", "5.", "8.", "11."],
+       "União = 25 + 20 − 8 = 37 alunos estudam ao menos uma disciplina. Logo, 40 − 37 = 3 não estudam nenhuma."),
+    ce(RLM, "Probabilidade", CESPE, 2026,
+       "De uma urna com 3 bolas brancas e 2 pretas, retiram-se duas bolas, sem reposição. A probabilidade de ambas serem brancas é igual a 3/10.",
+       True,
+       "P = 3/5 × 2/4 = 6/20 = 3/10. Sem reposição, a segunda retirada tem uma bola branca e uma bola a menos na urna."),
+    me(RLM, "Análise combinatória", CESPE, 2024,
+       "O número de maneiras distintas de 4 pessoas se sentarem em torno de uma mesa circular é",
+       ["6.", "24.", "12.", "4.", "16."],
+       "Permutação circular: (n − 1)! = 3! = 6. Rotações da mesma disposição não contam como arranjos diferentes."),
+    ce(RLM, "Equivalências lógicas", CESPE, 2025,
+       "A proposição \"Se não estudo, então não passo\" é logicamente equivalente a \"Se passo, então estudo\".",
+       True,
+       "É a contrapositiva: ~E → ~P equivale a P → E (inverte-se a ordem e negam-se as duas proposições)."),
+
+    # ------------------------------------------------------------------
+    # Conhecimentos Bancarios
+    # ------------------------------------------------------------------
+    ce(BANC, "Mercado de câmbio", CESPE, 2025,
+       "No regime de câmbio flutuante adotado pelo Brasil, o Banco Central pode intervir no mercado, por meio de leilões de moeda estrangeira ou de swaps cambiais, para reduzir a volatilidade da taxa de câmbio.",
+       True,
+       "O câmbio é flutuante, mas não livre de intervenção: o Banco Central atua para suavizar oscilações excessivas, sem fixar um patamar para a taxa."),
+    ce(BANC, "Produtos e serviços bancários", CESPE, 2026,
+       "O certificado de depósito bancário (CDB) é título de renda fixa emitido por bancos para captar recursos e pode ter remuneração prefixada ou pós-fixada.",
+       True,
+       "No CDB o investidor empresta ao banco. A remuneração pode ser prefixada, pós-fixada (atrelada ao CDI, por exemplo) ou híbrida, com parte prefixada e parte indexada."),
+    me(BANC, "Sistema Financeiro Nacional", CESPE, 2024,
+       "A autarquia responsável por fiscalizar e supervisionar as entidades fechadas de previdência complementar (fundos de pensão) é a",
+       ["Superintendência Nacional de Previdência Complementar (Previc).",
+        "Superintendência de Seguros Privados (Susep).",
+        "Comissão de Valores Mobiliários (CVM).",
+        "Agência Nacional de Saúde Suplementar (ANS).",
+        "Secretaria do Tesouro Nacional."],
+       "A Previc supervisiona os fundos de pensão. A Susep cuida de seguros, capitalização e previdência aberta; a CVM, do mercado de valores mobiliários."),
+    ce(BANC, "Prevenção à lavagem de dinheiro", CESPE, 2025,
+       "As instituições financeiras devem comunicar ao Coaf as operações com indícios de lavagem de dinheiro, sem dar ciência dessa comunicação ao cliente envolvido.",
+       True,
+       "Lei 9.613/1998, art. 11: a comunicação é obrigatória e sigilosa; avisar o cliente frustraria a apuração."),
+    ce(BANC, "Política monetária", CESPE, 2026,
+       "O redesconto é a operação pela qual o Banco Central concede assistência financeira de liquidez às instituições financeiras.",
+       True,
+       "O Banco Central atua como emprestador de última instância. Encarecer o redesconto desestimula esses empréstimos e reduz a liquidez; baratear tem o efeito oposto."),
+
+    # ------------------------------------------------------------------
+    # Economia
+    # ------------------------------------------------------------------
+    ce(ECON, "Inflação", CESPE, 2025,
+       "A inflação de custos ocorre quando o aumento generalizado dos preços decorre do excesso de demanda agregada em relação à capacidade produtiva da economia.",
+       False,
+       "Esse é o conceito de inflação de demanda. A inflação de custos vem do lado da oferta: alta de salários, matérias-primas, energia ou câmbio que as empresas repassam aos preços."),
+    ce(ECON, "Política fiscal", CESPE, 2024,
+       "Há superávit primário quando as receitas do governo superam as despesas, excluídos os juros da dívida pública.",
+       True,
+       "O resultado primário desconsidera os juros. Incluídos os juros, tem-se o resultado nominal, que no Brasil costuma ser deficitário mesmo com superávit primário."),
+    me(ECON, "Desemprego", CESPE, 2026,
+       "O trabalhador que perde o emprego porque sua função foi extinta pela adoção de uma nova tecnologia no setor em que atuava está em situação de desemprego",
+       ["estrutural.", "friccional.", "cíclico.", "sazonal.", "voluntário."],
+       "O desemprego estrutural decorre de mudanças na estrutura produtiva que tornam certas qualificações obsoletas. O friccional é a transição entre empregos; o cíclico acompanha as recessões; o sazonal, épocas do ano."),
+    ce(ECON, "Moeda", CESPE, 2025,
+       "A moeda desempenha as funções de meio de troca, unidade de conta e reserva de valor.",
+       True,
+       "São as três funções clássicas: facilita as trocas, serve de medida comum de valor e permite transferir poder de compra no tempo (função prejudicada por inflação alta)."),
+]
+
+
+LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7}
 
 
 def sql(texto):
