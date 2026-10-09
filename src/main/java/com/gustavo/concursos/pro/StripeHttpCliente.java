@@ -23,9 +23,11 @@ import java.util.List;
  * Cliente da API do Stripe via HTTP (formato form-urlencoded, sem SDK).
  * Checkout hospedado pelo Stripe, pagamento unico em reais.
  *
- * Formas de pagamento vem de STRIPE_METODOS (padrao: card,boleto). O Pix no
- * Stripe para empresas brasileiras depende de liberacao da propria Stripe:
- * quando a conta tiver Pix, acrescente "pix" na variavel.
+ * Formas de pagamento: definidas no PAINEL da Stripe (Configuracoes > Pagamentos >
+ * Metodos de pagamento), nao no codigo. As versoes atuais da API recusam o parametro
+ * payment_method_types ("no longer supported"); o Checkout mostra sozinho os metodos
+ * ativos na conta que aceitam reais (cartao, boleto, Pix quando liberado).
+ * STRIPE_METODOS so serve para ajustar opcoes: se contiver "boleto", o boleto vence em 3 dias.
  */
 @Component
 public class StripeHttpCliente implements StripeCliente {
@@ -64,9 +66,7 @@ public class StripeHttpCliente implements StripeCliente {
         campos.add(par("line_items[0][price_data][currency]", "brl"));
         campos.add(par("line_items[0][price_data][unit_amount]", String.valueOf(valorCentavos)));
         campos.add(par("line_items[0][price_data][product_data][name]", descricao));
-        for (int i = 0; i < metodos.size(); i++) {
-            campos.add(par("payment_method_types[" + i + "]", metodos.get(i)));
-        }
+        // Sem payment_method_types: metodos dinamicos, controlados no painel da Stripe.
         if (metodos.contains("boleto")) campos.add(par("payment_method_options[boleto][expires_after_days]", "3"));
         campos.add(par("success_url", urlSucesso));
         campos.add(par("cancel_url", urlCancelamento));
