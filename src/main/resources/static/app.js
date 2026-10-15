@@ -2798,7 +2798,7 @@ const EMPRESA = {
 };
 // Usado nos textos legais: "oferecida por <razao social>, CNPJ <cnpj>".
 EMPRESA.nome = [EMPRESA.razaoSocial, EMPRESA.cnpj && 'CNPJ ' + EMPRESA.cnpj].filter(Boolean).join(', ');
-const DATA_POLITICAS = '2026-09-26';
+const DATA_POLITICAS = '2026-10-15';
 
 (function prepararRodapeELegal() {
     $('#rodape-ano').textContent = new Date().getFullYear();
@@ -2838,7 +2838,7 @@ const DATA_POLITICAS = '2026-09-26';
 })();
 
 // Paginas publicas: abrem mesmo sem login.
-const PAGINAS_PUBLICAS = ['termos', 'privacidade', 'cookies'];
+const PAGINAS_PUBLICAS = ['termos', 'privacidade', 'reembolso', 'cookies'];
 
 document.querySelectorAll('[data-ir]').forEach(link => {
     link.addEventListener('click', e => {
