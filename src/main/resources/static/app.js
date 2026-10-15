@@ -2783,13 +2783,21 @@ if (retornoPagamento) {
 
 // ---------- rodape, paginas legais e contato ----------
 
-// Preencha antes de publicar: dados da empresa (Termos e Privacidade) e contato.
-// Campos vazios nao aparecem no site. Redes: { instagram: 'https://...', tiktok: '...', facebook: '...', x: '...' }
+// Dados da empresa (rodape, Termos e Privacidade) e contato. Campos vazios nao aparecem no site.
+// Identificacao do vendedor exigida pelo Decreto 7.962/2013 (comercio eletronico).
 const EMPRESA = {
-    nome: '',            // ex.: 'Nome da Ltda, CNPJ 00.000.000/0001-00'
-    email: 'contatoromanno@gmail.com',
-    redes: {}
+    razaoSocial: 'GUSTAVO HENRIQUE SILVA ROMANO LTDA',
+    cnpj: '64.518.482/0001-59',
+    email: 'contato@romanoconcursos.com.br',
+    telefone: '(31) 93301-5571',
+    redes: {
+        instagram: 'https://www.instagram.com/romanoconcursos',
+        tiktok: 'https://www.tiktok.com/@romanoconcursos',
+        threads: 'https://www.threads.com/@romanoconcursos'
+    }
 };
+// Usado nos textos legais: "oferecida por <razao social>, CNPJ <cnpj>".
+EMPRESA.nome = [EMPRESA.razaoSocial, EMPRESA.cnpj && 'CNPJ ' + EMPRESA.cnpj].filter(Boolean).join(', ');
 const DATA_POLITICAS = '2026-09-26';
 
 (function prepararRodapeELegal() {
@@ -2806,7 +2814,18 @@ const DATA_POLITICAS = '2026-09-26';
         link.href = 'mailto:' + EMPRESA.email;
         link.classList.remove('hidden');
     }
-    const nomes = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', x: 'X', youtube: 'YouTube', linkedin: 'LinkedIn' };
+    if (EMPRESA.telefone) {
+        const tel = $('#rodape-telefone');
+        tel.textContent = EMPRESA.telefone;
+        tel.href = 'tel:+55' + EMPRESA.telefone.replace(/\D/g, '');
+        tel.classList.remove('hidden');
+    }
+    if (EMPRESA.nome) {
+        const emp = $('#rodape-empresa');
+        emp.textContent = EMPRESA.nome;
+        emp.classList.remove('hidden');
+    }
+    const nomes = { instagram: 'Instagram', tiktok: 'TikTok', threads: 'Threads', facebook: 'Facebook', x: 'X', youtube: 'YouTube', linkedin: 'LinkedIn' };
     Object.entries(EMPRESA.redes).forEach(([rede, url]) => {
         if (!url) return;
         const a = document.createElement('a');
