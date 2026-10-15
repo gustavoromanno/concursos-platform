@@ -90,12 +90,16 @@ public class RedefinicaoSenhaController {
             tokenRepository.save(t);
 
             String link = urlBase + "/?redefinir=" + token;
-            email.enviar(u.getEmail(), "Crie uma nova senha — " + nomeMarca, """
-                    <p>Olá, %s!</p>
-                    <p>Recebemos um pedido para criar uma nova senha na %s.</p>
-                    <p><a href="%s">Clique aqui para criar sua nova senha</a>. O link vale por %d minutos e só pode ser usado uma vez.</p>
-                    <p>Se não foi você, ignore este e-mail: sua senha continua a mesma.</p>
-                    """.formatted(escapar(u.getNome()), escapar(nomeMarca), link, VALIDADE_MINUTOS));
+            String assunto = "Crie uma nova senha — " + nomeMarca;
+            String nome = u.getNome() == null ? "" : u.getNome().trim().split("\\s+")[0];
+            email.enviar(u.getEmail(), assunto, ModeloEmail.transacional(
+                    escapar(nomeMarca), urlBase, escapar(assunto),
+                    nome.isEmpty() ? "Olá!" : "Olá, " + escapar(nome) + "!",
+                    "Recebemos um pedido para criar uma nova senha na " + escapar(nomeMarca)
+                            + ". O link vale por " + VALIDADE_MINUTOS + " minutos e só pode ser usado uma vez.",
+                    "Criar nova senha",
+                    link,
+                    "Se não foi você, ignore este e-mail: sua senha continua a mesma."));
         });
         return Map.of("message", RESPOSTA_PADRAO);
     }
