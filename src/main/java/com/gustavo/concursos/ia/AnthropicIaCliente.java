@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,11 +22,13 @@ import java.util.Set;
 /**
  * Cliente da API de Mensagens da Anthropic, via HTTP puro (sem SDK).
  *
- * A chave vem da variavel ANTHROPIC_API_KEY e nunca e registrada em log.
+ * Ativo com IA_PROVEDOR=anthropic (ou sem IA_PROVEDOR). A chave vem da variavel
+ * ANTHROPIC_API_KEY e nunca e registrada em log.
  * Erros transitorios (limite de taxa, sobrecarga) sao repetidos com espera
  * crescente; os demais viram IaException com a mensagem da API.
  */
 @Component
+@ConditionalOnProperty(name = "ia.provedor", havingValue = "anthropic", matchIfMissing = true)
 public class AnthropicIaCliente implements IaCliente {
 
     private static final Logger log = LoggerFactory.getLogger(AnthropicIaCliente.class);
