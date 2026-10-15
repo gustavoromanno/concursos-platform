@@ -2,12 +2,14 @@
  * Service worker: deixa o site instalavel como app e abre a "casca" da
  * interface mesmo sem internet.
  *
- * - Arquivos do site (HTML, JS, CSS, icones): REDE PRIMEIRO. Com internet, sempre
- *   a versao nova (cada deploy chega na hora); sem internet, a ultima guardada.
+ * - Arquivos do site (HTML, JS, CSS, icones): CACHE PRIMEIRO, atualizando em
+ *   segundo plano (stale-while-revalidate). A pagina abre na hora com a copia
+ *   guardada, mesmo com o servidor lento ou acordando; a versao nova baixada fica
+ *   para a proxima abertura. Sem copia guardada (1a visita), vai direto na rede.
  * - Chamadas da API (/auth, /questoes, /pagamentos...) NUNCA passam pelo cache:
  *   dados pessoais e respostas sempre vem do servidor.
  */
-const CACHE = 'casca-v3';
+const CACHE = 'casca-v4';
 const CASCA = ['/', '/index.html', '/app.js', '/style.css', '/manifest.webmanifest',
                '/icones/icone.svg', '/icones/icone-192.png', '/icones/icone-512.png'];
 
@@ -30,15 +32,18 @@ self.addEventListener('fetch', evento => {
         && (CASCA.includes(url.pathname) || url.pathname.startsWith('/icones/'));
     if (!ehCasca) return;   // API e terceiros: direto na rede, sem cache
 
-    evento.respondWith(
-        fetch(req)
+    evento.respondWith(caches.open(CACHE).then(async cache => {
+        const guardada = await cache.match(req);
+        const daRede = fetch(req)
             .then(resp => {
-                if (resp.ok) {
-                    const copia = resp.clone();
-                    caches.open(CACHE).then(c => c.put(req, copia));
-                }
+                if (resp.ok) cache.put(req, resp.clone());
                 return resp;
             })
-            .catch(() => caches.match(req).then(r => r || caches.match('/index.html')))
-    );
+            .catch(() => guardada || cache.match('/index.html'));
+        if (guardada) {
+            evento.waitUntil(daRede.catch(() => {}));   // atualiza em segundo plano
+            return guardada;
+        }
+        return daRede;
+    }));
 });
