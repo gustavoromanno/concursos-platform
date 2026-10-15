@@ -1696,6 +1696,8 @@ main:has(#tela-planos:not(.hidden)), main:has(#tela-conta:not(.hidden)) { max-wi
 .rodape a:hover { color: var(--verde); }
 .rodape-redes { display: flex; gap: 12px; flex-wrap: wrap; }
 .rodape-copy { max-width: 1080px; margin: 24px auto 0; font-size: 12px; }
+.rodape-empresa::before { content: " · "; }
+#rodape-email { overflow-wrap: anywhere; }
 @media (max-width: 700px) { .rodape-grade { grid-template-columns: 1fr 1fr; } }
 
 /* Paginas legais */
