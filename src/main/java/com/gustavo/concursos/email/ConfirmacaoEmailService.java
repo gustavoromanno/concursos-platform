@@ -64,12 +64,15 @@ public class ConfirmacaoEmailService {
         tokenRepository.save(t);
 
         String nome = u.getNome() == null ? "" : u.getNome().trim().split("\\s+")[0];
-        email.enviar(u.getEmail(), "Confirme seu e-mail — " + nomeMarca, """
-                <p>Olá, %s!</p>
-                <p>Falta só um passo para começar a estudar na %s.</p>
-                <p><a href="%s/?confirmar=%s">Clique aqui para confirmar seu e-mail</a>. O link vale por %d horas.</p>
-                <p>Se você não criou esta conta, ignore este e-mail.</p>
-                """.formatted(escapar(nome), escapar(nomeMarca), urlBase, token, VALIDADE_HORAS));
+        String assunto = "Confirme seu e-mail — " + nomeMarca;
+        email.enviar(u.getEmail(), assunto, ModeloEmail.transacional(
+                escapar(nomeMarca), urlBase, escapar(assunto),
+                nome.isEmpty() ? "Olá!" : "Olá, " + escapar(nome) + "!",
+                "Falta só um passo para começar a estudar na " + escapar(nomeMarca)
+                        + ": confirme que este e-mail é seu. O link vale por " + VALIDADE_HORAS + " horas.",
+                "Confirmar meu e-mail",
+                urlBase + "/?confirmar=" + token,
+                "Se você não criou esta conta, ignore este e-mail."));
     }
 
     @Transactional

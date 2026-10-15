@@ -18,6 +18,10 @@ import java.util.Map;
  * Envio pelo Resend (https://resend.com), via HTTP.
  * RESEND_API_KEY e EMAIL_REMETENTE vem de variaveis de ambiente. Sem a chave,
  * o envio e so registrado em log (util em desenvolvimento).
+ *
+ * Todo e-mail vai com versao HTML e versao em texto simples, e com "Responder para"
+ * (EMAIL_RESPOSTA) quando configurado: um remetente "nao-responda" sem endereco de
+ * resposta real pesa contra no filtro de spam.
  */
 @Component
 public class ResendEmailCliente implements EmailCliente {
@@ -27,16 +31,19 @@ public class ResendEmailCliente implements EmailCliente {
 
     private final String chave;
     private final String remetente;
+    private final String responderPara;
     private final ObjectMapper json;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
 
     public ResendEmailCliente(
             @Value("${email.resend.api-key:}") String chave,
             @Value("${email.remetente:Romano Concursos <onboarding@resend.dev>}") String remetente,
+            @Value("${email.responder-para:}") String responderPara,
             ObjectMapper json
     ) {
         this.chave = chave;
-        this.remetente = remetente;
+        this.remetente = remetente.strip();
+        this.responderPara = responderPara.strip();
         this.json = json;
     }
 
@@ -57,6 +64,8 @@ public class ResendEmailCliente implements EmailCliente {
             dados.put("to", List.of(para));
             dados.put("subject", assunto);
             dados.put("html", html);
+            dados.put("text", TextoSimples.deHtml(html));
+            if (!responderPara.isEmpty()) dados.put("reply_to", List.of(responderPara));
             if (!cabecalhos.isEmpty()) dados.put("headers", cabecalhos);
             String corpo = json.writeValueAsString(dados);
             HttpRequest req = HttpRequest.newBuilder(URL)
