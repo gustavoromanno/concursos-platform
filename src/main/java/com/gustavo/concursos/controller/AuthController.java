@@ -29,6 +29,7 @@ public class AuthController {
 
     private final com.gustavo.concursos.email.ConfirmacaoEmailService confirmacaoEmail;
     private final com.gustavo.concursos.security.LimiteTentativasLogin limiteLogin;
+    private final com.gustavo.concursos.security.RegistroAcessoService registroAcesso;
 
     public AuthController(
             UsuarioRepository usuarioRepository,
@@ -36,8 +37,10 @@ public class AuthController {
             AuthenticationManager authenticationManager,
             JwtService jwtService,
             com.gustavo.concursos.email.ConfirmacaoEmailService confirmacaoEmail,
-            com.gustavo.concursos.security.LimiteTentativasLogin limiteLogin
+            com.gustavo.concursos.security.LimiteTentativasLogin limiteLogin,
+            com.gustavo.concursos.security.RegistroAcessoService registroAcesso
     ) {
+        this.registroAcesso = registroAcesso;
         this.confirmacaoEmail = confirmacaoEmail;
         this.limiteLogin = limiteLogin;
         this.usuarioRepository = usuarioRepository;
@@ -106,6 +109,12 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Confirme seu e-mail para entrar. Enviamos um link para " + email + " (confira também o spam).");
         }
+
+        // Marco Civil, art. 15: guarda data, hora e IP do acesso por 6 meses.
+        // Grava a cadeia completa do X-Forwarded-For (o 1o item pode ser forjado pelo cliente).
+        String cadeiaIp = http.getHeader("X-Forwarded-For");
+        registroAcesso.registrar(usuario.getId(),
+                cadeiaIp != null && !cadeiaIp.isBlank() ? cadeiaIp : http.getRemoteAddr());
 
         String token = jwtService.gerarToken(email);
         return ResponseEntity.ok(new LoginResponseDTO(token));
