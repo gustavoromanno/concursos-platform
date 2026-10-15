@@ -25,17 +25,33 @@ public class PublicoController {
         return Map.of("nome", nomeMarca);
     }
 
+    // Os numeros mudam pouco (so quando entra conteudo novo): ficam 10 min em memoria.
+    // Assim a pagina inicial nao consulta o banco a cada visita, nem acorda o Neon
+    // suspenso so para mostrar contadores. Uma consulta so, em vez de quatro.
+    private static final long VALIDADE_MS = 10 * 60 * 1000L;
+    private volatile Map<String, Long> numerosEmCache;
+    private volatile long numerosCalculadosEm;
+
     @GetMapping("/publico/numeros")
     public Map<String, Long> numeros() {
-        return Map.of(
-                "questoes", n("SELECT COUNT(*) FROM questao"),
-                "bancas", n("SELECT COUNT(DISTINCT banca_id) FROM questao"),
-                "disciplinas", n("SELECT COUNT(DISTINCT disciplina_id) FROM questao"),
-                "concursos", n("SELECT COUNT(*) FROM concurso"));
+        Map<String, Long> atual = numerosEmCache;
+        if (atual != null && System.currentTimeMillis() - numerosCalculadosEm < VALIDADE_MS) return atual;
+        Map<String, Object> linha = jdbc.queryForMap("""
+                SELECT (SELECT COUNT(*) FROM questao)                      AS questoes,
+                       (SELECT COUNT(DISTINCT banca_id) FROM questao)      AS bancas,
+                       (SELECT COUNT(DISTINCT disciplina_id) FROM questao) AS disciplinas,
+                       (SELECT COUNT(*) FROM concurso)                     AS concursos""");
+        Map<String, Long> novo = Map.of(
+                "questoes", n(linha.get("questoes")),
+                "bancas", n(linha.get("bancas")),
+                "disciplinas", n(linha.get("disciplinas")),
+                "concursos", n(linha.get("concursos")));
+        numerosEmCache = novo;
+        numerosCalculadosEm = System.currentTimeMillis();
+        return novo;
     }
 
-    private long n(String sql) {
-        Long v = jdbc.queryForObject(sql, Long.class);
-        return v == null ? 0 : v;
+    private static long n(Object valor) {
+        return valor instanceof Number num ? num.longValue() : 0;
     }
 }
