@@ -13,6 +13,10 @@ public interface QuestaoRascunhoRepository extends JpaRepository<QuestaoRascunho
 
     long countByImportacaoIdAndStatus(Long importacaoId, String status);
 
+    // Originais que ja ganharam ineditas (para "Continuar" nao gerar de novo).
+    @Query("SELECT DISTINCT r.base.id FROM QuestaoRascunho r WHERE r.importacao.id = :importacaoId AND r.base IS NOT NULL")
+    List<Long> basesComRascunho(@Param("importacaoId") Long importacaoId);
+
     // Ao reprocessar, some so o que ainda nao foi aprovado.
     @Modifying
     @Query("DELETE FROM QuestaoRascunho r WHERE r.importacao.id = :importacaoId AND r.status <> 'APROVADA'")

@@ -2507,8 +2507,19 @@ function cardImportacao(imp) {
         revisar.onclick = () => abrirRevisao(imp);
         acoes.appendChild(revisar);
     }
+    // Continuar: a leitura da prova ja terminou (45%); gera so as ineditas que faltam.
+    if (imp.status === 'ERRO' && imp.progresso >= 45 && imp.questoesLidas > 0) {
+        const continuar = criar('<button class="primario">Continuar de onde parou</button>');
+        continuar.onclick = async () => {
+            try { await api(`/admin/importacoes/${imp.id}/continuar`, { method: 'POST' }); }
+            catch (e) { alert(e.message); }
+            carregarImportacoes();
+        };
+        acoes.appendChild(continuar);
+    }
     if (imp.status === 'ERRO') {
         const reprocessar = criar('<button class="secundario">Reprocessar</button>');
+        reprocessar.title = 'Começa do zero: lê a prova de novo e apaga as inéditas pendentes';
         reprocessar.onclick = async () => {
             try { await api(`/admin/importacoes/${imp.id}/reprocessar`, { method: 'POST' }); }
             catch (e) { alert(e.message); }

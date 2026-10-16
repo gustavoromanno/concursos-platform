@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class GeminiIaClienteTest {
 
     private final ObjectMapper json = new ObjectMapper();
-    private final GeminiIaCliente cliente = new GeminiIaCliente("chave-falsa", "gemini-3.8-flash", json);
+    private final GeminiIaCliente cliente = new GeminiIaCliente("chave-falsa", "gemini-3.8-flash", "gemini-3.6-flash", json);
 
     private IaCliente.PedidoFerramenta pedido() {
         Map<String, Object> esquema = Map.of("type", "object",
@@ -66,7 +66,7 @@ class GeminiIaClienteTest {
 
     @Test
     void semChaveAvisaSemChamarARede() {
-        GeminiIaCliente semChave = new GeminiIaCliente("", "gemini-3.8-flash", json);
+        GeminiIaCliente semChave = new GeminiIaCliente("", "gemini-3.8-flash", "gemini-3.6-flash", json);
         assertThatThrownBy(() -> semChave.chamar(pedido()))
                 .isInstanceOf(IaException.class).hasMessageContaining("GEMINI_API_KEY");
     }

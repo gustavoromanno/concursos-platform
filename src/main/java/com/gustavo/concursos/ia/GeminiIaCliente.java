@@ -39,22 +39,25 @@ public class GeminiIaCliente implements IaCliente {
     private static final Logger log = LoggerFactory.getLogger(GeminiIaCliente.class);
     private static final String BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
     private static final Set<Integer> TRANSITORIOS = Set.of(429, 500, 502, 503, 504);
-    private static final int TENTATIVAS = 4;
+    private static final int TENTATIVAS = 6;   // espera 15+30+60+120+120 s, cerca de 6 min
     // Limite de dados enviados direto na requisicao (PDFs em base64 inclusos).
     static final long LIMITE_REQUISICAO = 20L * 1024 * 1024;
 
     private final String chave;
     private final String modelo;
+    private final String modeloReserva;
     private final ObjectMapper json;
     private final HttpClient http;
 
     public GeminiIaCliente(
             @Value("${ia.gemini.api-key:}") String chave,
             @Value("${ia.gemini.modelo:gemini-3.8-flash}") String modelo,
+            @Value("${ia.gemini.modelo-reserva:gemini-3.6-flash}") String modeloReserva,
             ObjectMapper json
     ) {
         this.chave = chave;
         this.modelo = modelo;
+        this.modeloReserva = modeloReserva == null ? "" : modeloReserva.strip();
         this.json = json;
         this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
     }
@@ -75,16 +78,35 @@ public class GeminiIaCliente implements IaCliente {
                     + "Reduza o tamanho dos arquivos (ex.: \"Reduzir tamanho do arquivo\" no leitor de PDF) e envie de novo.");
         }
 
-        URI url = URI.create(BASE + URLEncoder.encode(modelo, StandardCharsets.UTF_8) + ":generateContent");
-        HttpRequest requisicao = HttpRequest.newBuilder(url)
-                .timeout(Duration.ofMinutes(10))
-                .header("content-type", "application/json")
-                .header("x-goog-api-key", chave)
-                .POST(HttpRequest.BodyPublishers.ofString(corpoJson))
-                .build();
+        // Se o modelo principal continuar sobrecarregado depois de todas as tentativas,
+        // tenta o modelo reserva (GEMINI_MODELO_RESERVA; vazio desliga).
+        List<String> modelos = new ArrayList<>(List.of(modelo));
+        if (!modeloReserva.isEmpty() && !modeloReserva.equals(modelo)) modelos.add(modeloReserva);
 
-        HttpResponse<String> resposta = enviarComRepeticao(requisicao);
-        return interpretar(resposta.body(), pedido.nomeFerramenta());
+        for (int i = 0; ; i++) {
+            String m = modelos.get(i);
+            URI url = URI.create(BASE + URLEncoder.encode(m, StandardCharsets.UTF_8) + ":generateContent");
+            HttpRequest requisicao = HttpRequest.newBuilder(url)
+                    .timeout(Duration.ofMinutes(10))
+                    .header("content-type", "application/json")
+                    .header("x-goog-api-key", chave)
+                    .POST(HttpRequest.BodyPublishers.ofString(corpoJson))
+                    .build();
+            try {
+                HttpResponse<String> resposta = enviarComRepeticao(requisicao);
+                return interpretar(resposta.body(), pedido.nomeFerramenta());
+            } catch (Sobrecarga e) {
+                if (i + 1 >= modelos.size()) throw e;
+                log.warn("Modelo {} sobrecarregado; tentando o reserva {}.", m, modelos.get(i + 1));
+            }
+        }
+    }
+
+    // Erro temporario (sobrecarga/limite) que persistiu em todas as tentativas.
+    static class Sobrecarga extends IaException {
+        Sobrecarga(String mensagem) {
+            super(mensagem);
+        }
     }
 
     Map<String, Object> montarCorpo(PedidoFerramenta pedido) {
@@ -135,17 +157,21 @@ public class GeminiIaCliente implements IaCliente {
             int status = resposta.statusCode();
             if (status >= 200 && status < 300) return resposta;
 
-            if (TRANSITORIOS.contains(status) && tentativa < TENTATIVAS) {
-                log.warn("API do Gemini respondeu {} (tentativa {}/{}); repetindo.", status, tentativa, TENTATIVAS);
-                esperar(tentativa);
-                continue;
+            if (TRANSITORIOS.contains(status)) {
+                if (tentativa < TENTATIVAS) {
+                    log.warn("API do Gemini respondeu {} (tentativa {}/{}); repetindo.", status, tentativa, TENTATIVAS);
+                    esperar(tentativa);
+                    continue;
+                }
+                throw new Sobrecarga("A API do Gemini respondeu " + status + ": " + mensagemDeErro(resposta.body())
+                        + " Use \"Continuar de onde parou\" daqui a alguns minutos.");
             }
             throw new IaException("A API do Gemini respondeu " + status + ": " + mensagemDeErro(resposta.body()));
         }
     }
 
     private void esperar(int tentativa) {
-        long segundos = 10L << (tentativa - 1);   // 10, 20, 40: o limite gratuito e por minuto
+        long segundos = Math.min(120L, 15L << (tentativa - 1));   // 15, 30, 60, 120, 120
         try {
             Thread.sleep(segundos * 1000);
         } catch (InterruptedException e) {
