@@ -105,6 +105,12 @@ public class AdminImportacaoController {
         return paraDTO(importacaoService.reprocessar(id));
     }
 
+    @Transactional
+    @PostMapping("/importacoes/{id}/continuar")
+    public ImportacaoDTO continuar(@PathVariable Long id) {
+        return paraDTO(importacaoService.continuar(id));
+    }
+
     @DeleteMapping("/importacoes/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
         importacaoService.excluir(id);

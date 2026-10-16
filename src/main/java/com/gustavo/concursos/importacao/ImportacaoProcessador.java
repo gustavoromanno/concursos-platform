@@ -87,22 +87,31 @@ public class ImportacaoProcessador {
         ImportacaoProva imp = importacaoRepository.findById(importacaoId).orElse(null);
         if (imp == null) return;
         try {
-            ImportacaoArquivo arquivos = arquivoRepository.findById(importacaoId)
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Os PDFs desta importacao nao estao mais disponiveis. Envie a prova de novo."));
+            List<QuestaoBase> bases;
+            if (podeContinuar(imp)) {
+                // "Continuar": a leitura da prova ja terminou antes da falha. Reaproveita as
+                // originais e gera so para as que ainda nao tem ineditas (economiza tokens).
+                recarregarConcursoECargo(imp);
+                bases = baseRepository.findByImportacaoIdOrderByNumeroAsc(importacaoId);
+            } else {
+                ImportacaoArquivo arquivos = arquivoRepository.findById(importacaoId)
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Os PDFs desta importacao nao estao mais disponiveis. Envie a prova de novo."));
 
-            atualizar(imp, ImportacaoProva.EXTRAINDO, "Lendo a prova e o gabarito", 2);
-            Metadados meta = lerMetadados(imp, arquivos);
-            vincularConcurso(imp, meta);
+                atualizar(imp, ImportacaoProva.EXTRAINDO, "Lendo a prova e o gabarito", 2);
+                Metadados meta = lerMetadados(imp, arquivos);
+                vincularConcurso(imp, meta);
 
-            List<QuestaoBase> bases = extrairQuestoes(imp, arquivos, meta);
-            if (bases.isEmpty()) throw new IllegalStateException("Nenhuma questao foi encontrada na prova.");
+                bases = extrairQuestoes(imp, arquivos, meta);
+                if (bases.isEmpty()) throw new IllegalStateException("Nenhuma questao foi encontrada na prova.");
+            }
 
-            atualizar(imp, ImportacaoProva.GERANDO, "Gerando questoes ineditas", 45);
-            int geradas = gerarIneditas(imp, bases);
+            atualizar(imp, ImportacaoProva.GERANDO, "Gerando questoes ineditas", PROGRESSO_LEITURA_CONCLUIDA);
+            gerarIneditas(imp, bases);
+            long geradas = rascunhoRepository.countByImportacaoIdAndStatus(importacaoId, QuestaoRascunho.PENDENTE);
 
             // Sucesso: os PDFs nao sao mais necessarios.
-            arquivoRepository.deleteById(importacaoId);
+            if (arquivoRepository.existsById(importacaoId)) arquivoRepository.deleteById(importacaoId);
             imp.setMensagemErro(null);
             atualizar(imp, ImportacaoProva.CONCLUIDA,
                     bases.size() + " questoes lidas, " + geradas + " ineditas aguardando revisao", 100);
@@ -111,6 +120,20 @@ public class ImportacaoProcessador {
             imp.setMensagemErro(e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
             atualizar(imp, ImportacaoProva.ERRO, "Falhou", imp.getProgresso());
         }
+    }
+
+    // A leitura da prova (fase 1) terminou quando o progresso chegou a 45%.
+    static final int PROGRESSO_LEITURA_CONCLUIDA = 45;
+
+    public boolean podeContinuar(ImportacaoProva imp) {
+        return imp.getProgresso() >= PROGRESSO_LEITURA_CONCLUIDA && imp.getConcurso() != null
+                && baseRepository.countByImportacaoId(imp.getId()) > 0;
+    }
+
+    // Fora de transacao (thread da fila), concurso e cargo vem como proxies: carrega de verdade.
+    private void recarregarConcursoECargo(ImportacaoProva imp) {
+        imp.setConcurso(concursoRepository.findById(imp.getConcurso().getId()).orElse(null));
+        if (imp.getCargo() != null) imp.setCargo(cargoRepository.findById(imp.getCargo().getId()).orElse(null));
     }
 
     // ------------------------------------------------------------------
@@ -269,7 +292,10 @@ public class ImportacaoProcessador {
     // ------------------------------------------------------------------
 
     private int gerarIneditas(ImportacaoProva imp, List<QuestaoBase> bases) {
-        List<QuestaoBase> validas = bases.stream().filter(b -> !b.isAnulada()).toList();
+        // Ao continuar uma importacao, pula as originais que ja tem ineditas.
+        java.util.Set<Long> jaGeradas = new java.util.HashSet<>(rascunhoRepository.basesComRascunho(imp.getId()));
+        List<QuestaoBase> validas = bases.stream()
+                .filter(b -> !b.isAnulada() && !jaGeradas.contains(b.getId())).toList();
         Map<Integer, QuestaoBase> porNumero = new LinkedHashMap<>();
         validas.forEach(b -> porNumero.put(b.getNumero(), b));
 
@@ -292,7 +318,7 @@ public class ImportacaoProcessador {
         for (int i = 0; i < validas.size(); i += BASES_POR_GERACAO) {
             List<QuestaoBase> lote = validas.subList(i, Math.min(validas.size(), i + BASES_POR_GERACAO));
             atualizar(imp, ImportacaoProva.GERANDO, "Gerando a partir das questoes " + lote.get(0).getNumero()
-                    + " a " + lote.get(lote.size() - 1).getNumero(), 45 + (int) (54.0 * i / validas.size()));
+                    + " a " + lote.get(lote.size() - 1).getNumero(), PROGRESSO_LEITURA_CONCLUIDA + (int) (54.0 * i / validas.size()));
 
             JsonNode d = chamar(imp, new PedidoFerramenta(
                     SISTEMA,

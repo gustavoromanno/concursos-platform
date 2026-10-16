@@ -73,6 +73,29 @@ public class ImportacaoService {
         return imp;
     }
 
+    // Continua de onde parou: se a leitura da prova ja tinha terminado, gera so as
+    // ineditas que faltam, sem apagar nada e sem ler os PDFs de novo.
+    @Transactional
+    public ImportacaoProva continuar(Long id) {
+        ImportacaoProva imp = buscar(id);
+        if (imp.emAndamento()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Esta importacao ainda esta em andamento");
+        }
+        if (!ImportacaoProva.ERRO.equals(imp.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "So importacoes com erro podem continuar");
+        }
+        if (!processador.podeContinuar(imp)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A leitura da prova nao chegou ao fim. Use \"Reprocessar\" para comecar de novo.");
+        }
+        imp.setStatus(ImportacaoProva.AGUARDANDO);
+        imp.setEtapa("Na fila (continuando)");
+        imp.setMensagemErro(null);
+        imp.setAtualizadoEm(LocalDateTime.now());
+        disparar(id);
+        return imp;
+    }
+
     // Recomeca do zero: apaga as originais e os rascunhos nao aprovados.
     // Questoes ja aprovadas (e publicadas) continuam no site.
     @Transactional
@@ -150,7 +173,7 @@ public class ImportacaoService {
                 List.of(ImportacaoProva.AGUARDANDO, ImportacaoProva.EXTRAINDO, ImportacaoProva.GERANDO));
         for (ImportacaoProva imp : presas) {
             imp.setStatus(ImportacaoProva.ERRO);
-            imp.setMensagemErro("Interrompida por reinicio do servidor. Use \"Reprocessar\".");
+            imp.setMensagemErro("Interrompida por reinicio do servidor. Use \"Continuar\" ou \"Reprocessar\".");
             imp.setAtualizadoEm(LocalDateTime.now());
         }
         if (!presas.isEmpty()) log.info("{} importacao(oes) interrompida(s) marcadas para reprocessar.", presas.size());

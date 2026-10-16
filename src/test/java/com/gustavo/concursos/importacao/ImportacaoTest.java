@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Duration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
@@ -37,12 +38,20 @@ class ImportacaoTest {
 
     static final String ORIGINAL_1 = "Compete privativamente ao Banco Central do Brasil a emissao de moeda no territorio nacional.";
 
+    // Simulam a IA sobrecarregada na fase de geracao e contam as leituras da prova.
+    static volatile boolean FALHAR_GERACAO = false;
+    static final java.util.concurrent.atomic.AtomicInteger EXTRACOES = new java.util.concurrent.atomic.AtomicInteger();
+
     @TestConfiguration
     static class IaFalsa {
         @Bean
         @Primary
         IaCliente iaFalsa(ObjectMapper json) {
             return pedido -> {
+                if ("registrar_questoes".equals(pedido.nomeFerramenta())) EXTRACOES.incrementAndGet();
+                if ("criar_questoes_ineditas".equals(pedido.nomeFerramenta()) && FALHAR_GERACAO) {
+                    throw new com.gustavo.concursos.ia.IaException("A API do Gemini respondeu 503: sobrecarga simulada");
+                }
                 String resposta = switch (pedido.nomeFerramenta()) {
                     case "registrar_metadados" -> """
                             {"sigla":"Bacen","orgao":"Banco Central do Brasil","ano":2013,"banca":"Cebraspe",
@@ -113,6 +122,44 @@ class ImportacaoTest {
                 mvc.perform(get("/admin/importacoes/{id}", id))
                         .andExpect(jsonPath("$.status").value("CONCLUIDA")));
         return id;
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void continuaDeOndeParouSemLerAProvaDeNovo() throws Exception {
+        FALHAR_GERACAO = true;
+        try {
+            MvcResult r = mvc.perform(multipart("/admin/importacoes").file(pdf("prova")).file(pdf("gabarito"))
+                            .param("cargo", "Analista").param("ineditas", "1"))
+                    .andExpect(status().isAccepted())
+                    .andReturn();
+            long id = json.readTree(r.getResponse().getContentAsString()).path("id").asLong();
+            await().atMost(Duration.ofSeconds(20)).pollInSameThread().untilAsserted(() ->
+                    mvc.perform(get("/admin/importacoes/{id}", id))
+                            .andExpect(jsonPath("$.status").value("ERRO")));
+            mvc.perform(get("/admin/importacoes/{id}", id))
+                    .andExpect(jsonPath("$.questoesLidas").value(3))
+                    .andExpect(jsonPath("$.pendentes").value(0))
+                    .andExpect(jsonPath("$.progresso").value(45));
+
+            int extracoesAntes = EXTRACOES.get();
+            FALHAR_GERACAO = false;
+            mvc.perform(post("/admin/importacoes/{id}/continuar", id)).andExpect(status().isOk());
+            await().atMost(Duration.ofSeconds(20)).pollInSameThread().untilAsserted(() ->
+                    mvc.perform(get("/admin/importacoes/{id}", id))
+                            .andExpect(jsonPath("$.status").value("CONCLUIDA")));
+
+            // Gerou as ineditas sem ler a prova de novo e sem duplicar as originais.
+            mvc.perform(get("/admin/importacoes/{id}", id))
+                    .andExpect(jsonPath("$.questoesLidas").value(3))
+                    .andExpect(jsonPath("$.pendentes").value(2));
+            assertThat(EXTRACOES.get()).isEqualTo(extracoesAntes);
+
+            // Concluida: nao ha mais o que continuar.
+            mvc.perform(post("/admin/importacoes/{id}/continuar", id)).andExpect(status().isConflict());
+        } finally {
+            FALHAR_GERACAO = false;
+        }
     }
 
     @Test
