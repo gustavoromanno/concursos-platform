@@ -8,6 +8,8 @@ let simuladoAtual = null;
 let cronometro = null;
 let disciplinas = [];   // catalogo carregado uma vez apos o login
 let marcados = new Set();  // ids das questoes marcadas pelo usuario
+let recorrente = { ativo: false }; // assinatura mensal automatica (ligada no servidor)
+let assinaturaAtual = null;
 let indiceTeoria = [];     // resumos de teoria existentes (sem o texto), para o indice e os atalhos
 let anotadas = new Set();  // ids das questoes com anotacao do usuario
 let concursosFiltro = [];  // concursos (com cargos) do filtro de questoes
@@ -478,7 +480,7 @@ function preencherPerfil(p) {
     $('#conta-bio').value = p.bio || '';
 }
 
-const ROTULO_PLANO = { MENSAL: 'Mensal', TRIMESTRAL: 'Trimestral', ANUAL: 'Anual' };
+const ROTULO_PLANO = { MENSAL: 'Mensal', TRIMESTRAL: 'Trimestral', ANUAL: 'Anual', RECORRENTE: 'Mensal automático' };
 const ROTULO_PAGAMENTO = {
     PENDENTE: 'Não concluído', AGUARDANDO: 'Aguardando pagamento', PAGO: 'Pago',
     FALHOU: 'Falhou', EXPIRADO: 'Expirado', REEMBOLSADO: 'Reembolsado'
@@ -500,6 +502,14 @@ async function carregarAssinatura() {
     status.querySelector('.ir-planos').onclick = () => abrir('planos');
 
     try {
+        const a = await api('/pagamentos/assinatura');
+        if (a.ativa) {
+            status.querySelector('.ir-planos')?.remove();   // quem assina nao precisa "estender"
+            status.appendChild(blocoAssinatura(a));
+        }
+    } catch { /* sem bloco de assinatura */ }
+
+    try {
         const pagamentos = await api('/pagamentos');
         historico.innerHTML = pagamentos.length ? `
             <table class="tabela-pagamentos">
@@ -508,6 +518,32 @@ async function carregarAssinatura() {
                     <td>${reais(p.valorCentavos)}</td><td>${ROTULO_PAGAMENTO[p.status] || p.status}</td></tr>`).join('')}</tbody>
             </table>` : '';
     } catch { historico.innerHTML = ''; }
+}
+
+// Assinatura mensal com renovacao automatica: situacao e botao de cancelar/reativar.
+function blocoAssinatura(a) {
+    const fim = a.periodoFim ? dataBr(a.periodoFim) : '';
+    const texto = a.cancelarNoFim
+        ? `Renovação cancelada. Seu acesso Pro vai até ${fim}.`
+        : a.status === 'past_due'
+            ? 'Não conseguimos cobrar a renovação no cartão. A Stripe vai tentar de novo nos próximos dias.'
+            : a.status === 'trialing'
+                ? `A primeira cobrança de ${reais(a.valorCentavos)} acontece em ${fim}, quando seu período atual terminar.`
+                : `Renova em ${fim} por ${reais(a.valorCentavos)}, no cartão.`;
+    const bloco = criar(`<div class="assinatura-recorrente">
+        <strong>Assinatura mensal automática</strong>
+        <span class="sub">${escapar(texto)}</span>
+        <button class="${a.cancelarNoFim ? 'secundario' : 'perigo-suave'}">${a.cancelarNoFim ? 'Manter assinatura' : 'Cancelar renovação'}</button>
+        <span class="sub msg-assinatura"></span>
+    </div>`);
+    bloco.querySelector('button').onclick = async () => {
+        if (!a.cancelarNoFim && !confirm(`Cancelar a renovação? Não haverá novas cobranças e o Pro continua até ${fim}.`)) return;
+        try {
+            await api('/pagamentos/assinatura/' + (a.cancelarNoFim ? 'reativar' : 'cancelar'), { method: 'POST' });
+            carregarAssinatura();
+        } catch (e) { bloco.querySelector('.msg-assinatura').textContent = e.message; }
+    };
+    return bloco;
 }
 
 async function carregarContagensPerigo() {
@@ -2783,6 +2819,12 @@ async function carregarPlanos() {
     try {
         const r = await api('/planos');
         planosPro = r.planos;
+        recorrente = r.recorrente || { ativo: false };
+        aplicarRecorrente(recorrente.ativo);
+        assinaturaAtual = null;
+        if (recorrente.ativo && token) {
+            try { assinaturaAtual = await api('/pagamentos/assinatura'); } catch { /* segue sem */ }
+        }
         const limite = `${r.simuladosGratisPorMes} simulados por mês`;
         $('#beneficio-simulados-gratis').textContent = `Simulados cronometrados (${limite})`;
         $('#tabela-simulados-gratis').textContent = limite;
@@ -2800,16 +2842,37 @@ async function carregarPlanos() {
     const status = $('#status-pro');
     status.classList.toggle('hidden', !perfilUsuario?.pro);
     if (perfilUsuario?.pro) {
-        status.innerHTML = perfilUsuario.proAte
-            ? `<strong>Seu Pro está ativo até ${dataBr(perfilUsuario.proAte)}.</strong> <span class="sub">Comprar de novo soma os dias ao período atual.</span>`
-            : '<strong>Conta de administrador: todos os recursos Pro liberados.</strong>';
+        status.innerHTML = assinaturaAtual?.ativa
+            ? `<strong>Sua assinatura mensal automática está ativa${assinaturaAtual.cancelarNoFim ? ' (renovação cancelada)' : ''}.</strong> <span class="sub">Acesso Pro até ${dataBr(perfilUsuario.proAte)}. Gerencie em Meu perfil.</span>`
+            : perfilUsuario.proAte
+                ? `<strong>Seu Pro está ativo até ${dataBr(perfilUsuario.proAte)}.</strong> <span class="sub">Comprar de novo soma os dias ao período atual.</span>`
+                : '<strong>Conta de administrador: todos os recursos Pro liberados.</strong>';
     }
+}
+
+// Mostra os textos da assinatura automatica so quando ela esta ligada no servidor.
+function aplicarRecorrente(ativo) {
+    document.querySelectorAll('.so-recorrente').forEach(el => el.classList.toggle('hidden', !ativo));
+    document.querySelectorAll('.sem-recorrente').forEach(el => el.classList.toggle('hidden', ativo));
+}
+
+// Assinatura automatica so no mensal, para quem ainda nao tem uma.
+function renovacaoAutomatica() {
+    return periodoEscolhido === 'MENSAL' && recorrente.ativo && !assinaturaAtual?.ativa && $('#renovar-auto').checked;
 }
 
 function mostrarPreco() {
     const plano = planosPro.find(p => p.codigo === periodoEscolhido);
     if (!plano) return;
     const mensal = planosPro.find(p => p.codigo === 'MENSAL');
+    $('#opcao-renovar').classList.toggle('hidden', !(plano.codigo === 'MENSAL' && recorrente.ativo && !assinaturaAtual?.ativa));
+    if (renovacaoAutomatica()) {
+        $('#preco-pro').textContent = reais(recorrente.precoCentavos);
+        $('#preco-pro-sufixo').textContent = '/mês';
+        $('#preco-pro-detalhe').textContent = 'Cobrado todo mês no cartão · cancele quando quiser';
+        ['#btn-assinar', '#btn-assinar-rodape'].forEach(sel => { $(sel).textContent = 'Assinar Pro Mensal automático →'; });
+        return;
+    }
     $('#preco-pro').textContent = reais(plano.codigo === 'MENSAL' ? plano.precoCentavos : plano.precoMensalCentavos);
     $('#preco-pro-sufixo').textContent = '/mês';
     $('#preco-pro-detalhe').textContent = plano.codigo === 'MENSAL'
@@ -2831,13 +2894,15 @@ async function assinar() {
     const msg = $('#msg-assinar');
     msg.textContent = 'Abrindo o pagamento…';
     try {
-        const r = await api('/pagamentos/checkout', { method: 'POST', body: JSON.stringify({ plano: periodoEscolhido }) });
+        const plano = renovacaoAutomatica() ? 'RECORRENTE' : periodoEscolhido;
+        const r = await api('/pagamentos/checkout', { method: 'POST', body: JSON.stringify({ plano }) });
         window.location.href = r.url;   // pagina segura do Stripe
     } catch (e) {
         msg.textContent = e.message;
     }
 }
 $('#btn-assinar').onclick = assinar;
+$('#renovar-auto').onchange = mostrarPreco;
 $('#btn-assinar-rodape').onclick = assinar;
 
 // Volta do Stripe: ?pagamento=sucesso ou ?pagamento=cancelado.
@@ -3050,7 +3115,7 @@ const EMPRESA = {
 };
 // Usado nos textos legais: "oferecida por <razao social>, CNPJ <cnpj>".
 EMPRESA.nome = [EMPRESA.razaoSocial, EMPRESA.cnpj && 'CNPJ ' + EMPRESA.cnpj].filter(Boolean).join(', ');
-const DATA_POLITICAS = '2026-10-15';
+const DATA_POLITICAS = '2026-10-17';
 
 (function prepararRodapeELegal() {
     $('#rodape-ano').textContent = new Date().getFullYear();
@@ -3452,6 +3517,15 @@ $('#btn-camp-enviar').onclick = async () => {
         if (!EMPRESA.nome) document.querySelectorAll('.empresa-nome').forEach(el => { el.textContent = nome; });
         document.title = document.title.replace('Romano Concursos', nome);
     } catch { /* mantem o nome padrao do HTML */ }
+})();
+
+// Textos da assinatura automatica (landing e paginas legais) seguem o servidor.
+(async function flagRecorrente() {
+    try {
+        const r = await api('/planos');
+        recorrente = r.recorrente || { ativo: false };
+        aplicarRecorrente(recorrente.ativo);
+    } catch { /* fica so o pre-pago */ }
 })();
 
 // Service worker: permite instalar e abrir a interface sem internet.

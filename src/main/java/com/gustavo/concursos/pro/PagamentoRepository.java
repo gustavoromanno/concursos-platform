@@ -14,6 +14,8 @@ public interface PagamentoRepository extends JpaRepository<Pagamento, Long> {
 
     Optional<Pagamento> findFirstByStripePagamentoId(String stripePagamentoId);
 
+    Optional<Pagamento> findByStripeFaturaId(String stripeFaturaId);
+
     List<Pagamento> findByUsuarioIdOrderByCriadoEmDesc(Long usuarioId);
 
     @Modifying

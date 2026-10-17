@@ -51,6 +51,10 @@ public class Pagamento {
     @Column(name = "stripe_pagamento_id", length = 255)
     private String stripePagamentoId;
 
+    // Fatura da Stripe (so nas cobrancas da assinatura recorrente).
+    @Column(name = "stripe_fatura_id", length = 255, unique = true)
+    private String stripeFaturaId;
+
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm = LocalDateTime.now();
 

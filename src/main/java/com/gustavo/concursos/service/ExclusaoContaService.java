@@ -1,5 +1,6 @@
 package com.gustavo.concursos.service;
 
+import com.gustavo.concursos.pro.AssinaturaService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.Map;
  * Apaga perfil e dados de estudo. Mantem, sem vinculo com a conta: pagamentos
  * (obrigacao fiscal), pedidos de conteudo e reportes de erro. Os registros de acesso
  * (Marco Civil) nao tem vinculo de chave e seguem ate o fim do prazo legal.
+ * Assinatura mensal vigente e cancelada na Stripe antes, para a cobranca parar.
  */
 @Service
 public class ExclusaoContaService {
@@ -39,9 +41,11 @@ public class ExclusaoContaService {
     }
 
     private final JdbcTemplate jdbc;
+    private final AssinaturaService assinaturas;
 
-    public ExclusaoContaService(JdbcTemplate jdbc) {
+    public ExclusaoContaService(JdbcTemplate jdbc, AssinaturaService assinaturas) {
         this.jdbc = jdbc;
+        this.assinaturas = assinaturas;
     }
 
     public void apagarCategoria(String categoria, Long id) {
@@ -50,10 +54,12 @@ public class ExclusaoContaService {
 
     @Transactional
     public void excluir(Long id) {
+        assinaturas.encerrarParaExclusao(id);
         APAGAR.keySet().forEach(c -> apagarCategoria(c, id));
         jdbc.update("DELETE FROM comentario WHERE usuario_id = ?", id);
         jdbc.update("DELETE FROM filtro_salvo WHERE usuario_id = ?", id);
         jdbc.update("UPDATE pagamento SET usuario_id = NULL WHERE usuario_id = ?", id);
+        jdbc.update("UPDATE assinatura SET usuario_id = NULL WHERE usuario_id = ?", id);
         jdbc.update("UPDATE solicitacao_conteudo SET usuario_id = NULL WHERE usuario_id = ?", id);
         jdbc.update("UPDATE reporte_questao SET usuario_id = NULL WHERE usuario_id = ?", id);
         jdbc.update("DELETE FROM usuario WHERE id = ?", id);
