@@ -22,7 +22,7 @@ class PwaTest {
 
     @Test
     void arquivosDoAppSaoPublicos() throws Exception {
-        for (String caminho : new String[]{"/manifest.webmanifest", "/sw.js", "/robots.txt",
+        for (String caminho : new String[]{"/manifest.webmanifest", "/sw.js", "/robots.txt", "/sitemap.xml",
                 "/icones/icone-192.png", "/icones/icone-512.png", "/icones/icone.svg"}) {
             mvc.perform(get(caminho)).andExpect(status().isOk());
         }

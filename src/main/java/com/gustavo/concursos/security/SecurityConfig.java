@@ -46,7 +46,7 @@ public class SecurityConfig {
                         // Públicos
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/", "/index.html", "/app.js", "/style.css", "/favicon.ico",
-                                "/manifest.webmanifest", "/sw.js", "/robots.txt", "/icones/**").permitAll()
+                                "/manifest.webmanifest", "/sw.js", "/robots.txt", "/sitemap.xml", "/icones/**").permitAll()
                         .requestMatchers("/health").permitAll()
                         // Quando um controller responde com erro (400, 404...), o Tomcat
                         // repassa a requisicao para /error. Nesse repasse o token ja nao
