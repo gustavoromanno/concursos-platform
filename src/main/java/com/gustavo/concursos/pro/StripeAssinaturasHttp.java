@@ -1,7 +1,7 @@
 package com.gustavo.concursos.pro;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -57,7 +57,7 @@ public class StripeAssinaturasHttp implements StripeAssinaturas {
         campos.add(par("success_url", urlSucesso));
         campos.add(par("cancel_url", urlCancelamento));
         JsonNode corpo = enviar("POST", "/checkout/sessions", campos);
-        return new StripeCliente.Sessao(corpo.path("id").asText(), corpo.path("url").asText());
+        return new StripeCliente.Sessao(corpo.path("id").asString(), corpo.path("url").asString());
     }
 
     @Override
@@ -88,10 +88,10 @@ public class StripeAssinaturasHttp implements StripeAssinaturas {
             JsonNode corpo = json.readTree(resp.body());
             if (resp.statusCode() / 100 != 2) {
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                        "A Stripe recusou a operação: " + corpo.path("error").path("message").asText("erro desconhecido"));
+                        "A Stripe recusou a operação: " + corpo.path("error").path("message").asString("erro desconhecido"));
             }
             return corpo;
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Sem conexão com a Stripe. Tente de novo.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

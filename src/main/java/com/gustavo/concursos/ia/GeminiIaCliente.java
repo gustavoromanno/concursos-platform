@@ -1,7 +1,7 @@
 package com.gustavo.concursos.ia;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,7 +70,7 @@ public class GeminiIaCliente implements IaCliente {
         String corpoJson;
         try {
             corpoJson = json.writeValueAsString(montarCorpo(pedido));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IaException("Falha ao montar a requisicao para a IA.", e);
         }
         if (corpoJson.length() > LIMITE_REQUISICAO) {
@@ -182,9 +182,9 @@ public class GeminiIaCliente implements IaCliente {
 
     private String mensagemDeErro(String corpo) {
         try {
-            String msg = json.readTree(corpo).path("error").path("message").asText("");
+            String msg = json.readTree(corpo).path("error").path("message").asString("");
             return msg.isBlank() ? "erro sem detalhes" : msg;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return "erro sem detalhes";
         }
     }
@@ -193,7 +193,7 @@ public class GeminiIaCliente implements IaCliente {
         JsonNode raiz;
         try {
             raiz = json.readTree(corpo);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IaException("Resposta da IA em formato inesperado.", e);
         }
 
@@ -203,20 +203,20 @@ public class GeminiIaCliente implements IaCliente {
 
         JsonNode candidato = raiz.path("candidates").path(0);
         if (candidato.isMissingNode()) {
-            String bloqueio = raiz.path("promptFeedback").path("blockReason").asText("");
+            String bloqueio = raiz.path("promptFeedback").path("blockReason").asString("");
             throw new IaException(bloqueio.isBlank()
                     ? "O Gemini nao devolveu resposta."
                     : "O Gemini recusou o pedido (" + bloqueio + ").");
         }
         for (JsonNode parte : candidato.path("content").path("parts")) {
             JsonNode chamada = parte.path("functionCall");
-            if (nomeFerramenta.equals(chamada.path("name").asText())) {
+            if (nomeFerramenta.equals(chamada.path("name").asString())) {
                 return new RespostaFerramenta(chamada.path("args"), entrada, saida);
             }
         }
-        if ("MAX_TOKENS".equals(candidato.path("finishReason").asText())) {
+        if ("MAX_TOKENS".equals(candidato.path("finishReason").asString())) {
             throw new IaException("A resposta da IA foi cortada por excesso de tamanho.");
         }
-        throw new IaException("A IA nao devolveu os dados no formato esperado (" + candidato.path("finishReason").asText("?") + ").");
+        throw new IaException("A IA nao devolveu os dados no formato esperado (" + candidato.path("finishReason").asString("?") + ").");
     }
 }

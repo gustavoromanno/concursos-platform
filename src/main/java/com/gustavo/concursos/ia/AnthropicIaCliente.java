@@ -1,7 +1,7 @@
 package com.gustavo.concursos.ia;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,7 +74,7 @@ public class AnthropicIaCliente implements IaCliente {
         String corpoJson;
         try {
             corpoJson = json.writeValueAsString(corpo);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IaException("Falha ao montar a requisicao para a IA.", e);
         }
 
@@ -136,9 +136,9 @@ public class AnthropicIaCliente implements IaCliente {
     private String mensagemDeErro(String corpo) {
         try {
             JsonNode raiz = json.readTree(corpo);
-            String msg = raiz.path("error").path("message").asText("");
+            String msg = raiz.path("error").path("message").asString("");
             return msg.isBlank() ? "erro sem detalhes" : msg;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return "erro sem detalhes";
         }
     }
@@ -147,11 +147,11 @@ public class AnthropicIaCliente implements IaCliente {
         JsonNode raiz;
         try {
             raiz = json.readTree(corpo);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IaException("Resposta da IA em formato inesperado.", e);
         }
 
-        if ("max_tokens".equals(raiz.path("stop_reason").asText())) {
+        if ("max_tokens".equals(raiz.path("stop_reason").asString())) {
             throw new IaException("A resposta da IA foi cortada por excesso de tamanho.");
         }
 
@@ -162,8 +162,8 @@ public class AnthropicIaCliente implements IaCliente {
         long saida = uso.path("output_tokens").asLong(0);
 
         for (JsonNode bloco : raiz.path("content")) {
-            if ("tool_use".equals(bloco.path("type").asText())
-                    && nomeFerramenta.equals(bloco.path("name").asText())) {
+            if ("tool_use".equals(bloco.path("type").asString())
+                    && nomeFerramenta.equals(bloco.path("name").asString())) {
                 return new RespostaFerramenta(bloco.path("input"), entrada, saida);
             }
         }
