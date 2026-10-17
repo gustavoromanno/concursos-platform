@@ -1854,3 +1854,16 @@ main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
     .indice-teoria { position: static; max-height: none; }
     .leitura-teoria { padding: 20px; }
 }
+
+/* ---------- assinatura mensal automatica ---------- */
+.opcao-renovar {
+    display: flex; gap: 10px; align-items: flex-start; text-align: left; margin: 4px 0 14px;
+    padding: 10px 12px; border: 1px solid var(--borda); border-radius: 10px; font-size: 14px; cursor: pointer;
+}
+.opcao-renovar input { width: auto; height: auto; margin: 3px 0 0; padding: 0; flex: 0 0 auto; }
+.opcao-renovar span { flex: 1; }
+.opcao-renovar.hidden { display: none; }
+.assinatura-recorrente {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    margin-top: 12px; padding: 14px 16px; border-radius: 10px; background: var(--superficie);
+}

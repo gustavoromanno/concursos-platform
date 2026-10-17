@@ -25,6 +25,7 @@ import java.util.NoSuchElementException;
 public class PagamentoController {
 
     private final PagamentoService pagamentoService;
+    private final AssinaturaService assinaturaService;
     private final PagamentoRepository pagamentoRepository;
     private final UsuarioRepository usuarioRepository;
     private final Planos planos;
@@ -34,6 +35,7 @@ public class PagamentoController {
 
     public PagamentoController(
             PagamentoService pagamentoService,
+            AssinaturaService assinaturaService,
             PagamentoRepository pagamentoRepository,
             UsuarioRepository usuarioRepository,
             Planos planos,
@@ -42,6 +44,7 @@ public class PagamentoController {
             @Value("${pro.simulados-gratis-por-mes:3}") int simuladosGratis
     ) {
         this.pagamentoService = pagamentoService;
+        this.assinaturaService = assinaturaService;
         this.pagamentoRepository = pagamentoRepository;
         this.usuarioRepository = usuarioRepository;
         this.planos = planos;
@@ -53,7 +56,20 @@ public class PagamentoController {
     public record PlanoDTO(String codigo, String nome, int dias, int precoCentavos, int precoMensalCentavos) {
     }
 
-    public record PlanosDTO(List<PlanoDTO> planos, int simuladosGratisPorMes) {
+    /** Assinatura mensal com renovacao automatica: so aparece quando ativada (PRO_RECORRENTE_ATIVO). */
+    public record RecorrenteDTO(boolean ativo, int precoCentavos) {
+    }
+
+    public record PlanosDTO(List<PlanoDTO> planos, int simuladosGratisPorMes, RecorrenteDTO recorrente) {
+    }
+
+    public record AssinaturaDTO(boolean ativa, String status, boolean cancelarNoFim, LocalDateTime periodoFim,
+                                int valorCentavos) {
+        static AssinaturaDTO de(Assinatura a) {
+            return new AssinaturaDTO(true, a.getStatus(), a.isCancelarNoFim(), a.getPeriodoFim(), a.getValorCentavos());
+        }
+
+        static final AssinaturaDTO NENHUMA = new AssinaturaDTO(false, null, false, null, 0);
     }
 
     public record CheckoutDTO(@NotBlank String plano) {
@@ -67,7 +83,8 @@ public class PagamentoController {
     public PlanosDTO planos() {
         return new PlanosDTO(planos.todos().stream()
                 .map(p -> new PlanoDTO(p.codigo(), p.nome(), p.dias(), p.precoCentavos(), p.precoMensalEquivalente()))
-                .toList(), simuladosGratis);
+                .toList(), simuladosGratis,
+                new RecorrenteDTO(assinaturaService.ativo(), assinaturaService.precoCentavos()));
     }
 
     @PostMapping("/pagamentos/checkout")
@@ -82,6 +99,25 @@ public class PagamentoController {
                 .map(p -> new PagamentoDTO(p.getId(), p.getPlano(), p.getDias(), p.getValorCentavos(),
                         p.getStatus(), p.getCriadoEm(), p.getPagoEm()))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/pagamentos/assinatura")
+    public AssinaturaDTO minhaAssinatura(Authentication authentication) {
+        return assinaturaService.vigente(usuarioLogado(authentication).getId())
+                .map(AssinaturaDTO::de).orElse(AssinaturaDTO.NENHUMA);
+    }
+
+    // Desliga a renovacao: o Pro continua ate o fim do periodo ja pago.
+    @PostMapping("/pagamentos/assinatura/cancelar")
+    public AssinaturaDTO cancelarAssinatura(Authentication authentication) {
+        return AssinaturaDTO.de(assinaturaService.cancelarNoFim(usuarioLogado(authentication), true));
+    }
+
+    // Volta atras no cancelamento, enquanto o periodo pago nao acabou.
+    @PostMapping("/pagamentos/assinatura/reativar")
+    public AssinaturaDTO reativarAssinatura(Authentication authentication) {
+        return AssinaturaDTO.de(assinaturaService.cancelarNoFim(usuarioLogado(authentication), false));
     }
 
     // Chamado pelo Stripe (publico no SecurityConfig). So aceita com assinatura valida.

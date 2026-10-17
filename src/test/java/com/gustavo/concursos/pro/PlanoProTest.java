@@ -97,6 +97,13 @@ class PlanoProTest {
     }
 
     @Test
+    void assinaturaAutomaticaDesligadaNaoAbreCheckout() throws Exception {
+        mvc.perform(get("/planos")).andExpect(jsonPath("$.recorrente.ativo").value(false));
+        mvc.perform(post("/pagamentos/checkout").with(user(email)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"plano\":\"RECORRENTE\"}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void gratuitoRecebe402NosRecursosPro() throws Exception {
         mvc.perform(get("/revisoes/hoje").with(user(email))).andExpect(status().isPaymentRequired())
                 .andExpect(jsonPath("$.message").value("A revisão espaçada é um recurso do plano Pro."));

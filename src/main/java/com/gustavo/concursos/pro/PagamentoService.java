@@ -22,6 +22,7 @@ public class PagamentoService {
     private final UsuarioRepository usuarioRepository;
     private final Planos planos;
     private final StripeCliente stripe;
+    private final AssinaturaService assinaturas;
     private final String urlBase;
     private final String nomeMarca;
 
@@ -30,6 +31,7 @@ public class PagamentoService {
             UsuarioRepository usuarioRepository,
             Planos planos,
             StripeCliente stripe,
+            AssinaturaService assinaturas,
             @Value("${app.url-base:http://localhost:8080}") String urlBase,
             @Value("${app.nome:Romano Concursos}") String nomeMarca
     ) {
@@ -38,12 +40,14 @@ public class PagamentoService {
         this.usuarioRepository = usuarioRepository;
         this.planos = planos;
         this.stripe = stripe;
+        this.assinaturas = assinaturas;
         this.urlBase = urlBase.replaceAll("/+$", "");
     }
 
     // Abre o checkout do Stripe. Os dias so sao liberados quando o webhook confirmar.
     @Transactional
     public String iniciarCheckout(Usuario usuario, String codigoPlano) {
+        if (AssinaturaService.PLANO.equalsIgnoreCase(codigoPlano)) return assinaturas.iniciarCheckout(usuario);
         Planos.Plano plano = planos.buscar(codigoPlano)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Plano inválido"));
 
@@ -78,20 +82,30 @@ public class PagamentoService {
         JsonNode objeto = evento.path("data").path("object");
         switch (tipo) {
             // Cartao: ja vem pago. Boleto/Pix: vem "unpaid" e o pagamento chega depois.
-            case "checkout.session.completed" -> sessao(objeto).ifPresent(p -> {
-                p.setStripePagamentoId(objeto.path("payment_intent").asText(null));
-                if ("paid".equals(objeto.path("payment_status").asText())) confirmar(p);
-                else if (Pagamento.PENDENTE.equals(p.getStatus())) p.setStatus(Pagamento.AGUARDANDO);
-            });
+            case "checkout.session.completed" -> {
+                if ("subscription".equals(objeto.path("mode").asText())) assinaturas.sessaoConcluida(objeto);
+                else sessao(objeto).ifPresent(p -> {
+                    p.setStripePagamentoId(objeto.path("payment_intent").asText(null));
+                    if ("paid".equals(objeto.path("payment_status").asText())) confirmar(p);
+                    else if (Pagamento.PENDENTE.equals(p.getStatus())) p.setStatus(Pagamento.AGUARDANDO);
+                });
+            }
             case "checkout.session.async_payment_succeeded" -> sessao(objeto).ifPresent(p -> {
                 if (p.getStripePagamentoId() == null) p.setStripePagamentoId(objeto.path("payment_intent").asText(null));
                 confirmar(p);
             });
             case "checkout.session.async_payment_failed" -> sessao(objeto).ifPresent(p -> encerrar(p, Pagamento.FALHOU));
             case "checkout.session.expired" -> sessao(objeto).ifPresent(p -> encerrar(p, Pagamento.EXPIRADO));
+            // Assinatura mensal recorrente.
+            case "invoice.paid" -> assinaturas.faturaPaga(objeto);
+            case "invoice.payment_failed" -> assinaturas.faturaFalhou(objeto);
+            case "customer.subscription.updated" -> assinaturas.assinaturaAtualizada(objeto, false);
+            case "customer.subscription.deleted" -> assinaturas.assinaturaAtualizada(objeto, true);
             // Reembolso (ex.: direito de arrependimento em 7 dias): devolve os dias.
+            // Cobranca recorrente: casa pelo payment_intent ou, se faltar, pela fatura.
             case "charge.refunded" -> pagamentoRepository
                     .findFirstByStripePagamentoId(objeto.path("payment_intent").asText(""))
+                    .or(() -> pagamentoRepository.findByStripeFaturaId(objeto.path("invoice").asText("")))
                     .ifPresent(this::reembolsar);
             default -> log.debug("Evento do Stripe ignorado: {}", tipo);
         }
@@ -123,6 +137,7 @@ public class PagamentoService {
         p.setStatus(Pagamento.REEMBOLSADO);
         p.setReembolsadoEm(LocalDateTime.now());
         Usuario u = p.getUsuario();
+        if (AssinaturaService.PLANO.equals(p.getPlano())) assinaturas.encerrarPorReembolso(u);
         if (u == null || u.getProAte() == null) return;
         LocalDateTime novo = u.getProAte().minusDays(p.getDias());
         u.setProAte(novo.isAfter(LocalDateTime.now()) ? novo : LocalDateTime.now());

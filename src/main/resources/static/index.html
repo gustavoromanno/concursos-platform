@@ -174,7 +174,7 @@
             <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Painel completo de desempenho</li>
           </ul>
           <button class="primario ir-cadastro">Começar agora →</button>
-          <p class="sub garantia-plano">7 dias para desistir · Sem renovação automática</p>
+          <p class="sub garantia-plano">7 dias para desistir · <span class="sem-recorrente">Sem renovação automática</span><span class="so-recorrente hidden">Renovação automática só se você quiser</span></p>
         </div>
       </div>
     </div>
@@ -548,7 +548,7 @@
 
 <section id="tela-planos" class="hidden">
     <div class="planos-hero">
-      <span class="selo-hero">Sem renovação automática · pague só pelo período que escolher</span>
+      <span class="selo-hero"><span class="sem-recorrente">Sem renovação automática · pague só pelo período que escolher</span><span class="so-recorrente hidden">Pré-pago ou mensal automático · cancele quando quiser</span></span>
       <h1>Estude com <span class="destaque-nome">tudo liberado</span></h1>
       <p class="sub">Questões inéditas no estilo das bancas, simulados sem limite, revisão no momento certo e o painel completo do seu desempenho.</p>
       <div id="seletor-periodo" class="seletor-periodo" role="tablist">
@@ -581,6 +581,10 @@
         <span class="rotulo">PRO</span>
         <div class="preco-plano"><strong id="preco-pro">—</strong> <span id="preco-pro-sufixo" class="sub"></span></div>
         <p id="preco-pro-detalhe" class="sub"></p>
+        <label id="opcao-renovar" class="opcao-renovar hidden">
+          <input type="checkbox" id="renovar-auto">
+          <span><strong>Renovar automaticamente todo mês</strong> no cartão de crédito. Cancele quando quiser, em Meu perfil.</span>
+        </label>
         <p class="rotulo-beneficios">TUDO DO GRATUITO, MAIS:</p>
         <ul class="lista-beneficios">
           <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Questões inéditas geradas a partir de provas anteriores</li>
@@ -599,7 +603,7 @@
     <div class="garantias">
       <div class="card garantia"><strong>7 dias de arrependimento</strong><span class="sub">Desistiu em até 7 dias? Devolvemos o valor (Código de Defesa do Consumidor).</span></div>
       <div class="card garantia"><strong>Pagamento seguro</strong><span class="sub">Processado pelo Stripe. Não guardamos dados do seu cartão.</span></div>
-      <div class="card garantia"><strong>Sem cobrança automática</strong><span class="sub">É pré-pago: acabou o período, volta ao gratuito. Renova só se quiser.</span></div>
+      <div class="card garantia"><span class="sem-recorrente"><strong>Sem cobrança automática</strong><span class="sub">É pré-pago: acabou o período, volta ao gratuito. Renova só se quiser.</span></span><span class="so-recorrente hidden"><strong>Você escolhe como pagar</strong><span class="sub">Pré-pago, sem cobrança automática, ou mensal automático no cartão, que você cancela em dois cliques.</span></span></div>
     </div>
 
     <h2 class="titulo-secao">Compare os planos</h2>
@@ -623,7 +627,7 @@
 
     <h2 class="titulo-secao">Perguntas frequentes</h2>
     <div class="faq">
-      <details><summary>O plano Pro renova sozinho?</summary><p>Não. É pré-pago: você paga 30, 90 ou 365 dias. Ao terminar, sua conta volta ao gratuito, sem perder nada do que você já fez. Se comprar de novo antes de vencer, os dias se somam.</p></details>
+      <details><summary>O plano Pro renova sozinho?</summary><p>Os planos pré-pagos (30, 90 ou 365 dias) não renovam: ao terminar, sua conta volta ao gratuito, sem perder nada do que você já fez. Se comprar de novo antes de vencer, os dias se somam.<span class="so-recorrente hidden"> Se preferir, no plano mensal você pode marcar a renovação automática: a cobrança vem todo mês no cartão até você cancelar em Meu perfil, e o acesso vai até o fim do mês já pago.</span></p></details>
       <details><summary>Quais formas de pagamento são aceitas?</summary><p>Cartão de crédito e boleto. O Pix aparece no pagamento assim que estiver habilitado na conta. O boleto libera o Pro quando o banco confirma o pagamento, o que pode levar até 2 dias úteis.</p></details>
       <details><summary>Posso desistir depois de pagar?</summary><p>Sim. Em até 7 dias da compra você tem direito ao reembolso integral, pelo Código de Defesa do Consumidor. Peça pelo e-mail de contato.</p></details>
       <details><summary>O que são as questões inéditas?</summary><p>São questões criadas a partir de provas anteriores de cada concurso, no mesmo assunto e estilo da banca, com texto próprio. Todas são revisadas antes de publicadas, e as provas originais não são reproduzidas.</p></details>
@@ -828,7 +832,7 @@
     <p>A Romano Concursos é uma plataforma on-line de apoio aos estudos para concursos públicos, com banco de questões, simulados, cadernos, marcadores, revisão espaçada, relatórios de desempenho e catálogo de concursos.</p>
     <ul>
       <li><strong>Plano gratuito:</strong> acesso às questões e às principais ferramentas, com limites em alguns recursos (por exemplo, quantidade de simulados por mês).</li>
-      <li><strong>Plano Pro:</strong> libera os recursos avançados durante o período contratado (30, 90 ou 365 dias). É pré-pago e <strong>não tem renovação automática</strong>.</li>
+      <li><strong>Plano Pro:</strong> libera os recursos avançados durante o período contratado. Os planos pré-pagos (30, 90 ou 365 dias) <strong>não têm renovação automática</strong>.<span class="so-recorrente hidden"> Há também a assinatura mensal com <strong>renovação automática</strong> no cartão de crédito, opcional, que pode ser cancelada a qualquer momento, nos termos da <a href="#" data-ir="reembolso">Política de Cancelamento e Reembolso</a>.</span></li>
     </ul>
 
     <h2>2. Cadastro e conta</h2>
@@ -949,7 +953,8 @@
     <p>Esta política faz parte dos <a href="#" data-ir="termos">Termos de Uso</a> da Romano Concursos (<span class="empresa-nome"></span>).</p>
 
     <h2>1. Como funciona o Plano Pro</h2>
-    <p>O Plano Pro é <strong>pré-pago</strong>, por 30, 90 ou 365 dias, e <strong>não tem renovação automática</strong>. Nada é cobrado de novo sem que você faça um novo pagamento. Ao fim do período, a conta volta ao plano gratuito, sem perder seus dados de estudo.</p>
+    <p>Os planos <strong>pré-pagos</strong>, de 30, 90 ou 365 dias, <strong>não têm renovação automática</strong>. Nada é cobrado de novo sem que você faça um novo pagamento. Ao fim do período, a conta volta ao plano gratuito, sem perder seus dados de estudo.</p>
+    <p class="so-recorrente hidden">A <strong>assinatura mensal com renovação automática</strong> é opcional e só é contratada quando você marca essa opção. Ela é cobrada no cartão de crédito a cada mês, no valor informado na contratação, até você cancelar. Se você ainda tiver dias de um plano pré-pago, a primeira cobrança só acontece quando eles terminarem.</p>
 
     <h2>2. Direito de arrependimento (7 dias)</h2>
     <p>Conforme o art. 49 do Código de Defesa do Consumidor, você pode desistir da compra em até <strong>7 (sete) dias corridos</strong> contados da confirmação do pagamento e receber de volta o valor integral.</p>
@@ -958,10 +963,20 @@
       <li><strong>Cartão e Pix:</strong> o estorno é feito pela Stripe, no mesmo meio de pagamento. No cartão, o prazo para o crédito aparecer depende da administradora.</li>
       <li><strong>Boleto:</strong> a devolução é feita por transferência (Pix) para uma conta de mesma titularidade de quem pagou, que você nos informa por e-mail.</li>
       <li>Com o reembolso, o acesso Pro daquele pagamento é encerrado.</li>
+      <li class="so-recorrente hidden"><strong>Assinatura mensal:</strong> o prazo de 7 dias vale a partir da primeira cobrança. Ao pedir o reembolso, a assinatura também é cancelada.</li>
     </ul>
 
     <h2>3. Depois dos 7 dias</h2>
-    <p>Como o plano é pré-pago e não renova sozinho, não há cobrança futura a cancelar: o Pro simplesmente termina no fim do período. Após o prazo de arrependimento, não há devolução proporcional dos dias não usados, exceto quando o serviço não puder ser prestado por falha nossa ou nos demais casos previstos em lei.</p>
+    <p>Nos planos pré-pagos, não há cobrança futura a cancelar: o Pro simplesmente termina no fim do período. Após o prazo de arrependimento, não há devolução proporcional dos dias não usados, exceto quando o serviço não puder ser prestado por falha nossa ou nos demais casos previstos em lei.</p>
+    <div class="so-recorrente hidden">
+      <h2>3.1. Como cancelar a assinatura mensal</h2>
+      <ul>
+        <li>Em <strong>Meu perfil → Assinatura</strong>, clique em <strong>Cancelar renovação</strong>. Também atendemos o pedido pelo e-mail <span class="empresa-email"></span>.</li>
+        <li>O cancelamento vale na hora para as próximas cobranças. O acesso Pro continua até o fim do mês já pago, e você pode desfazer o cancelamento até lá.</li>
+        <li>Não há multa nem fidelidade. Depois dos 7 dias de arrependimento, o mês em curso não é devolvido de forma proporcional.</li>
+        <li>Se a cobrança de uma renovação for recusada, o cartão é tentado de novo nos dias seguintes; sem pagamento, a assinatura é encerrada e a conta volta ao gratuito no fim do período pago.</li>
+      </ul>
+    </div>
 
     <h2>4. Pagamento não concluído</h2>
     <p>Se o pagamento não for confirmado (por exemplo, boleto vencido ou cartão recusado), nada é cobrado e o Pro não é liberado. Você pode tentar de novo a qualquer momento.</p>
