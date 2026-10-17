@@ -1,5 +1,7 @@
 package com.gustavo.concursos.pro;
 
+import tools.jackson.core.JacksonException;
+
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.gustavo.concursos.entity.Usuario;
