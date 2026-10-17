@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -52,5 +53,36 @@ class AdminPainelTest {
         mvc.perform(post("/admin/usuarios/" + u.getId() + "/pro").with(user("admin").roles("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"dias\":0}")).andExpect(status().isOk());
         assertThat(usuarioRepository.findById(u.getId()).orElseThrow().ehPro()).isFalse();
+    }
+
+    @Test
+    void adminExcluiContaDeTesteMasNaoOutraContaAdmin() throws Exception {
+        Usuario u = new Usuario();
+        u.setNome("Conta de teste");
+        u.setEmail("excluir" + System.nanoTime() + "@teste.com");
+        u.setSenhaHash("x");
+        usuarioRepository.save(u);
+
+        mvc.perform(delete("/admin/usuarios/" + u.getId()).with(user("x").roles("USUARIO")))
+                .andExpect(status().isForbidden());
+        assertThat(usuarioRepository.findById(u.getId())).isPresent();
+
+        mvc.perform(delete("/admin/usuarios/" + u.getId()).with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.excluido").value(true));
+        assertThat(usuarioRepository.findById(u.getId())).isEmpty();
+
+        mvc.perform(delete("/admin/usuarios/" + u.getId()).with(user("admin").roles("ADMIN")))
+                .andExpect(status().isNotFound());
+
+        Usuario admin = new Usuario();
+        admin.setNome("Outro admin");
+        admin.setEmail("admin" + System.nanoTime() + "@teste.com");
+        admin.setSenhaHash("x");
+        admin.setPapel("ADMIN");
+        usuarioRepository.save(admin);
+        mvc.perform(delete("/admin/usuarios/" + admin.getId()).with(user("admin").roles("ADMIN")))
+                .andExpect(status().isConflict());
+        assertThat(usuarioRepository.findById(admin.getId())).isPresent();
     }
 }

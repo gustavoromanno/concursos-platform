@@ -1,5 +1,6 @@
 package com.gustavo.concursos.controller;
 
+import com.gustavo.concursos.service.ExclusaoContaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +22,11 @@ import java.util.Map;
 public class AdminPainelController {
 
     private final JdbcTemplate jdbc;
+    private final ExclusaoContaService exclusaoConta;
 
-    public AdminPainelController(JdbcTemplate jdbc) {
+    public AdminPainelController(JdbcTemplate jdbc, ExclusaoContaService exclusaoConta) {
         this.jdbc = jdbc;
+        this.exclusaoConta = exclusaoConta;
     }
 
     public record AjustePro(int dias) {
@@ -99,6 +102,20 @@ public class AdminPainelController {
     private long n(String sql, Object... args) {
         Long v = jdbc.queryForObject(sql, Long.class, args);
         return v == null ? 0 : v;
+    }
+
+    // Exclusao de conta pelo administrador: contas de teste ou pedido do titular (LGPD)
+    // feito por e-mail. Mesma rotina da exclusao em "Meu perfil". A conta ADMIN e protegida.
+    @Transactional
+    @DeleteMapping("/usuarios/{id}")
+    public Map<String, Object> excluirUsuario(@PathVariable Long id) {
+        List<Map<String, Object>> achado = jdbc.queryForList("SELECT email, papel FROM usuario WHERE id = ?", id);
+        if (achado.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+        if ("ADMIN".equals(achado.get(0).get("papel"))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A conta de administrador não pode ser excluída");
+        }
+        exclusaoConta.excluir(id);
+        return Map.of("id", id, "excluido", true);
     }
 
     // Plano B para quem nao recebeu o e-mail de confirmacao (suporte).

@@ -30,12 +30,14 @@ DISCIPLINAS_POR_LOTE = {
     "5": ["Ética no Serviço Público"],
     "6": ["Economia", "Estatística"],
     "7": [],
+    "8": [],
 }
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
 CARGO_EXEMPLO = "Analista Administrativo"
 
 CESPE, FGV = "CESPE/CEBRASPE", "FGV"
+CESG = "CESGRANRIO"
 BANC, MFIN = "Conhecimentos Bancários", "Matemática Financeira"
 ETICA = "Ética no Serviço Público"
 ECON, EST = "Economia", "Estatística"
@@ -888,7 +890,132 @@ LOTE_7 = [
 ]
 
 
-LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7}
+LOTE_8 = [
+    # ------------------------------------------------------------------
+    # Matematica Financeira (estilo Cesgranrio: BB, Caixa, BNB)
+    # ------------------------------------------------------------------
+    me(MFIN, "Juros compostos", CESG, 2026,
+       "Um cliente aplicou R$ 10.000,00 a juros compostos de 2% ao mês. Sem novos depósitos nem retiradas, o montante ao final de 3 meses será de",
+       ["R$ 10.612,08", "R$ 10.600,00", "R$ 10.604,00", "R$ 10.824,32", "R$ 10.200,00"],
+       "M = C × (1 + i)^n = 10.000 × 1,02³ = 10.000 × 1,061208 = R$ 10.612,08. R$ 10.600,00 seria o resultado com juros simples (3 × 2% = 6%)."),
+    me(MFIN, "Taxas equivalentes", CESG, 2026,
+       "Uma taxa nominal de 12% ao ano, com capitalização mensal, corresponde a uma taxa efetiva anual de, aproximadamente,",
+       ["12,68%", "12,00%", "12,36%", "13,00%", "11,39%"],
+       "Taxa nominal de 12% a.a. capitalizada mensalmente = 1% ao mês. Efetiva anual: (1,01)¹² − 1 ≈ 0,1268, ou seja, 12,68% ao ano."),
+    me(MFIN, "Taxas equivalentes", CESG, 2025,
+       "No regime de juros compostos, a taxa anual equivalente a 10% ao semestre é de",
+       ["21%", "20%", "10%", "22%", "19%"],
+       "(1 + 0,10)² − 1 = 1,21 − 1 = 0,21 = 21% ao ano. Somar as taxas (20%) só vale no regime de juros simples."),
+    me(MFIN, "Taxa real e inflação", CESG, 2025,
+       "Uma aplicação rendeu 10,25% em um ano no qual a inflação foi de 5%. A taxa real de rendimento no período foi de",
+       ["5,00%", "5,25%", "15,25%", "4,75%", "2,05%"],
+       "Fórmula de Fisher: (1 + nominal) = (1 + real) × (1 + inflação). 1,1025 / 1,05 = 1,05, logo a taxa real é de 5%. Subtrair as taxas (5,25%) é só uma aproximação."),
+    me(MFIN, "Juros simples", CESG, 2026,
+       "Qual capital, aplicado a juros simples de 1,5% ao mês, rende R$ 900,00 de juros em 8 meses?",
+       ["R$ 7.500,00", "R$ 6.000,00", "R$ 9.000,00", "R$ 13.500,00", "R$ 1.200,00"],
+       "J = C × i × t → 900 = C × 0,015 × 8 = C × 0,12 → C = 900 / 0,12 = R$ 7.500,00."),
+    me(MFIN, "Descontos", CESG, 2025,
+       "Um título de R$ 5.000,00 foi descontado 3 meses antes do vencimento, com desconto comercial (por fora) simples à taxa de 2% ao mês. O valor recebido pelo cliente foi de",
+       ["R$ 4.700,00", "R$ 4.716,98", "R$ 4.900,00", "R$ 4.705,96", "R$ 4.600,00"],
+       "Desconto comercial simples: D = N × i × n = 5.000 × 0,02 × 3 = R$ 300,00. Valor atual = 5.000 − 300 = R$ 4.700,00. R$ 4.716,98 seria o desconto racional (por dentro)."),
+    me(MFIN, "Descontos", CESG, 2026,
+       "Um título de R$ 5.000,00 foi resgatado 3 meses antes do vencimento, com desconto racional (por dentro) simples à taxa de 2% ao mês. O valor atual do título é de, aproximadamente,",
+       ["R$ 4.716,98", "R$ 4.700,00", "R$ 4.711,61", "R$ 4.850,00", "R$ 4.283,02"],
+       "No desconto racional simples, A = N / (1 + i × n) = 5.000 / 1,06 ≈ R$ 4.716,98. O desconto (R$ 283,02) incide sobre o valor atual, e não sobre o nominal."),
+    me(MFIN, "Sistemas de amortização", CESG, 2026,
+       "Um financiamento de R$ 120.000,00 será pago em 24 prestações mensais pelo Sistema de Amortização Constante (SAC), à taxa de 1% ao mês. O valor da segunda prestação será de",
+       ["R$ 6.150,00", "R$ 6.200,00", "R$ 5.000,00", "R$ 6.100,00", "R$ 6.250,00"],
+       "Amortização constante: 120.000 / 24 = R$ 5.000,00. Após a 1ª parcela, o saldo é R$ 115.000,00; os juros da 2ª são 1% × 115.000 = R$ 1.150,00. Prestação: 5.000 + 1.150 = R$ 6.150,00 (a 1ª foi R$ 6.200,00)."),
+    me(MFIN, "Sistemas de amortização", CESG, 2025,
+       "Um empréstimo de R$ 10.000,00 será quitado em 2 prestações mensais iguais pelo Sistema Francês (Price), à taxa de 2% ao mês, com a primeira paga um mês após a contratação. A amortização contida na primeira prestação é de, aproximadamente,",
+       ["R$ 4.950,50", "R$ 5.000,00", "R$ 5.150,50", "R$ 200,00", "R$ 5.050,50"],
+       "Prestação: PMT = 10.000 × 0,02 / (1 − 1,02⁻²) ≈ R$ 5.150,50. Juros do 1º mês: 2% × 10.000 = R$ 200,00. Amortização = 5.150,50 − 200,00 = R$ 4.950,50."),
+    ce(MFIN, "Sistemas de amortização", CESPE, 2026,
+       "No Sistema de Amortização Constante (SAC), as prestações são decrescentes, pois a parcela de juros diminui a cada período, enquanto no Sistema Francês (Price) as prestações são constantes e as amortizações, crescentes.",
+       True,
+       "No SAC a amortização é fixa e os juros caem com o saldo devedor, então a prestação diminui. Na Price a prestação é fixa: como os juros caem, a parte que amortiza a dívida cresce."),
+    ce(MFIN, "Análise de investimentos", CESPE, 2025,
+       "Um projeto exige investimento de R$ 1.000,00 hoje e retorna R$ 1.210,00 daqui a dois anos. Considerando taxa mínima de atratividade de 10% ao ano, o valor presente líquido do projeto é nulo, e sua taxa interna de retorno é de 10% ao ano.",
+       True,
+       "VPL = 1.210 / 1,1² − 1.000 = 1.210 / 1,21 − 1.000 = 0. A TIR é a taxa que zera o VPL; como ele é zero a 10%, a TIR é 10% ao ano."),
+
+    # ------------------------------------------------------------------
+    # Conhecimentos Bancarios
+    # ------------------------------------------------------------------
+    me(BANC, "Sistema Financeiro Nacional", CESG, 2026,
+       "O Conselho Monetário Nacional (CMN), órgão normativo máximo do Sistema Financeiro Nacional, é composto pelo",
+       ["Ministro da Fazenda, pelo Ministro do Planejamento e Orçamento e pelo Presidente do Banco Central do Brasil.",
+        "Presidente da República, pelo Ministro da Fazenda e pelo Presidente da CVM.",
+        "Presidente do Banco Central do Brasil e pelos diretores do Banco Central.",
+        "Ministro da Fazenda, pelo Presidente do Banco do Brasil e pelo Presidente da Caixa Econômica Federal.",
+        "Presidente da CVM, pelo Superintendente da Susep e pelo Diretor-Superintendente da Previc."],
+       "O CMN tem três membros: o Ministro da Fazenda (que o preside), o Ministro do Planejamento e Orçamento e o Presidente do Banco Central. A Secretaria-Executiva do CMN é exercida pelo Banco Central."),
+    me(BANC, "Sistema Financeiro Nacional", CESG, 2025,
+       "No Sistema Financeiro Nacional, a entidade responsável por regular e fiscalizar o mercado de valores mobiliários, como o de ações e debêntures, é a",
+       ["Comissão de Valores Mobiliários (CVM).", "Superintendência de Seguros Privados (Susep).",
+        "Superintendência Nacional de Previdência Complementar (Previc).", "Caixa Econômica Federal.",
+        "Secretaria do Tesouro Nacional."],
+       "A CVM é a autarquia que regula e fiscaliza o mercado de valores mobiliários. A Susep cuida de seguros, capitalização e previdência aberta; a Previc, dos fundos de pensão (previdência fechada)."),
+    ce(BANC, "Política monetária", CESPE, 2026,
+       "O Comitê de Política Monetária (Copom), do Banco Central do Brasil, define a meta para a taxa Selic, enquanto a meta para a inflação é fixada pelo Conselho Monetário Nacional.",
+       True,
+       "O CMN fixa a meta de inflação; o Copom, órgão do Banco Central, define a meta da Selic, principal instrumento para levar a inflação à meta."),
+    me(BANC, "Política monetária", CESG, 2026,
+       "Uma medida de política monetária que tende a REDUZIR a liquidez da economia é",
+       ["o aumento da alíquota do recolhimento compulsório sobre depósitos.",
+        "a compra de títulos públicos pelo Banco Central no mercado aberto.",
+        "a redução da meta para a taxa Selic.",
+        "a redução da taxa cobrada nas operações de redesconto.",
+        "a ampliação dos prazos das operações de redesconto."],
+       "Com compulsório maior, os bancos precisam deixar mais recursos parados no Banco Central e têm menos para emprestar. As demais medidas aumentam a liquidez (expansionistas)."),
+    me(BANC, "Garantias do sistema financeiro", CESG, 2026,
+       "Entre os produtos a seguir, aquele que conta com a garantia do Fundo Garantidor de Créditos (FGC) é",
+       ["o Certificado de Depósito Bancário (CDB).", "a cota de fundo de investimento.",
+        "a debênture emitida por uma sociedade anônima.", "a ação negociada em bolsa.",
+        "o título do Tesouro Direto."],
+       "O FGC cobre, até o limite por pessoa e por instituição, depósitos à vista, poupança, CDB, LCI, LCA e outros. Fundos de investimento, debêntures e ações não têm essa garantia; títulos públicos têm o risco do Tesouro Nacional, não do FGC."),
+    ce(BANC, "Garantias do sistema financeiro", CESPE, 2025,
+       "A garantia ordinária do Fundo Garantidor de Créditos é limitada a R$ 250 mil por titular em cada instituição ou conglomerado financeiro.",
+       True,
+       "O limite ordinário do FGC é de R$ 250 mil por CPF ou CNPJ, por instituição ou conglomerado. Há também um teto global de R$ 1 milhão por titular, válido por períodos de quatro anos."),
+    me(BANC, "Produtos e serviços bancários", CESG, 2025,
+       "Pela regra em vigor para os depósitos de poupança feitos desde maio de 2012, quando a meta da taxa Selic é superior a 8,5% ao ano, a remuneração da poupança corresponde a",
+       ["0,5% ao mês mais a Taxa Referencial (TR).", "70% da meta da Selic mais a TR.",
+        "100% do CDI.", "a variação do IPCA mais 6% ao ano.", "a meta da Selic, sem acréscimo."],
+       "Com Selic acima de 8,5% a.a., a poupança rende 0,5% ao mês + TR. Com Selic igual ou abaixo de 8,5% a.a., rende 70% da Selic + TR."),
+    me(BANC, "Títulos públicos", CESG, 2026,
+       "No Tesouro Direto, o título cuja rentabilidade acompanha a taxa Selic, sendo indicado para reserva de emergência por sua baixa oscilação de preço, é o",
+       ["Tesouro Selic (LFT).", "Tesouro Prefixado (LTN).", "Tesouro IPCA+ (NTN-B Principal).",
+        "Tesouro Prefixado com Juros Semestrais (NTN-F).", "Tesouro IPCA+ com Juros Semestrais (NTN-B)."],
+       "O Tesouro Selic (LFT) é pós-fixado à Selic. Os prefixados e os atrelados ao IPCA têm preço que oscila mais com as mudanças de juros (marcação a mercado)."),
+    ce(BANC, "Mercado de capitais", CESPE, 2026,
+       "Nas sociedades anônimas, as ações ordinárias conferem ao acionista direito a voto nas assembleias, e as ações preferenciais costumam ter prioridade na distribuição de dividendos, podendo ter o direito a voto restringido ou suprimido pelo estatuto.",
+       True,
+       "Ações ordinárias (ON) dão direito a voto. As preferenciais (PN) têm vantagens como prioridade nos dividendos e podem ter o voto restringido ou suprimido, nos termos da Lei 6.404/1976."),
+    ce(BANC, "Sistema de Pagamentos Brasileiro", CESPE, 2025,
+       "O Pix é o arranjo de pagamentos instantâneos instituído pelo Banco Central do Brasil, que permite transferências e pagamentos em poucos segundos, inclusive em fins de semana e feriados.",
+       True,
+       "O Pix foi criado e é regulamentado pelo Banco Central e funciona 24 horas por dia, 7 dias por semana, com liquidação em tempo real."),
+    ce(BANC, "Open Finance", CESPE, 2026,
+       "No Open Finance, uma instituição pode acessar os dados de conta de um cliente mantidos em outra instituição independentemente de autorização, bastando que ambas participem do ecossistema.",
+       False,
+       "O compartilhamento de dados no Open Finance depende do consentimento prévio do cliente, que define quais dados, com quem e por quanto tempo, e pode revogá-lo a qualquer momento."),
+    me(BANC, "Prevenção à lavagem de dinheiro", CESG, 2025,
+       "A lavagem de dinheiro costuma ser descrita em três etapas. A etapa em que se realizam várias operações para dificultar o rastreamento da origem ilícita dos recursos é chamada de",
+       ["ocultação (estratificação).", "colocação.", "integração.", "compensação.", "custódia."],
+       "Etapas clássicas: colocação (o dinheiro entra no sistema), ocultação ou estratificação (operações sucessivas para apagar a trilha) e integração (o recurso volta com aparência lícita)."),
+    ce(BANC, "Prevenção à lavagem de dinheiro", CESPE, 2026,
+       "O Conselho de Controle de Atividades Financeiras (Coaf), unidade de inteligência financeira do Brasil, está vinculado administrativamente ao Banco Central do Brasil.",
+       True,
+       "Desde a Lei 13.974/2020, o Coaf é vinculado administrativamente ao Banco Central, com autonomia técnica e operacional. Recebe e analisa as comunicações de operações suspeitas."),
+    ce(BANC, "Mercado de câmbio", CESPE, 2025,
+       "A valorização do real frente ao dólar tende a baratear as importações e a reduzir a competitividade dos produtos brasileiros exportados.",
+       True,
+       "Com o real mais forte, são necessários menos reais para comprar o mesmo bem importado; já o exportador recebe menos reais pelo mesmo valor em dólar, perdendo competitividade."),
+]
+
+
+LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7, "8": LOTE_8}
 
 
 def sql(texto):
