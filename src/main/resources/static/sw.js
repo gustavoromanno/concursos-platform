@@ -9,7 +9,7 @@
  * - Chamadas da API (/auth, /questoes, /pagamentos...) NUNCA passam pelo cache:
  *   dados pessoais e respostas sempre vem do servidor.
  */
-const CACHE = 'casca-v8';
+const CACHE = 'casca-v9';
 const CASCA = ['/', '/index.html', '/app.js', '/style.css', '/manifest.webmanifest',
                '/icones/icone.svg', '/icones/icone-192.png', '/icones/icone-512.png'];
 
