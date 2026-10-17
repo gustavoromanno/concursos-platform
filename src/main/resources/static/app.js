@@ -1502,6 +1502,56 @@ async function carregarConcursos() {
 }
 
 // Página do concurso: cronograma, cargos, conteúdo programático e provas.
+// "Método Romano" dentro do concurso: os 4 passos do estudo, cada um com a acao
+// que leva direto para a tela certa, ja no contexto deste concurso.
+const ICONES_METODO = {"alvo": "<svg class=\"ic\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/></svg>", "lapis": "<svg class=\"ic\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 20h9\"/><path d=\"M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838.838-2.872a2 2 0 0 1 .506-.854z\"/></svg>", "revisao": "<svg class=\"ic\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/></svg>", "grafico": "<svg class=\"ic\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\"/><line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\"/></svg>"};
+
+function cardMetodoConcurso(c) {
+    const temQuestoes = c.provas.some(p => p.totalQuestoes > 0);
+    const passos = [
+        ['alvo', 'Objetivo', 'Defina o cargo como objetivo: o conteúdo do edital vira seu plano de estudo.', 'Escolher cargo', 'objetivo'],
+        ['lapis', 'Prática', temQuestoes ? 'Resolva as questões deste concurso, com gabarito explicado.'
+            : 'Resolva questões no estilo da banca, com gabarito explicado.', 'Resolver questões', 'pratica'],
+        ['revisao', 'Revisão', 'Refaça o que errou no momento certo, antes de esquecer.', 'Abrir revisão', 'revisao'],
+        ['grafico', 'Evolução', 'Faça um simulado cronometrado e veja seu desempenho por assunto.', 'Criar simulado', 'simulado'],
+    ];
+    const card = criar(`
+        <div class="card metodo-romano compacto">
+            <div class="topo-metodo">
+                <div>
+                    <span class="rotulo-metodo">Como estudar para este concurso</span>
+                    <h2 class="titulo-metodo">Método Romano</h2>
+                </div>
+            </div>
+            <div class="grade-metodo">${passos.map(([icone, titulo, texto, botao, acao]) => `
+                <div class="pilar-metodo">
+                    <span class="icone-pilar">${ICONES_METODO[icone]}</span>
+                    <div>
+                        <strong>${titulo}</strong>
+                        <span class="sub">${texto}</span>
+                        <button class="link acao-metodo" data-acao="${acao}">${botao} →</button>
+                    </div>
+                </div>`).join('')}
+            </div>
+        </div>
+    `);
+    card.querySelectorAll('.acao-metodo').forEach(b => b.onclick = () => {
+        const acao = b.dataset.acao;
+        if (acao === 'objetivo') {
+            const cargos = document.querySelector('#prova-aberta .bloco-cargo');
+            if (cargos) cargos.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            else alert('Este concurso ainda não tem cargos cadastrados.');
+        } else if (acao === 'pratica') {
+            abrir('questoes');
+            if (temQuestoes) aplicarFiltro({ concursoId: c.id });
+        } else {
+            abrir(acao);
+        }
+        if (acao !== 'objetivo') window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    return card;
+}
+
 async function abrirConcurso(id) {
     const alvo = $('#prova-aberta');
     alvo.classList.remove('hidden');
@@ -1530,6 +1580,7 @@ async function abrirConcurso(id) {
         voltar.onclick = () => alvo.classList.add('hidden');
         cabecalho.appendChild(voltar);
         alvo.appendChild(cabecalho);
+        alvo.appendChild(cardMetodoConcurso(c));
 
         // Cronograma
         if (c.etapas.length) {
