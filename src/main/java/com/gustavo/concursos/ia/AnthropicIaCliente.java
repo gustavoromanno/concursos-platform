@@ -1,5 +1,7 @@
 package com.gustavo.concursos.ia;
 
+import tools.jackson.core.JacksonException;
+
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
