@@ -1867,3 +1867,48 @@ main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
     display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
     margin-top: 12px; padding: 14px 16px; border-radius: 10px; background: var(--superficie);
 }
+
+/* ---------- celular: barra de navegacao embaixo + "Mais" ---------- */
+.barra-movel, .menu-mais { display: none; }
+@media (max-width: 700px) {
+    #topo nav { display: none; }
+    body:has(#barra-movel:not(.hidden)) { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+
+    .barra-movel:not(.hidden) {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        background: var(--barra);
+        box-shadow: 0 -4px 18px rgba(0, 0, 0, .18);
+    }
+    .barra-movel button, .menu-mais-grade button {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+        position: relative; min-height: 52px; padding: 6px 2px;
+        border: none; border-radius: 12px; background: transparent;
+        color: var(--barra-texto); font: inherit; font-size: 11px; line-height: 1.1; cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .barra-movel button .ic { width: 22px; height: 22px; }
+    .barra-movel button.ativo { color: #fff; background: var(--barra-ativo); }
+    .barra-movel button.ativo .ic { color: var(--dourado); }
+    .ponto-movel {
+        position: absolute; top: 6px; right: calc(50% - 16px);
+        width: 8px; height: 8px; border-radius: 50%; background: var(--dourado);
+    }
+
+    .menu-mais:not(.hidden) { display: block; position: fixed; inset: 0; z-index: 50; }
+    .menu-mais-fundo { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); }
+    .menu-mais-folha {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        padding: 10px 14px calc(18px + env(safe-area-inset-bottom));
+        background: var(--barra); border-radius: 18px 18px 0 0;
+        animation: subir-folha .18s ease-out;
+    }
+    .menu-mais-alca { width: 40px; height: 4px; margin: 0 auto 12px; border-radius: 4px; background: rgba(255, 255, 255, .25); }
+    .menu-mais-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .menu-mais-grade button { min-height: 76px; font-size: 12.5px; background: var(--barra-ativo); color: #fff; }
+    .menu-mais-grade button .ic { width: 24px; height: 24px; color: var(--dourado); }
+    .menu-mais-grade button.ativo { outline: 2px solid var(--dourado); }
+}
+@keyframes subir-folha { from { transform: translateY(100%); } to { transform: none; } }
