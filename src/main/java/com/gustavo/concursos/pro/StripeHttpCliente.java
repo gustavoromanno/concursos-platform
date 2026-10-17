@@ -1,7 +1,9 @@
 package com.gustavo.concursos.pro;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -83,10 +85,10 @@ public class StripeHttpCliente implements StripeCliente {
             JsonNode corpo = json.readTree(resp.body());
             if (resp.statusCode() / 100 != 2) {
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                        "O Stripe recusou o pagamento: " + corpo.path("error").path("message").asText("erro desconhecido"));
+                        "O Stripe recusou o pagamento: " + corpo.path("error").path("message").asString("erro desconhecido"));
             }
-            return new Sessao(corpo.path("id").asText(), corpo.path("url").asText());
-        } catch (IOException e) {
+            return new Sessao(corpo.path("id").asString(), corpo.path("url").asString());
+        } catch (IOException | JacksonException e) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Sem conexão com o Stripe. Tente de novo.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

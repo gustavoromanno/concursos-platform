@@ -1,8 +1,8 @@
 package com.gustavo.concursos.importacao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.gustavo.concursos.entity.Alternativa;
 import com.gustavo.concursos.entity.Assunto;
 import com.gustavo.concursos.entity.CargoDisciplina;
@@ -180,7 +180,7 @@ public class PublicacaoRascunhoService {
     List<ValidadorQuestaoGerada.Alternativa> lerAlternativas(String jsonAlternativas) {
         try {
             return json.readValue(jsonAlternativas, new TypeReference<List<ValidadorQuestaoGerada.Alternativa>>() {});
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Alternativas do rascunho em formato invalido");
         }
     }
