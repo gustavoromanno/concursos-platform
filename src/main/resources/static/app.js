@@ -960,11 +960,20 @@ function travarAlternativas(card) {
 
 async function responderDireto(questao, alternativa, card) {
     travarAlternativas(card);
+    // Retorno imediato: marca a escolhida enquanto o servidor confere.
+    const indice = questao.alternativas.indexOf(alternativa);
+    const botaoEscolhido = card.querySelectorAll('.alternativa')[indice];
+    botaoEscolhido?.classList.add('conferindo');
 
-    const resultado = await api(`/questoes/${questao.id}/responder`, {
-        method: 'POST',
-        body: JSON.stringify({ alternativaId: alternativa.id })
-    });
+    let resultado;
+    try {
+        resultado = await api(`/questoes/${questao.id}/responder`, {
+            method: 'POST',
+            body: JSON.stringify({ alternativaId: alternativa.id })
+        });
+    } finally {
+        botaoEscolhido?.classList.remove('conferindo');
+    }
 
     questao.alternativas.forEach((alt, i) => {
         const botao = card.querySelectorAll('.alternativa')[i];

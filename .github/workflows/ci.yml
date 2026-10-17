@@ -30,4 +30,15 @@ jobs:
           node scripts/verificar-frontend.js
 
       - name: Rodar os testes
-        run: mvn -B test
+        run: mvn -B test 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+
+      # Resumo dos erros como anotacao: aparece no topo da execucao e pode ser lido pela API.
+      - name: Resumo dos erros
+        if: failure()
+        run: |
+          test -f build.log || exit 0
+          grep -E "\[ERROR\]|Tests run:.*(Failures: [1-9]|Errors: [1-9])|Caused by|expected|but was" build.log \
+            | grep -vE "Help 1|re-run Maven|full stack trace|-> \[Help|For more information|^\[ERROR\] *$|-e switch|-X switch" \
+            | awk '!seen[$0]++' | head -150 > resumo.txt
+          echo "::error title=resumo::$(sed -e 's/%/%25/g' resumo.txt | awk '{printf "%s%%0A", $0}' | cut -c1-60000)"
+
