@@ -3117,6 +3117,7 @@ async function buscarUsuariosAdmin() {
                         <button class="secundario conceder">Dar dias de Pro</button>
                         ${u.proAte ? '<button class="link remover">Remover Pro</button>' : ''}
                         ${u.emailConfirmado ? '' : '<button class="link confirmar-email">Confirmar e-mail</button>'}
+                        ${u.papel === 'ADMIN' ? '' : '<button class="perigo excluir-usuario">Excluir conta</button>'}
                     </div>
                 </div>`);
             const ajustar = async dias => {
@@ -3128,6 +3129,19 @@ async function buscarUsuariosAdmin() {
             linha.querySelector('.conceder').onclick = () => ajustar(Number(linha.querySelector('input').value));
             linha.querySelector('.confirmar-email')?.addEventListener('click', async () => {
                 try { await api(`/admin/usuarios/${u.id}/confirmar-email`, { method: 'POST' }); buscarUsuariosAdmin(); }
+                catch (e) { alert(e.message); }
+            });
+            // Exclusao definitiva: pede para digitar o e-mail, como nos servicos grandes.
+            linha.querySelector('.excluir-usuario')?.addEventListener('click', async () => {
+                const digitado = prompt(`Excluir DEFINITIVAMENTE a conta ${u.email}?\n`
+                    + 'Apaga perfil e dados de estudo; pagamentos ficam guardados sem vínculo (obrigação fiscal).\n\n'
+                    + 'Para confirmar, digite o e-mail da conta:');
+                if (digitado === null) return;
+                if (digitado.trim().toLowerCase() !== u.email.toLowerCase()) {
+                    alert('O e-mail digitado não confere. Nada foi excluído.');
+                    return;
+                }
+                try { await api(`/admin/usuarios/${u.id}`, { method: 'DELETE' }); buscarUsuariosAdmin(); }
                 catch (e) { alert(e.message); }
             });
             linha.querySelector('.remover')?.addEventListener('click', () => {

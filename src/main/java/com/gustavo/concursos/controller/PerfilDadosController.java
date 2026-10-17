@@ -2,6 +2,7 @@ package com.gustavo.concursos.controller;
 
 import com.gustavo.concursos.entity.Usuario;
 import com.gustavo.concursos.repository.UsuarioRepository;
+import com.gustavo.concursos.service.ExclusaoContaService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -35,25 +36,11 @@ public class PerfilDadosController {
             "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO");
     private static final int FOTO_MAX_CARACTERES = 400_000;   // ~300 KB de imagem em base64
 
-    // Cada categoria da zona de perigo e os comandos que a apagam (na ordem das chaves estrangeiras).
-    private static final Map<String, List<String>> APAGAR = new LinkedHashMap<>();
+    // Categorias da zona de perigo: os comandos de exclusao ficam em ExclusaoContaService.APAGAR.
+    private static final Map<String, List<String>> APAGAR = ExclusaoContaService.APAGAR;
     private static final Map<String, String> CONTAR = new LinkedHashMap<>();
 
     static {
-        APAGAR.put("ESTATISTICAS", List.of("DELETE FROM resposta WHERE usuario_id = ?"));
-        APAGAR.put("CADERNOS", List.of(
-                "DELETE FROM caderno_questao WHERE caderno_id IN (SELECT id FROM caderno WHERE usuario_id = ?)",
-                "DELETE FROM caderno WHERE usuario_id = ?",
-                "DELETE FROM anotacao WHERE usuario_id = ?"));
-        APAGAR.put("SIMULADOS", List.of(
-                "DELETE FROM simulado_questao WHERE simulado_id IN (SELECT id FROM simulado WHERE usuario_id = ?)",
-                "DELETE FROM simulado WHERE usuario_id = ?"));
-        APAGAR.put("MARCADORES", List.of("DELETE FROM marcador WHERE usuario_id = ?"));
-        APAGAR.put("PROGRESSO", List.of(
-                "DELETE FROM revisao WHERE usuario_id = ?",
-                "DELETE FROM objetivo_usuario WHERE usuario_id = ?",
-                "DELETE FROM meta_estudo WHERE usuario_id = ?"));
-
         CONTAR.put("ESTATISTICAS", "SELECT COUNT(*) FROM resposta WHERE usuario_id = ?");
         CONTAR.put("CADERNOS", "SELECT (SELECT COUNT(*) FROM caderno WHERE usuario_id = ?) + (SELECT COUNT(*) FROM anotacao WHERE usuario_id = ?)");
         CONTAR.put("SIMULADOS", "SELECT COUNT(*) FROM simulado WHERE usuario_id = ?");
@@ -64,11 +51,14 @@ public class PerfilDadosController {
     private final UsuarioRepository usuarioRepository;
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwordEncoder;
+    private final ExclusaoContaService exclusaoConta;
 
-    public PerfilDadosController(UsuarioRepository usuarioRepository, JdbcTemplate jdbc, PasswordEncoder passwordEncoder) {
+    public PerfilDadosController(UsuarioRepository usuarioRepository, JdbcTemplate jdbc, PasswordEncoder passwordEncoder,
+                                 ExclusaoContaService exclusaoConta) {
         this.usuarioRepository = usuarioRepository;
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
+        this.exclusaoConta = exclusaoConta;
     }
 
     public record DadosPessoaisDTO(
@@ -192,14 +182,7 @@ public class PerfilDadosController {
         if ("ADMIN".equals(u.getPapel())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A conta de administrador não pode ser excluída por aqui");
         }
-        Long id = u.getId();
-        APAGAR.values().forEach(cmds -> executar(cmds, id));
-        jdbc.update("DELETE FROM comentario WHERE usuario_id = ?", id);
-        jdbc.update("DELETE FROM filtro_salvo WHERE usuario_id = ?", id);
-        jdbc.update("UPDATE pagamento SET usuario_id = NULL WHERE usuario_id = ?", id);
-        jdbc.update("UPDATE solicitacao_conteudo SET usuario_id = NULL WHERE usuario_id = ?", id);
-        jdbc.update("UPDATE reporte_questao SET usuario_id = NULL WHERE usuario_id = ?", id);
-        jdbc.update("DELETE FROM usuario WHERE id = ?", id);
+        exclusaoConta.excluir(u.getId());
         return ResponseEntity.noContent().build();
     }
 
