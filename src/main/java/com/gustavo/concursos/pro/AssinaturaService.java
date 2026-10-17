@@ -1,6 +1,6 @@
 package com.gustavo.concursos.pro;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.gustavo.concursos.entity.Usuario;
 import com.gustavo.concursos.repository.UsuarioRepository;
 import org.slf4j.Logger;
@@ -216,7 +216,7 @@ public class AssinaturaService {
         String id = texto(assinatura.path("id"));
         if (id == null) return;
         Assinatura a = buscarOuCriar(id, usuarioDe(assinatura.path("metadata"), null), null, texto(assinatura.path("customer")));
-        a.setStatus(apagada ? "canceled" : assinatura.path("status").asText(a.getStatus()));
+        a.setStatus(apagada ? "canceled" : assinatura.path("status").asString(a.getStatus()));
         a.setCancelarNoFim(assinatura.path("cancel_at_period_end").asBoolean(false));
         long fim = assinatura.path("current_period_end").asLong(0);
         if (fim == 0) fim = assinatura.path("items").path("data").path(0).path("current_period_end").asLong(0);
@@ -289,7 +289,7 @@ public class AssinaturaService {
     private static String texto(JsonNode no) {
         if (no == null || no.isMissingNode() || no.isNull()) return null;
         if (no.isObject()) return texto(no.path("id"));
-        String s = no.asText("");
+        String s = no.asString("");
         return s.isBlank() ? null : s;
     }
 }

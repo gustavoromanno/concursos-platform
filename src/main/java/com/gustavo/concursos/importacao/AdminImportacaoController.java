@@ -1,8 +1,8 @@
 package com.gustavo.concursos.importacao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -175,7 +175,7 @@ public class AdminImportacaoController {
         List<AlternativaDTO> alternativas;
         try {
             alternativas = json.readValue(r.getAlternativas(), new TypeReference<List<AlternativaDTO>>() {});
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             alternativas = List.of();
         }
         return new RascunhoDTO(
