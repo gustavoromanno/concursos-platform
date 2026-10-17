@@ -47,18 +47,36 @@ public class RevisaoService {
                     return nova;
                 });
 
-        if (acertou) {
-            aplicarAcerto(revisao);
-        } else {
-            aplicarErro(revisao);
-        }
-
-        revisao.setProximaRevisao(LocalDate.now().plusDays(revisao.getIntervaloDias()));
+        Agenda nova = calcular(revisao.getRepeticoes(), revisao.getIntervaloDias(), revisao.getFacilidade(), acertou);
+        revisao.setRepeticoes(nova.repeticoes());
+        revisao.setIntervaloDias(nova.intervaloDias());
+        revisao.setFacilidade(nova.facilidade());
+        revisao.setProximaRevisao(nova.proximaRevisao());
         revisao.setAtualizadoEm(LocalDateTime.now());
         revisaoRepository.save(revisao);
     }
 
-    private void aplicarAcerto(Revisao r) {
+    /** Nova agenda de revisao de uma questao, depois de uma resposta. */
+    public record Agenda(int repeticoes, int intervaloDias, BigDecimal facilidade, LocalDate proximaRevisao) {
+    }
+
+    /**
+     * Calculo puro da repeticao espacada (sem banco). Valores nulos = primeira
+     * vez que a pessoa responde a questao. Usado tambem pela resposta rapida,
+     * que grava tudo numa ida so ao banco.
+     */
+    public static Agenda calcular(Integer repeticoesAtuais, Integer intervaloAtual, BigDecimal facilidadeAtual, boolean acertou) {
+        Revisao r = new Revisao();
+        if (repeticoesAtuais != null) r.setRepeticoes(repeticoesAtuais);
+        if (intervaloAtual != null) r.setIntervaloDias(intervaloAtual);
+        if (facilidadeAtual != null) r.setFacilidade(facilidadeAtual);
+        if (acertou) aplicarAcerto(r);
+        else aplicarErro(r);
+        return new Agenda(r.getRepeticoes(), r.getIntervaloDias(), r.getFacilidade(),
+                LocalDate.now().plusDays(r.getIntervaloDias()));
+    }
+
+    private static void aplicarAcerto(Revisao r) {
         int repeticoes = r.getRepeticoes() + 1;
         r.setRepeticoes(repeticoes);
 
@@ -78,7 +96,7 @@ public class RevisaoService {
         r.setFacilidade(limitar(r.getFacilidade().add(PREMIO_ACERTO)));
     }
 
-    private void aplicarErro(Revisao r) {
+    private static void aplicarErro(Revisao r) {
         // Errou: recomeça a contagem e volta amanhã. A facilidade cai, então
         // mesmo quando voltar a acertar, essa questão será revisada com mais
         // frequência do que uma que nunca foi errada.
@@ -87,7 +105,7 @@ public class RevisaoService {
         r.setFacilidade(limitar(r.getFacilidade().subtract(PENALIDADE_ERRO)));
     }
 
-    private BigDecimal limitar(BigDecimal valor) {
+    private static BigDecimal limitar(BigDecimal valor) {
         return valor.max(FACILIDADE_MINIMA).min(FACILIDADE_MAXIMA);
     }
 }

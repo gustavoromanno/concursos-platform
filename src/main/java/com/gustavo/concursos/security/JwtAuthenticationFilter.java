@@ -12,6 +12,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 // Roda uma vez por requisicao, antes do filtro padrao de autenticacao do Spring.
 // Le o header "Authorization: Bearer <token>", valida e, se for valido,
@@ -28,6 +30,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+
+    // Cache curto do usuario por e-mail: cada requisicao autenticada deixava de ir
+    // ao banco (~170 ms entre o Render e o Neon) so para reler o mesmo usuario.
+    // 30 s e o maximo que uma troca de papel ou exclusao de conta leva para valer.
+    // Fica aqui (e nao no CustomUserDetailsService) de proposito: o login apaga a
+    // senha do objeto que recebe, e um cache compartilhado sairia sem senha.
+    static final long VALIDADE_CACHE_MS = 30_000;
+    private record UsuarioEmCache(UserDetails detalhes, long expiraEm) {
+    }
+    private final Map<String, UsuarioEmCache> cache = new ConcurrentHashMap<>();
 
     public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
         this.jwtService = jwtService;
@@ -54,7 +66,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtService.extrairEmail(token);
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UserDetails userDetails = carregar(email);
 
                 if (jwtService.tokenValido(token, userDetails.getUsername())) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -69,5 +81,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private UserDetails carregar(String email) {
+        long agora = System.currentTimeMillis();
+        UsuarioEmCache emCache = cache.get(email);
+        if (emCache != null && emCache.expiraEm() > agora) return emCache.detalhes();
+        UserDetails detalhes = userDetailsService.loadUserByUsername(email);
+        if (cache.size() > 5_000) cache.clear();   // teto simples de memoria
+        cache.put(email, new UsuarioEmCache(detalhes, agora + VALIDADE_CACHE_MS));
+        return detalhes;
     }
 }
