@@ -399,10 +399,70 @@ document.querySelectorAll('#topo nav button').forEach(btn => {
     btn.onclick = () => abrir(btn.dataset.tela);
 });
 
+// ---------- menu do celular: barra embaixo + "Mais" ----------
+// Os botoes sao copiados do menu do topo, para os dois ficarem sempre iguais.
+const ATALHOS_MOVEL = ['inicio', 'questoes', 'teoria', 'revisao'];
+const ICONE_MAIS = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>';
+
+function botaoMovel(tela, icone, rotulo) {
+    const b = criar(`<button data-tela="${tela}">${icone}<span>${escapar(rotulo)}</span></button>`);
+    return b;
+}
+
+(function montarBarraMovel() {
+    const barra = $('#barra-movel');
+    ATALHOS_MOVEL.forEach(tela => {
+        const origem = document.querySelector(`#topo nav button[data-tela="${tela}"]`);
+        if (!origem) return;
+        const b = botaoMovel(tela, origem.querySelector('svg').outerHTML, origem.querySelector('span').textContent);
+        if (tela === 'revisao') b.appendChild(criar('<span class="ponto-movel hidden" aria-hidden="true"></span>'));
+        b.onclick = () => abrir(tela);
+        barra.appendChild(b);
+    });
+    const mais = botaoMovel('mais', ICONE_MAIS, 'Mais');
+    mais.onclick = abrirMenuMais;
+    barra.appendChild(mais);
+
+    // Mostra a barra junto com o topo (so com login) e espelha o selo da revisao.
+    const sincronizar = () => {
+        barra.classList.toggle('hidden', $('#topo').classList.contains('hidden'));
+        const selo = $('#selo-revisao');
+        barra.querySelector('.ponto-movel')?.classList.toggle('hidden', !selo || selo.classList.contains('hidden'));
+    };
+    new MutationObserver(sincronizar).observe($('#topo'), { attributes: true, attributeFilter: ['class'] });
+    const selo = $('#selo-revisao');
+    if (selo) new MutationObserver(sincronizar).observe(selo, { attributes: true, childList: true });
+    sincronizar();
+})();
+
+function abrirMenuMais() {
+    const grade = document.querySelector('#menu-mais .menu-mais-grade');
+    grade.innerHTML = '';
+    document.querySelectorAll('#topo nav button').forEach(origem => {
+        if (ATALHOS_MOVEL.includes(origem.dataset.tela) || origem.classList.contains('hidden')) return;
+        const b = botaoMovel(origem.dataset.tela, origem.querySelector('svg').outerHTML, origem.querySelector('span').textContent);
+        b.classList.toggle('ativo', origem.classList.contains('ativo'));
+        b.onclick = () => { fecharMenuMais(); abrir(origem.dataset.tela); };
+        grade.appendChild(b);
+    });
+    const conta = botaoMovel('conta', '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>', 'Minha conta');
+    conta.onclick = () => { fecharMenuMais(); $('#btn-conta').click(); };
+    grade.appendChild(conta);
+    $('#menu-mais').classList.remove('hidden');
+}
+
+function fecharMenuMais() {
+    $('#menu-mais').classList.add('hidden');
+}
+document.querySelector('#menu-mais .menu-mais-fundo').onclick = fecharMenuMais;
+
 function abrir(tela) {
     document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('#topo nav button').forEach(b =>
         b.classList.toggle('ativo', b.dataset.tela === tela));
+    document.querySelectorAll('#barra-movel button').forEach(b =>
+        b.classList.toggle('ativo', b.dataset.tela === tela || (b.dataset.tela === 'mais' && !ATALHOS_MOVEL.includes(tela))));
+    fecharMenuMais();
     $('#tela-' + tela).classList.remove('hidden');
 
     if (tela === 'questoes') { carregarQuestoes(0); carregarFiltrosSalvos(); }
