@@ -31,6 +31,7 @@ DISCIPLINAS_POR_LOTE = {
     "6": ["Economia", "Estatística"],
     "7": [],
     "8": [],
+    "9": ["Redes de Computadores"],
 }
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
@@ -40,6 +41,19 @@ CESPE, FGV = "CESPE/CEBRASPE", "FGV"
 CESG = "CESGRANRIO"
 BANC, MFIN = "Conhecimentos Bancários", "Matemática Financeira"
 ETICA = "Ética no Serviço Público"
+FCC = "FCC"
+REDES, BD, SEG, ESW = ("Redes de Computadores", "Banco de Dados",
+                       "Segurança da Informação", "Engenharia de Software")
+
+# A partir do lote 9 a banca e localizada por variantes do nome (a importacao
+# por IA pode ter cadastrado "Fundação Carlos Chagas" em vez de "FCC").
+BANCA_VARIANTES = {
+    "FCC": ["fcc", "fundação carlos chagas", "fundacao carlos chagas"],
+    "CESPE/CEBRASPE": ["cespe/cebraspe", "cebraspe", "cespe"],
+}
+
+# Lotes de areas especificas (TI) nao entram no cargo de exemplo (administrativo).
+LOTES_SEM_CARGO_EXEMPLO = {"9"}
 ECON, EST = "Economia", "Estatística"
 PORT, DADM, DCON, INFO, RLM = (
     "Língua Portuguesa", "Direito Administrativo", "Direito Constitucional",
@@ -1015,7 +1029,147 @@ LOTE_8 = [
 ]
 
 
-LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7, "8": LOTE_8}
+LOTE_9 = [
+    # ------------------------------------------------------------------
+    # Redes de Computadores (estilo FCC e Cebraspe: TRTs, TREs, Bacen)
+    # ------------------------------------------------------------------
+    me(REDES, "Modelo OSI e TCP/IP", FCC, 2026,
+       "No modelo de referência OSI, a camada responsável pelo endereçamento lógico e pelo roteamento de pacotes entre redes distintas é a camada de",
+       ["Rede", "Enlace", "Transporte", "Sessão", "Física"],
+       "A camada de Rede (3) cuida do endereçamento lógico (por exemplo, IP) e do roteamento entre redes. O Enlace (2) trata do quadro e do endereço físico (MAC) dentro do mesmo segmento; o Transporte (4) cuida da comunicação fim a fim entre processos (portas)."),
+    me(REDES, "Protocolos de transporte", FCC, 2026,
+       "Em comparação com o TCP, o protocolo UDP",
+       ["não estabelece conexão nem garante a entrega ou a ordem dos datagramas, o que o torna mais leve para aplicações como streaming e DNS.",
+        "estabelece conexão por meio do three-way handshake antes de enviar os dados.",
+        "garante a entrega e a ordem dos segmentos por meio de confirmações (ACK) e retransmissões.",
+        "possui controle de congestionamento e de fluxo por janela deslizante.",
+        "opera na camada de rede, junto com o protocolo IP."],
+       "O UDP é não orientado a conexão: não faz handshake, não confirma recebimento nem reordena dados. Handshake, ACK, retransmissão e janela deslizante são características do TCP. Ambos operam na camada de transporte."),
+    ce(REDES, "Protocolos de aplicação", CESPE, 2026,
+       "O DNS utiliza, por padrão, a porta 53, e as consultas comuns de resolução de nomes são feitas preferencialmente sobre UDP, podendo recorrer ao TCP em respostas grandes e em transferências de zona.",
+       True,
+       "Certo. A porta padrão do DNS é a 53, tanto em UDP quanto em TCP. Consultas comuns usam UDP; o TCP é usado em transferência de zona e quando a resposta não cabe em um datagrama UDP."),
+    me(REDES, "Endereçamento IP", FCC, 2026,
+       "Uma sub-rede IPv4 com máscara /26 (255.255.255.192) comporta, no máximo, quantos endereços utilizáveis por hosts?",
+       ["62", "64", "30", "126", "254"],
+       "Com /26 sobram 32 − 26 = 6 bits para hosts: 2⁶ = 64 endereços. Descontando o endereço de rede e o de broadcast, restam 64 − 2 = 62 endereços utilizáveis."),
+    ce(REDES, "Endereçamento IP", CESPE, 2025,
+       "O endereço 172.32.10.1 pertence a uma das faixas de endereços IPv4 privados definidas na RFC 1918.",
+       False,
+       "Errado. As faixas privadas são 10.0.0.0/8, 172.16.0.0/12 (de 172.16.0.0 a 172.31.255.255) e 192.168.0.0/16. O endereço 172.32.10.1 está fora da faixa 172.16–172.31, portanto é público."),
+    me(REDES, "Protocolos de aplicação", FCC, 2025,
+       "O protocolo que permite a um computador obter automaticamente, ao se conectar à rede, um endereço IP, a máscara de sub-rede, o gateway padrão e os servidores DNS é o",
+       ["DHCP", "ARP", "ICMP", "SNMP", "NAT"],
+       "O DHCP distribui automaticamente a configuração de rede. O ARP descobre o MAC a partir do IP; o ICMP transporta mensagens de controle e erro (como o ping); o SNMP serve para gerenciar equipamentos; o NAT traduz endereços privados em públicos."),
+    ce(REDES, "Modelo OSI e TCP/IP", CESPE, 2025,
+       "O protocolo ARP é utilizado para descobrir o endereço físico (MAC) correspondente a um endereço IPv4 conhecido, dentro da mesma rede local.",
+       True,
+       "Certo. O ARP envia um pedido em broadcast perguntando quem tem determinado IP, e o dono responde com seu endereço MAC. No IPv6, essa função é feita pelo Neighbor Discovery."),
+
+    # ------------------------------------------------------------------
+    # Banco de Dados
+    # ------------------------------------------------------------------
+    me(BD, "Normalização", FCC, 2026,
+       "Uma tabela relacional está na segunda forma normal (2FN) quando está na 1FN e",
+       ["todo atributo não chave depende da chave primária inteira, sem dependências parciais de parte de uma chave composta.",
+        "nenhum atributo não chave depende de outro atributo não chave, sem dependências transitivas.",
+        "todos os seus atributos possuem valores atômicos, sem grupos repetidos.",
+        "todo determinante de uma dependência funcional é uma chave candidata.",
+        "não possui dependências multivaloradas independentes."],
+       "2FN: eliminar dependências parciais, ou seja, nenhum atributo não chave pode depender de só uma parte da chave composta. Sem dependência transitiva é a 3FN; valores atômicos, a 1FN; todo determinante ser chave candidata, a FNBC; sem dependência multivalorada, a 4FN."),
+    me(BD, "SQL", FCC, 2026,
+       "Em SQL, o comando que remove todas as linhas de uma tabela, mantendo a sua estrutura, e que é classificado como DDL é o",
+       ["TRUNCATE", "DROP", "DELETE", "ALTER", "REVOKE"],
+       "TRUNCATE esvazia a tabela e mantém a estrutura; é tratado como DDL. DROP apaga a tabela inteira (estrutura e dados). DELETE também remove linhas, mas é DML e pode usar WHERE. ALTER muda a estrutura; REVOKE retira permissões (DCL)."),
+    ce(BD, "SQL", CESPE, 2026,
+       "Em uma consulta SQL, a cláusula WHERE filtra as linhas antes do agrupamento, enquanto a cláusula HAVING filtra os grupos formados pelo GROUP BY, podendo utilizar funções de agregação como COUNT e SUM.",
+       True,
+       "Certo. A ordem lógica é FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY. Por isso, condições sobre agregações (por exemplo, COUNT(*) > 5) ficam no HAVING, e não no WHERE."),
+    me(BD, "Transações", FCC, 2025,
+       "Entre as propriedades ACID das transações em um SGBD, o isolamento garante que",
+       ["a execução concorrente de transações produza o mesmo resultado que se elas fossem executadas uma após a outra, sem que uma veja os efeitos intermediários da outra.",
+        "as alterações de uma transação confirmada não se percam, mesmo diante de falhas do sistema.",
+        "todas as operações de uma transação sejam executadas por completo ou nenhuma delas seja.",
+        "a transação leve o banco de um estado válido a outro estado válido, respeitando as restrições de integridade.",
+        "os dados sejam replicados em mais de um servidor para tolerar falhas."],
+       "Isolamento: transações concorrentes não interferem umas nas outras. Não se perder após o commit é durabilidade; tudo ou nada é atomicidade; manter as regras de integridade é consistência. Replicação não é uma propriedade ACID."),
+    ce(BD, "SQL", CESPE, 2025,
+       "O LEFT JOIN retorna apenas as linhas que possuem correspondência nas duas tabelas envolvidas na junção.",
+       False,
+       "Errado. Retornar só as linhas com correspondência nas duas tabelas é o INNER JOIN. O LEFT JOIN retorna todas as linhas da tabela da esquerda e, quando não há correspondência na da direita, preenche as colunas dela com NULL."),
+    me(BD, "Modelo relacional", FCC, 2025,
+       "No modelo relacional, a restrição que exige que o valor de um atributo exista como chave primária em outra tabela (ou seja nulo, quando permitido) é a de",
+       ["integridade referencial, implementada por chave estrangeira.",
+        "integridade de entidade, implementada por chave primária.",
+        "integridade de domínio, implementada pelo tipo de dado da coluna.",
+        "unicidade, implementada por índice UNIQUE.",
+        "integridade semântica, implementada por visões (views)."],
+       "A chave estrangeira garante a integridade referencial: não é possível apontar para um registro inexistente. A integridade de entidade exige chave primária não nula e única; a de domínio limita os valores possíveis do atributo."),
+
+    # ------------------------------------------------------------------
+    # Seguranca da Informacao
+    # ------------------------------------------------------------------
+    me(SEG, "Criptografia", FCC, 2026,
+       "Usando criptografia assimétrica, Alice deseja enviar a Bob uma mensagem que somente Bob consiga ler. Para isso, Alice deve cifrar a mensagem com a",
+       ["chave pública de Bob.", "chave privada de Alice.", "chave pública de Alice.", "chave privada de Bob.",
+        "chave simétrica gerada por Bob e enviada pela internet sem proteção."],
+       "Para confidencialidade, cifra-se com a chave pública do destinatário: só a chave privada dele decifra. Cifrar com a chave privada do remetente serve para assinatura (autenticidade), não para sigilo, já que qualquer um decifra com a chave pública dele."),
+    ce(SEG, "Criptografia", CESPE, 2026,
+       "A assinatura digital garante a integridade, a autenticidade e o não repúdio de um documento, mas, por si só, não garante a sua confidencialidade.",
+       True,
+       "Certo. A assinatura é feita com a chave privada do autor sobre o hash do documento e pode ser verificada por qualquer pessoa com a chave pública. O conteúdo continua legível; para sigilo, é preciso também cifrar."),
+    me(SEG, "Malwares e ataques", FCC, 2025,
+       "O tipo de código malicioso que cifra os arquivos da vítima e exige pagamento, geralmente em criptomoeda, para liberar o acesso aos dados é denominado",
+       ["ransomware", "worm", "spyware", "rootkit", "keylogger"],
+       "Ransomware sequestra os dados por criptografia e cobra resgate. Worm se propaga sozinho pela rede; spyware coleta informações; rootkit esconde a presença do invasor; keylogger registra o que é digitado."),
+    ce(SEG, "Criptografia", CESPE, 2025,
+       "Funções de hash criptográfico, como o SHA-256, são reversíveis quando se conhece a chave correta, o que permite recuperar o dado original a partir do resumo.",
+       False,
+       "Errado. Hash não usa chave e é uma função de mão única: não é possível obter o dado original a partir do resumo. Ele serve para verificar integridade e guardar senhas (com salt). Recuperar o original com uma chave é próprio da criptografia, não do hash."),
+    me(SEG, "Backup", FCC, 2026,
+       "O tipo de backup que copia os arquivos alterados desde o último backup completo, de modo que a restauração exige apenas o último backup completo e o último backup desse tipo, é o backup",
+       ["diferencial", "incremental", "completo (full)", "espelho", "de cópia simples"],
+       "O diferencial acumula tudo o que mudou desde o último completo; na restauração, bastam o completo e o último diferencial. O incremental copia só o que mudou desde o último backup de qualquer tipo, e a restauração exige o completo e todos os incrementais seguintes."),
+    ce(SEG, "Controle de acesso", CESPE, 2026,
+       "A autenticação multifator combina fatores de categorias diferentes, como algo que o usuário sabe e algo que ele possui; exigir duas senhas distintas, por isso, não caracteriza autenticação multifator.",
+       True,
+       "Certo. As categorias são: algo que se sabe (senha, PIN), algo que se possui (token, celular) e algo que se é (biometria). Duas senhas são dois fatores da mesma categoria."),
+
+    # ------------------------------------------------------------------
+    # Engenharia de Software
+    # ------------------------------------------------------------------
+    me(ESW, "Metodologias ágeis", FCC, 2026,
+       "No Scrum, o responsável por maximizar o valor do produto e por gerenciar o Product Backlog, incluindo a ordenação dos seus itens, é o",
+       ["Product Owner", "Scrum Master", "time de desenvolvimento (Developers)", "conjunto de stakeholders", "gerente de projetos"],
+       "O Product Owner responde pelo valor do produto e pelo Product Backlog. O Scrum Master cuida da eficácia do time e do processo; os Developers constroem o incremento. O Scrum não prevê o papel de gerente de projetos."),
+    ce(ESW, "Metodologias ágeis", CESPE, 2026,
+       "No Scrum, a Sprint Retrospective tem como principal objetivo inspecionar o incremento produzido junto aos stakeholders e adaptar o Product Backlog.",
+       False,
+       "Errado. Inspecionar o incremento com os stakeholders e adaptar o Product Backlog é o objetivo da Sprint Review. A Retrospective avalia como foi a Sprint (pessoas, interações, processos e ferramentas) e planeja melhorias para a próxima."),
+    me(ESW, "Processos de software", FCC, 2025,
+       "O modelo de processo de software em cascata caracteriza-se por",
+       ["fases sequenciais, em que cada etapa (requisitos, projeto, implementação, testes e implantação) começa após a conclusão da anterior.",
+        "entregas curtas e frequentes de incrementos funcionais, com requisitos revistos a cada iteração.",
+        "ciclos em espiral guiados pela análise de riscos a cada volta.",
+        "construção rápida de protótipos descartáveis para validar os requisitos com o usuário.",
+        "ausência de documentação, com foco exclusivo no código."],
+       "O cascata é linear e sequencial, com cada fase terminando antes da seguinte. Entregas iterativas são típicas dos métodos ágeis e incrementais; a análise de riscos por ciclo é do modelo espiral (Boehm); protótipos descartáveis, da prototipação."),
+    me(ESW, "Testes de software", FCC, 2026,
+       "A técnica de teste que se baseia no conhecimento da estrutura interna do código, buscando exercitar caminhos, condições e laços do programa, é o teste",
+       ["de caixa-branca (estrutural)", "de caixa-preta (funcional)", "de aceitação", "de regressão", "de carga"],
+       "Caixa-branca usa o código-fonte (cobertura de comandos, desvios e caminhos). Caixa-preta testa entradas e saídas sem olhar o código. Aceitação, regressão e carga referem-se ao objetivo ou ao nível do teste, não à técnica baseada na estrutura interna."),
+    ce(ESW, "Requisitos", CESPE, 2025,
+       "Requisitos não funcionais descrevem restrições e atributos de qualidade do sistema, como desempenho, segurança, disponibilidade e usabilidade, e não as funções específicas que ele deve executar.",
+       True,
+       "Certo. Requisitos funcionais dizem o que o sistema faz (por exemplo, emitir boleto); os não funcionais dizem como ele deve se comportar (tempo de resposta, segurança, disponibilidade, usabilidade)."),
+    me(ESW, "UML", FCC, 2025,
+       "Na UML, o diagrama que representa a troca de mensagens entre objetos ao longo do tempo, destacando a ordem em que as interações ocorrem, é o diagrama de",
+       ["sequência", "classes", "casos de uso", "implantação", "componentes"],
+       "O diagrama de sequência mostra as mensagens entre objetos em ordem temporal (linhas de vida verticais). O de classes é estrutural; o de casos de uso mostra atores e funcionalidades; os de implantação e de componentes descrevem a arquitetura física e a modular."),
+]
+
+
+LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7, "8": LOTE_8, "9": LOTE_9}
 
 
 def sql(texto):
@@ -1046,6 +1200,13 @@ SET total_topicos = (SELECT COUNT(*) FROM assunto a WHERE a.disciplina_id = cd.d
 WHERE cd.total_topicos IS NOT NULL;""",
         "",
     ]
+
+
+def juncao_banca(lote, banca):
+    if int(lote) < 9:  # lotes antigos: texto identico ao ja aplicado (checksum)
+        return f"JOIN banca b ON b.nome = {sql(banca)}"
+    nomes = ", ".join(sql(n) for n in BANCA_VARIANTES.get(banca, [banca.lower()]))
+    return f"JOIN banca b ON b.id = (SELECT MIN(x.id) FROM banca x WHERE lower(x.nome) IN ({nomes}))"
 
 
 def gerar(lote):
@@ -1100,7 +1261,7 @@ def gerar(lote):
            {sql(q['explicacao'])},
            {sql(q['tipo'])}
     FROM disciplina d
-    JOIN banca b ON b.nome = {sql(q['banca'])}
+    {juncao_banca(lote, q['banca'])}
     JOIN assunto a ON a.disciplina_id = d.id AND lower(a.nome) = lower({sql(q['assunto'])})
     WHERE d.nome = {sql(q['disc'])}
     RETURNING id
@@ -1112,6 +1273,8 @@ FROM nova, (VALUES
 ) AS v(texto, correta, ordem);
 """)
 
+    if lote in LOTES_SEM_CARGO_EXEMPLO:
+        return "\n".join(linhas)
     if int(lote) >= 6:
         return "\n".join(linhas + rodape_novo(QUESTOES))
 
