@@ -1,6 +1,6 @@
 package com.gustavo.concursos.pro;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.gustavo.concursos.entity.Usuario;
 import com.gustavo.concursos.repository.UsuarioRepository;
 import org.slf4j.Logger;
@@ -73,8 +73,8 @@ public class PagamentoService {
      */
     @Transactional
     public void processarEvento(JsonNode evento) {
-        String id = evento.path("id").asText("");
-        String tipo = evento.path("type").asText("");
+        String id = evento.path("id").asString("");
+        String tipo = evento.path("type").asString("");
         if (id.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Evento sem id");
         if (pagamentoRepository.contarEvento(id) > 0) return;
         pagamentoRepository.registrarEvento(id, tipo);
@@ -83,15 +83,15 @@ public class PagamentoService {
         switch (tipo) {
             // Cartao: ja vem pago. Boleto/Pix: vem "unpaid" e o pagamento chega depois.
             case "checkout.session.completed" -> {
-                if ("subscription".equals(objeto.path("mode").asText())) assinaturas.sessaoConcluida(objeto);
+                if ("subscription".equals(objeto.path("mode").asString())) assinaturas.sessaoConcluida(objeto);
                 else sessao(objeto).ifPresent(p -> {
-                    p.setStripePagamentoId(objeto.path("payment_intent").asText(null));
-                    if ("paid".equals(objeto.path("payment_status").asText())) confirmar(p);
+                    p.setStripePagamentoId(objeto.path("payment_intent").asString(null));
+                    if ("paid".equals(objeto.path("payment_status").asString())) confirmar(p);
                     else if (Pagamento.PENDENTE.equals(p.getStatus())) p.setStatus(Pagamento.AGUARDANDO);
                 });
             }
             case "checkout.session.async_payment_succeeded" -> sessao(objeto).ifPresent(p -> {
-                if (p.getStripePagamentoId() == null) p.setStripePagamentoId(objeto.path("payment_intent").asText(null));
+                if (p.getStripePagamentoId() == null) p.setStripePagamentoId(objeto.path("payment_intent").asString(null));
                 confirmar(p);
             });
             case "checkout.session.async_payment_failed" -> sessao(objeto).ifPresent(p -> encerrar(p, Pagamento.FALHOU));
@@ -104,15 +104,15 @@ public class PagamentoService {
             // Reembolso (ex.: direito de arrependimento em 7 dias): devolve os dias.
             // Cobranca recorrente: casa pelo payment_intent ou, se faltar, pela fatura.
             case "charge.refunded" -> pagamentoRepository
-                    .findFirstByStripePagamentoId(objeto.path("payment_intent").asText(""))
-                    .or(() -> pagamentoRepository.findByStripeFaturaId(objeto.path("invoice").asText("")))
+                    .findFirstByStripePagamentoId(objeto.path("payment_intent").asString(""))
+                    .or(() -> pagamentoRepository.findByStripeFaturaId(objeto.path("invoice").asString("")))
                     .ifPresent(this::reembolsar);
             default -> log.debug("Evento do Stripe ignorado: {}", tipo);
         }
     }
 
     private java.util.Optional<Pagamento> sessao(JsonNode objeto) {
-        return pagamentoRepository.findByStripeSessaoId(objeto.path("id").asText(""));
+        return pagamentoRepository.findByStripeSessaoId(objeto.path("id").asString(""));
     }
 
     // Soma os dias a partir do fim do Pro atual (ou de agora, se ja venceu).

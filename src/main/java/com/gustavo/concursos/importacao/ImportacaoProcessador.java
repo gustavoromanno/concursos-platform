@@ -1,8 +1,8 @@
 package com.gustavo.concursos.importacao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.gustavo.concursos.entity.Banca;
 import com.gustavo.concursos.entity.Concurso;
 import com.gustavo.concursos.entity.ConcursoCargo;
@@ -171,13 +171,13 @@ public class ImportacaoProcessador {
         if (total <= 0) throw new IllegalStateException("Nao foi possivel identificar o numero de questoes da prova.");
 
         return new Metadados(
-                d.path("sigla").asText("").strip(),
-                d.path("orgao").asText("").strip(),
+                d.path("sigla").asString("").strip(),
+                d.path("orgao").asString("").strip(),
                 d.path("ano").asInt(LocalDateTime.now().getYear()),
-                d.path("banca").asText("").strip(),
-                d.path("cargo").asText("").strip(),
-                d.path("nivel").asText(null),
-                d.path("tipo_questoes").asText(ValidadorQuestaoGerada.MULTIPLA_ESCOLHA),
+                d.path("banca").asString("").strip(),
+                d.path("cargo").asString("").strip(),
+                d.path("nivel").asString(null),
+                d.path("tipo_questoes").asString(ValidadorQuestaoGerada.MULTIPLA_ESCOLHA),
                 total);
     }
 
@@ -267,19 +267,19 @@ public class ImportacaoProcessador {
 
             for (JsonNode q : d.path("questoes")) {
                 int numero = q.path("numero").asInt(0);
-                String enunciado = q.path("enunciado").asText("").strip();
+                String enunciado = q.path("enunciado").asString("").strip();
                 if (numero < inicio || numero > fim || enunciado.isEmpty()) continue;
 
                 QuestaoBase base = new QuestaoBase();
                 base.setImportacao(imp);
                 base.setNumero(numero);
-                base.setTipo(q.path("tipo").asText(meta.tipo()));
-                base.setDisciplina(corte(q.path("disciplina").asText(null), 100));
-                base.setAssunto(corte(q.path("assunto").asText(null), 150));
+                base.setTipo(q.path("tipo").asString(meta.tipo()));
+                base.setDisciplina(corte(q.path("disciplina").asString(null), 100));
+                base.setAssunto(corte(q.path("assunto").asString(null), 150));
                 base.setEnunciado(enunciado);
                 base.setAlternativas(q.path("alternativas").isArray() ? q.path("alternativas").toString() : "[]");
                 base.setAnulada(q.path("anulada").asBoolean(false));
-                String gab = q.path("gabarito").asText("").strip().toUpperCase(Locale.ROOT);
+                String gab = q.path("gabarito").asString("").strip().toUpperCase(Locale.ROOT);
                 base.setGabarito(base.isAnulada() || gab.isEmpty() ? null : corte(gab, 10));
                 todas.add(baseRepository.save(base));
             }
@@ -378,11 +378,11 @@ public class ImportacaoProcessador {
     private ValidadorQuestaoGerada.Questao paraValidador(JsonNode q) {
         List<ValidadorQuestaoGerada.Alternativa> alternativas = new ArrayList<>();
         for (JsonNode a : q.path("alternativas")) {
-            alternativas.add(new ValidadorQuestaoGerada.Alternativa(a.path("texto").asText(""), a.path("correta").asBoolean(false)));
+            alternativas.add(new ValidadorQuestaoGerada.Alternativa(a.path("texto").asString(""), a.path("correta").asBoolean(false)));
         }
         return new ValidadorQuestaoGerada.Questao(
-                q.path("tipo").asText(""), q.path("disciplina").asText(""), q.path("assunto").asText(""),
-                q.path("enunciado").asText(""), alternativas, q.path("explicacao").asText(""));
+                q.path("tipo").asString(""), q.path("disciplina").asString(""), q.path("assunto").asString(""),
+                q.path("enunciado").asString(""), alternativas, q.path("explicacao").asString(""));
     }
 
     private QuestaoRascunho paraRascunho(ImportacaoProva imp, QuestaoBase base, ValidadorQuestaoGerada.Questao q) {
@@ -421,7 +421,7 @@ public class ImportacaoProcessador {
     private String paraJson(Object valor) {
         try {
             return json.writeValueAsString(valor);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Falha ao serializar JSON", e);
         }
     }
@@ -429,7 +429,7 @@ public class ImportacaoProcessador {
     private List<Object> lerLista(String jsonLista) {
         try {
             return jsonLista == null ? List.of() : json.readValue(jsonLista, List.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return List.of();
         }
     }

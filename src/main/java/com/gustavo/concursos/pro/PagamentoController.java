@@ -1,7 +1,7 @@
 package com.gustavo.concursos.pro;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.gustavo.concursos.entity.Usuario;
 import com.gustavo.concursos.repository.UsuarioRepository;
 import jakarta.validation.Valid;
@@ -130,7 +130,7 @@ public class PagamentoController {
         JsonNode evento;
         try {
             evento = json.readTree(corpo);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Evento inválido");
         }
         pagamentoService.processarEvento(evento);

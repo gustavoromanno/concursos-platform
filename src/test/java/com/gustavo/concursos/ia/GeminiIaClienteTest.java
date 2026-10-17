@@ -1,7 +1,7 @@
 package com.gustavo.concursos.ia;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -29,15 +29,15 @@ class GeminiIaClienteTest {
     void montaPedidoComPdfInlineEFuncaoObrigatoria() {
         JsonNode corpo = json.valueToTree(cliente.montarCorpo(pedido()));
 
-        assertThat(corpo.at("/systemInstruction/parts/0/text").asText()).isEqualTo("Voce extrai dados de provas.");
+        assertThat(corpo.at("/systemInstruction/parts/0/text").asString()).isEqualTo("Voce extrai dados de provas.");
         JsonNode partes = corpo.at("/contents/0/parts");
-        assertThat(partes.get(0).at("/inline_data/mime_type").asText()).isEqualTo("application/pdf");
-        assertThat(partes.get(0).at("/inline_data/data").asText()).isEqualTo("AQID");
-        assertThat(partes.get(1).path("text").asText()).isEqualTo("Leia a prova.");
-        assertThat(corpo.at("/tools/0/functionDeclarations/0/name").asText()).isEqualTo("registrar_metadados");
-        assertThat(corpo.at("/tools/0/functionDeclarations/0/parameters/required/0").asText()).isEqualTo("sigla");
-        assertThat(corpo.at("/toolConfig/functionCallingConfig/mode").asText()).isEqualTo("ANY");
-        assertThat(corpo.at("/toolConfig/functionCallingConfig/allowedFunctionNames/0").asText()).isEqualTo("registrar_metadados");
+        assertThat(partes.get(0).at("/inline_data/mime_type").asString()).isEqualTo("application/pdf");
+        assertThat(partes.get(0).at("/inline_data/data").asString()).isEqualTo("AQID");
+        assertThat(partes.get(1).path("text").asString()).isEqualTo("Leia a prova.");
+        assertThat(corpo.at("/tools/0/functionDeclarations/0/name").asString()).isEqualTo("registrar_metadados");
+        assertThat(corpo.at("/tools/0/functionDeclarations/0/parameters/required/0").asString()).isEqualTo("sigla");
+        assertThat(corpo.at("/toolConfig/functionCallingConfig/mode").asString()).isEqualTo("ANY");
+        assertThat(corpo.at("/toolConfig/functionCallingConfig/allowedFunctionNames/0").asString()).isEqualTo("registrar_metadados");
         assertThat(corpo.at("/generationConfig/maxOutputTokens").asInt()).isGreaterThan(2000);
     }
 
@@ -48,7 +48,7 @@ class GeminiIaClienteTest {
                   "finishReason":"STOP"}],
                  "usageMetadata":{"promptTokenCount":1200,"candidatesTokenCount":40,"thoughtsTokenCount":300}}""";
         IaCliente.RespostaFerramenta r = cliente.interpretar(resposta, "registrar_metadados");
-        assertThat(r.dados().path("sigla").asText()).isEqualTo("Bacen");
+        assertThat(r.dados().path("sigla").asString()).isEqualTo("Bacen");
         assertThat(r.tokensEntrada()).isEqualTo(1200);
         assertThat(r.tokensSaida()).isEqualTo(340);
     }

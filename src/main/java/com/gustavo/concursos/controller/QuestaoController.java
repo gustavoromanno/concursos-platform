@@ -79,8 +79,9 @@ public class QuestaoController {
             throw com.gustavo.concursos.pro.AcessoPro.bloqueio("As questões inéditas das provas");
         }
 
-        Specification<Questao> filtro = Specification
-                .where(QuestaoSpecification.palavraChave(palavraChave))
+        // Spring Data 4: sem Specification.where; comeca de unrestricted() e vai somando.
+        Specification<Questao> filtro = Specification.<Questao>unrestricted()
+                .and(QuestaoSpecification.palavraChave(palavraChave))
                 .and(QuestaoSpecification.disciplinaId(disciplinaId))
                 .and(QuestaoSpecification.bancaId(bancaId))
                 .and(QuestaoSpecification.orgaoId(orgaoId))
@@ -95,7 +96,7 @@ public class QuestaoController {
                 .and(QuestaoSpecification.concursoId(concursoId))
                 .and(QuestaoSpecification.cargoId(cargoId))
                 .and(QuestaoSpecification.origem(origem))
-                .and(pro ? null : QuestaoSpecification.semOrigem(Questao.ORIGEM_IA));
+                .and(pro ? Specification.unrestricted() : QuestaoSpecification.semOrigem(Questao.ORIGEM_IA));
 
         return questaoRepository.findAll(filtro, pageable).map(QuestaoResponseDTO::fromEntity);
     }
@@ -103,7 +104,7 @@ public class QuestaoController {
     // "Minhas questões": depende do histórico do usuário logado. Certas e
     // erradas seguem a resposta MAIS RECENTE, como a lista de revisão.
     private Specification<Questao> filtroSituacao(String situacao, Authentication authentication) {
-        if (situacao == null || situacao.isBlank()) return null;
+        if (situacao == null || situacao.isBlank()) return Specification.unrestricted();
         if (!java.util.Set.of("RESOLVIDAS", "NAO_RESOLVIDAS", "CERTAS", "ERRADAS").contains(situacao)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "situacao invalida: use RESOLVIDAS, NAO_RESOLVIDAS, CERTAS ou ERRADAS");
@@ -122,14 +123,14 @@ public class QuestaoController {
 
     // Somente questoes em que o usuario escreveu anotacao.
     private Specification<Questao> filtroAnotacoes(Boolean comAnotacoes, Authentication authentication) {
-        if (!Boolean.TRUE.equals(comAnotacoes)) return null;
+        if (!Boolean.TRUE.equals(comAnotacoes)) return Specification.unrestricted();
         return QuestaoSpecification.idEm(anotacaoRepository.questaoIdsDoUsuario(usuarioLogadoId(authentication)));
     }
 
     // Dificuldade derivada da taxa de acerto da comunidade (ver DificuldadeCalculadora).
     // Questoes com poucas respostas nao entram em nenhuma faixa.
     private Specification<Questao> filtroDificuldade(String dificuldade) {
-        if (dificuldade == null || dificuldade.isBlank()) return null;
+        if (dificuldade == null || dificuldade.isBlank()) return Specification.unrestricted();
 
         DificuldadeCalculadora.Dificuldade alvo;
         try {

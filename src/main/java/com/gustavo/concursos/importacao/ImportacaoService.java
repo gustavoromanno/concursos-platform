@@ -1,7 +1,7 @@
 package com.gustavo.concursos.importacao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -153,7 +153,7 @@ public class ImportacaoService {
         r.setExplicacao(valida.explicacao());
         try {
             r.setAlternativas(json.writeValueAsString(valida.alternativas()));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
         return r;

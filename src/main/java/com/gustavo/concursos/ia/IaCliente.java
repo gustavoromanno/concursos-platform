@@ -1,6 +1,6 @@
 package com.gustavo.concursos.ia;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import java.util.Base64;
 import java.util.List;
