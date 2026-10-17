@@ -79,10 +79,12 @@ class RespostaTest {
         Alternativa a1 = new Alternativa();
         a1.setTexto("4");
         a1.setCorreta(true);
+        a1.setOrdem(1);
         a1.setQuestao(q);
         Alternativa a2 = new Alternativa();
         a2.setTexto("5");
         a2.setCorreta(false);
+        a2.setOrdem(2);
         a2.setQuestao(q);
         q.getAlternativas().add(a1);
         q.getAlternativas().add(a2);
