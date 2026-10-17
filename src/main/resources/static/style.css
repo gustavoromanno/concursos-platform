@@ -1805,3 +1805,52 @@ main:has(#tela-landing:not(.hidden)) { max-width: 1120px; }
     .topo-metodo, .grade-metodo, .metodo-romano.compacto .grade-metodo { grid-template-columns: 1fr; }
     .titulo-metodo { font-size: 32px; }
 }
+
+/* ---------- teoria por assunto ---------- */
+main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
+.layout-teoria { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+.indice-teoria { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.indice-teoria input { width: 100%; margin-bottom: 12px; }
+.grupo-teoria { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+.grupo-teoria .rotulo { margin-bottom: 4px; }
+.item-teoria {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    width: 100%; text-align: left; background: none; border: 0; border-radius: 8px;
+    padding: 8px 10px; color: var(--texto); font: inherit; font-size: 14px; cursor: pointer;
+}
+.item-teoria:hover { background: var(--trilho); }
+.item-teoria.ativo { background: var(--superficie); color: var(--primario-escuro); font-weight: 600; }
+.selo-teoria {
+    flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+    background: var(--trilho); color: var(--suave);
+}
+.selo-teoria.gratis { background: var(--superficie-ok); color: var(--primario); }
+#nova-teoria { width: 100%; margin-top: 4px; }
+
+.leitura-teoria { min-height: 320px; padding: 28px 32px; }
+.titulo-teoria { margin: 6px 0 18px; font-size: 24px; line-height: 1.25; }
+.texto-teoria { font-size: 16px; line-height: 1.7; max-width: 72ch; }
+.texto-teoria h3 { margin: 26px 0 8px; font-size: 18px; color: var(--primario-escuro); }
+.texto-teoria p { margin: 0 0 12px; }
+.texto-teoria ul, .texto-teoria ol { margin: 0 0 14px; padding-left: 22px; }
+.texto-teoria li { margin-bottom: 4px; }
+.texto-teoria strong { color: var(--texto); }
+.tabela-teoria { overflow-x: auto; margin: 4px 0 16px; }
+.tabela-teoria table { border-collapse: collapse; min-width: 100%; font-size: 14px; }
+.tabela-teoria th, .tabela-teoria td { border: 1px solid var(--borda); padding: 6px 10px; text-align: left; }
+.tabela-teoria th { background: var(--trilho); font-weight: 600; }
+.acoes-teoria { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 24px 0 8px; }
+.bloqueio-teoria {
+    border: 1px dashed var(--borda); border-radius: 12px; padding: 24px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.form-teoria { display: flex; flex-direction: column; gap: 12px; }
+.form-teoria label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+.form-teoria .linha-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; }
+.form-teoria textarea { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+
+@media (max-width: 900px) {
+    .layout-teoria { grid-template-columns: 1fr; }
+    .indice-teoria { position: static; max-height: none; }
+    .leitura-teoria { padding: 20px; }
+}

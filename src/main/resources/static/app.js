@@ -8,6 +8,7 @@ let simuladoAtual = null;
 let cronometro = null;
 let disciplinas = [];   // catalogo carregado uma vez apos o login
 let marcados = new Set();  // ids das questoes marcadas pelo usuario
+let indiceTeoria = [];     // resumos de teoria existentes (sem o texto), para o indice e os atalhos
 let anotadas = new Set();  // ids das questoes com anotacao do usuario
 let concursosFiltro = [];  // concursos (com cargos) do filtro de questoes
 let atualizacaoImportacoes = null;  // timer de atualizacao da tela de importacao
@@ -328,6 +329,7 @@ async function carregarEstadoPessoal() {
     } catch {
         perfilUsuario = null;
     }
+    carregarIndiceTeoria();
     try {
         marcados = new Set(await api('/marcadores/ids'));
     } catch {
@@ -402,6 +404,7 @@ function abrir(tela) {
     $('#tela-' + tela).classList.remove('hidden');
 
     if (tela === 'questoes') { carregarQuestoes(0); carregarFiltrosSalvos(); }
+    if (tela === 'teoria') carregarTeoria();
     if (tela === 'inicio') carregarInicio();
     if (tela === 'revisao') carregarRevisao();
     if (tela === 'erradas') carregarErradas();
@@ -733,6 +736,13 @@ function montarAcoes(alvo, questao, opcoes) {
     const reportar = criar('<button class="acao" title="Encontrou um erro nesta questão? Avise">⚑ erro</button>');
     reportar.onclick = () => abrirReporte(reportar, questao);
     alvo.appendChild(reportar);
+
+    const teoria = teoriaDoAssunto(questao.disciplina, questao.assunto);
+    if (teoria) {
+        const ler = criar('<button class="acao" title="Ler a teoria deste assunto">📖 teoria</button>');
+        ler.onclick = () => { abrir('teoria'); abrirResumo(teoria.assuntoId); };
+        alvo.appendChild(ler);
+    }
 
     const anotar = criar('<button class="acao" title="Minha anotação (só você vê)">✎ anotação</button>');
     anotar.classList.toggle('ativa', anotadas.has(questao.id));
@@ -2842,6 +2852,186 @@ if (retornoPagamento) {
             : 'Pagamento cancelado. Nada foi cobrado.';
     }, 800));
 }
+
+
+// ---------- teoria por assunto ----------
+
+async function carregarIndiceTeoria() {
+    try { indiceTeoria = await api('/teoria'); } catch { indiceTeoria = []; }
+}
+
+function teoriaDoAssunto(disciplina, assunto) {
+    if (!assunto) return null;
+    const a = assunto.toLowerCase();
+    return indiceTeoria.find(t => t.assunto.toLowerCase() === a && (!disciplina || t.disciplina === disciplina)) || null;
+}
+
+// Converte o formato simples dos resumos (## titulo, - lista, **negrito**, tabela com |)
+// em HTML. Tudo e escapado antes: o texto nunca vira HTML arbitrario.
+function textoTeoriaParaHtml(texto) {
+    const inline = s => escapar(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Linhas de tabela viram um bloco proprio, mesmo sem linha em branco antes ou depois.
+    const blocos = String(texto || '').replace(/\r/g, '')
+        .replace(/((?:^\|.*\n?)+)/gm, '\n\n$1\n\n')
+        .split(/\n{2,}/);
+    return blocos.map(bloco => {
+        const linhas = bloco.split('\n').filter(l => l.trim() !== '');
+        if (!linhas.length) return '';
+        if (linhas.every(l => l.trim().startsWith('|'))) {
+            const celulas = l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+            const corpo = linhas.filter(l => !/^\|[\s|:-]+\|$/.test(l.trim()));
+            const [cab, ...resto] = corpo;
+            return `<div class="tabela-teoria"><table><thead><tr>${celulas(cab).map(c => `<th>${inline(c)}</th>`).join('')}</tr></thead>
+                <tbody>${resto.map(l => `<tr>${celulas(l).map(c => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+        }
+        let html = '';
+        let lista = null;
+        const fechar = () => { if (lista) { html += `</${lista}>`; lista = null; } };
+        linhas.forEach(l => {
+            const s = l.trim();
+            if (s.startsWith('## ')) { fechar(); html += `<h3>${inline(s.slice(3))}</h3>`; return; }
+            const ul = s.match(/^- (.*)/), ol = s.match(/^\d+\. (.*)/);
+            if (ul || ol) {
+                const tipo = ul ? 'ul' : 'ol';
+                if (lista !== tipo) { fechar(); html += `<${tipo}>`; lista = tipo; }
+                html += `<li>${inline((ul || ol)[1])}</li>`;
+                return;
+            }
+            fechar();
+            html += `<p>${inline(s)}</p>`;
+        });
+        fechar();
+        return html;
+    }).join('');
+}
+
+async function carregarTeoria() {
+    await carregarIndiceTeoria();
+    desenharIndiceTeoria();
+}
+
+function desenharIndiceTeoria() {
+    const alvo = $('#lista-teoria');
+    const termo = $('#busca-teoria').value.trim().toLowerCase();
+    const lista = indiceTeoria.filter(t => !termo
+        || t.assunto.toLowerCase().includes(termo) || t.disciplina.toLowerCase().includes(termo)
+        || t.titulo.toLowerCase().includes(termo));
+    if (!lista.length) {
+        alvo.innerHTML = `<div class="vazio">${indiceTeoria.length ? 'Nenhum assunto encontrado.' : 'A teoria ainda está sendo escrita.'}</div>`;
+        return;
+    }
+    const pro = perfilUsuario?.pro || perfilUsuario?.papel === 'ADMIN';
+    const porDisciplina = {};
+    lista.forEach(t => (porDisciplina[t.disciplina] ||= []).push(t));
+    alvo.innerHTML = '';
+    Object.entries(porDisciplina).forEach(([disciplina, itens]) => {
+        const grupo = criar(`<div class="grupo-teoria"><span class="rotulo">${escapar(disciplina)}</span></div>`);
+        itens.forEach(t => {
+            const item = criar(`<button class="item-teoria" data-assunto="${t.assuntoId}">
+                <span>${escapar(t.assunto)}</span>
+                ${t.gratuito ? '<span class="selo-teoria gratis">grátis</span>' : (pro ? '' : '<span class="selo-teoria">Pro</span>')}
+            </button>`);
+            item.onclick = () => abrirResumo(t.assuntoId);
+            grupo.appendChild(item);
+        });
+        alvo.appendChild(grupo);
+    });
+}
+
+$('#busca-teoria').oninput = desenharIndiceTeoria;
+
+async function abrirResumo(assuntoId) {
+    const alvo = $('#leitura-teoria');
+    document.querySelectorAll('.item-teoria').forEach(b => b.classList.toggle('ativo', b.dataset.assunto === String(assuntoId)));
+    alvo.innerHTML = '<div class="vazio">Carregando…</div>';
+    const info = indiceTeoria.find(t => t.assuntoId === assuntoId);
+    try {
+        const r = await api('/teoria/' + assuntoId, { semAvisoPro: true });
+        const admin = perfilUsuario?.papel === 'ADMIN';
+        alvo.innerHTML = `
+            <span class="rotulo">${escapar(r.disciplina)} · ${escapar(r.assunto)}</span>
+            <h2 class="titulo-teoria">${escapar(r.titulo)}</h2>
+            <div class="texto-teoria">${textoTeoriaParaHtml(r.conteudo)}</div>
+            <div class="acoes-teoria">
+                <button class="primario praticar">Praticar ${r.totalQuestoes ? r.totalQuestoes + ' ' : ''}questões deste assunto →</button>
+                ${admin ? '<button class="secundario editar">Editar resumo</button>' : ''}
+            </div>
+            <p class="sub">Atualizado em ${new Date(r.atualizadoEm).toLocaleDateString('pt-BR')}.</p>`;
+        alvo.querySelector('.praticar').onclick = () => {
+            abrir('questoes');
+            aplicarFiltro({ disciplinaId: r.disciplinaId, assuntoId: r.assuntoId });
+        };
+        alvo.querySelector('.editar')?.addEventListener('click', () => editarResumo(r));
+    } catch (e) {
+        if (e.pro) {
+            alvo.innerHTML = `
+                <span class="rotulo">${escapar(info?.disciplina || '')} · ${escapar(info?.assunto || '')}</span>
+                <h2 class="titulo-teoria">${escapar(info?.titulo || 'Teoria')}</h2>
+                <div class="bloqueio-teoria">
+                    <strong>Este resumo é do plano Pro.</strong>
+                    <p class="sub">No plano gratuito você lê os resumos marcados como grátis. Com o Pro, libera toda a teoria, além dos recursos avançados.</p>
+                    <button class="primario">Ver planos</button>
+                </div>`;
+            alvo.querySelector('.bloqueio-teoria button').onclick = () => abrir('planos');
+        } else {
+            alvo.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
+        }
+    }
+    if (window.innerWidth < 900) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Editor do admin: cria ou substitui o resumo de um assunto.
+async function editarResumo(atual) {
+    const alvo = $('#leitura-teoria');
+    let disciplinas = [];
+    try { disciplinas = await api('/disciplinas'); } catch { /* segue so com o atual */ }
+    const achatar = (lista, nivel = 0) => (lista || []).flatMap(a =>
+        [{ id: a.id, nome: '\u00a0\u00a0'.repeat(nivel) + a.nome }, ...achatar(a.subassuntos, nivel + 1)]);
+    const opcoesAssunto = d => achatar(d?.assuntos).map(a =>
+        `<option value="${a.id}" ${atual && a.id === atual.assuntoId ? 'selected' : ''}>${escapar(a.nome)}</option>`).join('');
+    const discAtual = atual ? disciplinas.find(d => d.id === atual.disciplinaId) : disciplinas[0];
+    alvo.innerHTML = `
+        <h2 class="titulo-teoria">${atual ? 'Editar resumo' : 'Novo resumo'}</h2>
+        <div class="form-teoria">
+            <label>Disciplina <select class="ed-disciplina" ${atual ? 'disabled' : ''}>${disciplinas.map(d =>
+                `<option value="${d.id}" ${discAtual && d.id === discAtual.id ? 'selected' : ''}>${escapar(d.nome)}</option>`).join('')}</select></label>
+            <label>Assunto <select class="ed-assunto" ${atual ? 'disabled' : ''}>${opcoesAssunto(discAtual)}</select></label>
+            <label>Título <input class="ed-titulo" maxlength="200" value="${escapar(atual?.titulo || '')}"></label>
+            <label class="linha-check"><input type="checkbox" class="ed-gratuito" ${atual?.gratuito ? 'checked' : ''}> Liberado no plano gratuito</label>
+            <label>Conteúdo <textarea class="ed-conteudo" rows="18">${escapar(atual?.conteudo || '')}</textarea></label>
+            <p class="sub">Formato: <code>## Subtítulo</code>, linhas com <code>- item</code>, <code>**negrito**</code> e linha em branco entre parágrafos.</p>
+            <div class="acoes-teoria">
+                <button class="primario salvar">Salvar</button>
+                ${atual ? '<button class="link excluir">Excluir resumo</button>' : ''}
+                <span class="sub msg"></span>
+            </div>
+        </div>`;
+    const selDisc = alvo.querySelector('.ed-disciplina');
+    selDisc.onchange = () => {
+        alvo.querySelector('.ed-assunto').innerHTML = opcoesAssunto(disciplinas.find(d => String(d.id) === selDisc.value));
+    };
+    alvo.querySelector('.salvar').onclick = async () => {
+        const assuntoId = atual ? atual.assuntoId : Number(alvo.querySelector('.ed-assunto').value);
+        const corpo = {
+            titulo: alvo.querySelector('.ed-titulo').value,
+            conteudo: alvo.querySelector('.ed-conteudo').value,
+            gratuito: alvo.querySelector('.ed-gratuito').checked
+        };
+        try {
+            await api('/admin/teoria/' + assuntoId, { method: 'PUT', body: JSON.stringify(corpo) });
+            await carregarTeoria();
+            abrirResumo(assuntoId);
+        } catch (e) { alvo.querySelector('.msg').textContent = e.message; }
+    };
+    alvo.querySelector('.excluir')?.addEventListener('click', async () => {
+        if (!confirm('Excluir este resumo?')) return;
+        await api('/admin/teoria/' + atual.assuntoId, { method: 'DELETE' });
+        await carregarTeoria();
+        alvo.innerHTML = '<div class="vazio">Resumo excluído.</div>';
+    });
+}
+
+$('#nova-teoria').onclick = () => editarResumo(null);
 
 // ---------- rodape, paginas legais e contato ----------
 
