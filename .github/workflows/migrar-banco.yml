@@ -1,0 +1,69 @@
+# Copia o banco inteiro de um PostgreSQL para outro (ex.: Neon São Paulo -> Neon Oregon,
+# na mesma região do Render). Roda só quando disparado à mão, em Actions > "Migrar banco".
+#
+# Antes de rodar, crie em Settings > Secrets and variables > Actions:
+#   DB_ORIGEM_URL  = string de conexão DIRETA do banco atual  (postgresql://usuario:senha@host/banco?sslmode=require)
+#   DB_DESTINO_URL = string de conexão DIRETA do banco novo, ainda vazio
+# Use a conexão direta (host sem "-pooler"): o pg_dump não funciona bem pelo pooler.
+# Os secrets não aparecem no log. Apague-os depois da migração.
+name: Migrar banco
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Digite MIGRAR para confirmar a cópia'
+        required: true
+      versao_postgres:
+        description: 'Versão do PostgreSQL do Neon (igual ou maior que a do banco de origem)'
+        required: true
+        default: '17'
+
+jobs:
+  migrar:
+    runs-on: ubuntu-24.04
+    container: postgres:${{ inputs.versao_postgres }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      ORIGEM: ${{ secrets.DB_ORIGEM_URL }}
+      DESTINO: ${{ secrets.DB_DESTINO_URL }}
+    steps:
+      - name: Conferir antes de copiar
+        run: |
+          set -e
+          if [ "${{ inputs.confirmar }}" != "MIGRAR" ]; then echo "::error title=resumo::Digite MIGRAR no campo de confirmação."; exit 1; fi
+          if [ -z "$ORIGEM" ] || [ -z "$DESTINO" ]; then echo "::error title=resumo::Crie os secrets DB_ORIGEM_URL e DB_DESTINO_URL."; exit 1; fi
+          if [ "$ORIGEM" = "$DESTINO" ]; then echo "::error title=resumo::Origem e destino são o mesmo banco."; exit 1; fi
+          vo=$(psql "$ORIGEM" -Atc "show server_version")
+          vd=$(psql "$DESTINO" -Atc "show server_version")
+          n=$(psql "$DESTINO" -Atc "select count(*) from pg_tables where schemaname = 'public'")
+          echo "Origem: PostgreSQL $vo | Destino: PostgreSQL $vd | tabelas no destino: $n"
+          if [ "$n" != "0" ]; then echo "::error title=resumo::O banco de destino não está vazio ($n tabelas). Use um projeto Neon novo."; exit 1; fi
+
+      - name: Copiar (pg_dump + pg_restore)
+        run: |
+          set -eo pipefail
+          pg_dump "$ORIGEM" --format=custom --no-owner --no-privileges --file=banco.dump
+          echo "Cópia gerada: $(du -h banco.dump | cut -f1)"
+          pg_restore --no-owner --no-privileges --exit-on-error --dbname="$DESTINO" banco.dump
+
+      - name: Comparar origem e destino
+        run: |
+          set -e
+          diferencas=0
+          resumo="tabela | origem | destino%0A"
+          for t in $(psql "$ORIGEM" -Atc "select tablename from pg_tables where schemaname = 'public' order by 1"); do
+            o=$(psql "$ORIGEM" -Atc "select count(*) from public.\"$t\"")
+            d=$(psql "$DESTINO" -Atc "select count(*) from public.\"$t\"")
+            marca=""; if [ "$o" != "$d" ]; then marca=" <-- DIFERENTE"; diferencas=$((diferencas+1)); fi
+            resumo="${resumo}${t} | ${o} | ${d}${marca}%0A"
+          done
+          ultima=$(psql "$DESTINO" -Atc "select coalesce((select version from flyway_schema_history where success order by installed_rank desc limit 1), '?')" 2>/dev/null || echo "? (sem histórico do Flyway)")
+          resumo="${resumo}%0AÚltima migração no destino: V${ultima}"
+          if [ "$diferencas" != "0" ]; then
+            echo "::error title=resumo::${diferencas} tabela(s) com contagem diferente%0A${resumo}"
+            exit 1
+          fi
+          echo "::notice title=migracao::Cópia conferida: todas as tabelas com a mesma contagem.%0A${resumo}"
