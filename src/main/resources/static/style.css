@@ -1912,3 +1912,7 @@ main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
     .menu-mais-grade button.ativo { outline: 2px solid var(--dourado); }
 }
 @keyframes subir-folha { from { transform: translateY(100%); } to { transform: none; } }
+
+/* Resposta enviada: a alternativa escolhida pulsa ate o resultado chegar. */
+.alternativa.conferindo { border-color: var(--dourado); border-width: 2px; animation: conferindo 0.9s ease-in-out infinite; }
+@keyframes conferindo { 50% { box-shadow: 0 0 0 4px rgba(192, 143, 60, .18); } }
