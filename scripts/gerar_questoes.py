@@ -32,6 +32,7 @@ DISCIPLINAS_POR_LOTE = {
     "7": [],
     "8": [],
     "9": ["Redes de Computadores"],
+    "10": ["Sistemas Operacionais", "Arquitetura de Computadores", "Governança de TI", "Programação"],
 }
 
 # Cargo do concurso de exemplo que passa a cobrar tambem as disciplinas novas.
@@ -44,6 +45,8 @@ ETICA = "Ética no Serviço Público"
 FCC = "FCC"
 REDES, BD, SEG, ESW = ("Redes de Computadores", "Banco de Dados",
                        "Segurança da Informação", "Engenharia de Software")
+SO, ARQ, GOV, PROG = ("Sistemas Operacionais", "Arquitetura de Computadores",
+                      "Governança de TI", "Programação")
 
 # A partir do lote 9 a banca e localizada por variantes do nome (a importacao
 # por IA pode ter cadastrado "Fundação Carlos Chagas" em vez de "FCC").
@@ -53,7 +56,7 @@ BANCA_VARIANTES = {
 }
 
 # Lotes de areas especificas (TI) nao entram no cargo de exemplo (administrativo).
-LOTES_SEM_CARGO_EXEMPLO = {"9"}
+LOTES_SEM_CARGO_EXEMPLO = {"9", "10"}
 ECON, EST = "Economia", "Estatística"
 PORT, DADM, DCON, INFO, RLM = (
     "Língua Portuguesa", "Direito Administrativo", "Direito Constitucional",
@@ -1168,8 +1171,149 @@ LOTE_9 = [
        "O diagrama de sequência mostra as mensagens entre objetos em ordem temporal (linhas de vida verticais). O de classes é estrutural; o de casos de uso mostra atores e funcionalidades; os de implantação e de componentes descrevem a arquitetura física e a modular."),
 ]
 
+LOTE_10 = [
+    # ------------------------------------------------------------------
+    # Sistemas Operacionais (Linux e Windows)
+    # ------------------------------------------------------------------
+    me(SO, "Linux: permissões", FCC, 2026,
+       "Em um sistema Linux, após o comando chmod 750 relatorio.sh, as permissões do arquivo passam a ser:",
+       ["dono: leitura, escrita e execução; grupo: leitura e execução; outros: nenhuma.",
+        "dono: leitura e escrita; grupo: leitura; outros: nenhuma.",
+        "dono: leitura, escrita e execução; grupo: leitura, escrita e execução; outros: leitura.",
+        "dono: execução; grupo: leitura e execução; outros: leitura, escrita e execução.",
+        "dono: leitura, escrita e execução; grupo: nenhuma; outros: leitura e execução."],
+       "Cada dígito soma leitura (4), escrita (2) e execução (1), na ordem dono, grupo e outros. 7 = 4 + 2 + 1 (rwx); 5 = 4 + 1 (r-x); 0 = nenhuma permissão. Resultado: rwxr-x---."),
+    me(SO, "Linux: estrutura de diretórios", FCC, 2025,
+       "No padrão de hierarquia de diretórios do Linux (FHS), os arquivos de configuração do sistema ficam, por padrão, no diretório",
+       ["/etc", "/bin", "/var", "/home", "/tmp"],
+       "/etc guarda as configurações do sistema (por exemplo, /etc/passwd e /etc/fstab). /bin tem comandos essenciais; /var, dados variáveis como logs; /home, as pastas dos usuários; /tmp, arquivos temporários."),
+    ce(SO, "Linux: processos", CESPE, 2026,
+       "No Linux, o comando ps lista os processos em execução, e o comando kill envia sinais a processos, sendo o sinal 9 (SIGKILL) o que encerra o processo imediatamente, sem permitir que ele trate o sinal.",
+       True,
+       "Certo. O kill sem opção envia o SIGTERM (15), que pede o encerramento e pode ser tratado pelo processo. O kill -9 envia o SIGKILL, que não pode ser capturado nem ignorado."),
+    me(SO, "Windows: sistemas de arquivos", FCC, 2025,
+       "Em comparação com o FAT32, o sistema de arquivos NTFS, usado pelo Windows,",
+       ["permite definir permissões de acesso por usuário e armazenar arquivos maiores que 4 GB.",
+        "é limitado a arquivos de no máximo 4 GB, mas é compatível com mais dispositivos.",
+        "não oferece registro de transações (journaling), o que o torna mais rápido.",
+        "só pode ser usado em pen drives e cartões de memória.",
+        "não permite criptografia de arquivos nem compactação."],
+       "O NTFS tem listas de controle de acesso (permissões por usuário e grupo), journaling, criptografia (EFS), compactação e suporte a arquivos muito grandes. O limite de 4 GB por arquivo é do FAT32, que é mais simples e compatível com mais dispositivos."),
+    ce(SO, "Gerenciamento de memória", CESPE, 2025,
+       "A memória virtual permite que os processos utilizem mais memória do que a RAM física disponível, usando o disco como extensão; quando há trocas excessivas de páginas entre a RAM e o disco, ocorre o fenômeno conhecido como thrashing.",
+       True,
+       "Certo. A memória virtual pagina partes dos processos para o disco. Se a RAM é insuficiente para o conjunto de páginas em uso, o sistema passa mais tempo trocando páginas do que executando, e o desempenho despenca (thrashing)."),
+    me(SO, "Gerenciamento de processos", FCC, 2026,
+       "O algoritmo de escalonamento de processos que atribui a cada processo uma fatia fixa de tempo de CPU (quantum), atendendo-os em fila circular, é o",
+       ["Round Robin", "FIFO (First In, First Out)", "SJF (Shortest Job First)", "por prioridade não preemptivo", "EDF (Earliest Deadline First)"],
+       "No Round Robin, cada processo roda por um quantum e, se não terminar, volta ao fim da fila. O FIFO atende por ordem de chegada até o fim; o SJF escolhe o menor job; o EDF, o prazo mais próximo."),
 
-LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7, "8": LOTE_8, "9": LOTE_9}
+    # ------------------------------------------------------------------
+    # Arquitetura de Computadores (hardware)
+    # ------------------------------------------------------------------
+    me(ARQ, "Memórias", FCC, 2025,
+       "A memória principal do computador, volátil, cujo conteúdo se perde quando o equipamento é desligado, é a",
+       ["RAM", "ROM", "memória flash de um SSD", "EEPROM do firmware", "disco rígido (HD)"],
+       "A RAM é volátil e guarda os programas e dados em uso. ROM e EEPROM (firmware), a memória flash dos SSDs e os discos rígidos são não voláteis: mantêm os dados sem energia."),
+    me(ARQ, "Armazenamento e RAID", FCC, 2026,
+       "O nível de RAID que distribui os dados e a paridade entre todos os discos do conjunto, tolera a falha de um disco e exige no mínimo três discos é o",
+       ["RAID 5", "RAID 0", "RAID 1", "RAID 6", "RAID 10"],
+       "RAID 5 usa paridade distribuída: com 3 ou mais discos, sobrevive à perda de um. RAID 0 só divide os dados (sem redundância); RAID 1 espelha; RAID 6 tem paridade dupla (aguenta dois discos, mínimo quatro); RAID 10 combina espelhamento e divisão."),
+    ce(ARQ, "Memórias", CESPE, 2026,
+       "A memória cache, mais rápida e mais cara que a RAM, armazena dados e instruções usados com frequência pelo processador, reduzindo o tempo médio de acesso à memória.",
+       True,
+       "Certo. A cache fica entre o processador e a RAM (níveis L1, L2 e L3) e explora o princípio da localidade: o que foi usado recentemente, ou está perto disso, tende a ser usado de novo."),
+    me(ARQ, "Sistemas de numeração", FCC, 2025,
+       "O número decimal 45, representado no sistema binário, é",
+       ["101101", "101011", "110101", "100101", "111001"],
+       "45 = 32 + 8 + 4 + 1 = 2⁵ + 2³ + 2² + 2⁰. Marcando as posições de 2⁵ a 2⁰: 1 0 1 1 0 1 → 101101."),
+
+    # ------------------------------------------------------------------
+    # Governança de TI (ITIL e COBIT)
+    # ------------------------------------------------------------------
+    me(GOV, "ITIL", FCC, 2026,
+       "No ITIL 4, o propósito da prática de gerenciamento de incidente é",
+       ["minimizar o impacto negativo dos incidentes, restaurando a operação normal do serviço o mais rápido possível.",
+        "identificar a causa raiz dos incidentes e eliminar erros conhecidos.",
+        "avaliar e autorizar mudanças antes de sua implantação.",
+        "manter informações sobre os itens de configuração e seus relacionamentos.",
+        "atender pedidos padronizados dos usuários, como acesso e informações."],
+       "Incidente foca em restaurar o serviço rápido. Causa raiz e erros conhecidos são do gerenciamento de problema; autorizar mudanças, da habilitação de mudança; itens de configuração, do gerenciamento de configuração; pedidos padronizados, do gerenciamento de requisição de serviço."),
+    ce(GOV, "ITIL", CESPE, 2025,
+       "No ITIL, um problema é a causa, ou causa potencial, de um ou mais incidentes, e o gerenciamento de problemas busca reduzir a probabilidade e o impacto de incidentes, identificando suas causas reais.",
+       True,
+       "Certo. Enquanto o incidente cuida de restabelecer o serviço, o problema investiga a causa. Uma causa identificada e ainda não corrigida, com solução de contorno documentada, é um erro conhecido."),
+    me(GOV, "COBIT", FCC, 2026,
+       "No COBIT 2019, os objetivos de governança estão agrupados no domínio",
+       ["EDM – Avaliar, Dirigir e Monitorar", "APO – Alinhar, Planejar e Organizar",
+        "BAI – Construir, Adquirir e Implementar", "DSS – Entregar, Servir e Suportar",
+        "MEA – Monitorar, Avaliar e Analisar"],
+       "O COBIT separa governança e gestão. A governança fica no EDM; os domínios de gestão são APO, BAI, DSS e MEA."),
+    ce(GOV, "COBIT", CESPE, 2026,
+       "Segundo o COBIT, governança e gestão são a mesma disciplina, ambas exercidas diretamente pela equipe técnica de TI.",
+       False,
+       "Errado. O COBIT distingue as duas: a governança (normalmente a alta administração, o conselho) avalia, dirige e monitora; a gestão planeja, constrói, executa e monitora as atividades conforme a direção dada pela governança."),
+
+    # ------------------------------------------------------------------
+    # Programação
+    # ------------------------------------------------------------------
+    me(PROG, "Orientação a objetos", FCC, 2025,
+       "Em orientação a objetos, o princípio que consiste em ocultar os atributos de uma classe, permitindo o acesso a eles apenas por meio de métodos públicos, é denominado",
+       ["encapsulamento", "herança", "polimorfismo", "sobrecarga", "acoplamento"],
+       "Encapsulamento esconde o estado interno (atributos private) e expõe operações controladas (getters, setters e outros métodos). Herança reaproveita uma classe; polimorfismo permite o mesmo método com comportamentos diferentes; sobrecarga são métodos de mesmo nome com parâmetros diferentes."),
+    me(PROG, "Java", FCC, 2026,
+       "Considere o trecho em Java: int x = 7; int y = 2; System.out.println(x / y + x % y); O valor exibido é",
+       ["4", "4.5", "3.5", "5", "3"],
+       "Entre inteiros, a divisão descarta a parte decimal: 7 / 2 = 3. O operador % devolve o resto: 7 % 2 = 1. Logo, 3 + 1 = 4."),
+    ce(PROG, "Java", CESPE, 2026,
+       "Em Java, uma classe pode estender apenas uma superclasse, mas pode implementar várias interfaces.",
+       True,
+       "Certo. Java não tem herança múltipla de classes (extends aceita uma só), mas uma classe pode implementar quantas interfaces quiser (implements A, B, C)."),
+    me(PROG, "Estruturas de dados", FCC, 2025,
+       "A estrutura de dados em que o último elemento inserido é o primeiro a ser removido (LIFO) é a",
+       ["pilha", "fila", "lista duplamente encadeada", "árvore binária de busca", "tabela hash"],
+       "Pilha é LIFO (push e pop no topo). Fila é FIFO: o primeiro que entra é o primeiro que sai. Listas, árvores e tabelas hash não têm essa regra fixa de remoção."),
+    me(PROG, "Algoritmos", FCC, 2026,
+       "A complexidade de tempo, no pior caso, da busca binária em um vetor ordenado de n elementos é",
+       ["O(log n)", "O(n)", "O(1)", "O(n log n)", "O(n²)"],
+       "A cada comparação, a busca binária descarta metade do vetor: n, n/2, n/4... até 1, o que leva cerca de log₂ n passos. A busca sequencial é que é O(n)."),
+
+    # ------------------------------------------------------------------
+    # Redes, Banco de Dados e Segurança (complemento)
+    # ------------------------------------------------------------------
+    me(REDES, "Equipamentos e VLAN", FCC, 2026,
+       "O recurso que permite dividir logicamente um mesmo switch em domínios de broadcast distintos, isolando, por exemplo, a rede administrativa da rede de visitantes, é a",
+       ["VLAN", "NAT", "VPN", "DHCP", "proxy"],
+       "VLANs segmentam a rede na camada 2: cada uma é um domínio de broadcast separado, e a comunicação entre elas passa por um roteador ou switch de camada 3. NAT traduz endereços; VPN cria um túnel seguro; DHCP distribui IPs; proxy intermedia requisições."),
+    ce(REDES, "Protocolos de aplicação", CESPE, 2026,
+       "O HTTPS utiliza o protocolo TLS para cifrar a comunicação entre o navegador e o servidor e opera, por padrão, na porta 443.",
+       True,
+       "Certo. O HTTP comum usa a porta 80, sem criptografia. O HTTPS é o HTTP sobre TLS (sucessor do SSL), na porta 443."),
+    me(BD, "SQL", FCC, 2025,
+       "A consulta SELECT setor, COUNT(*) FROM funcionario GROUP BY setor HAVING COUNT(*) > 5 retorna",
+       ["cada setor com mais de cinco funcionários, acompanhado da sua quantidade de funcionários.",
+        "apenas os cinco primeiros setores em ordem alfabética.",
+        "os funcionários que trabalham em mais de cinco setores.",
+        "o total geral de funcionários, desde que seja maior que cinco.",
+        "todos os setores, exibindo a quantidade somente quando ela passa de cinco."],
+       "GROUP BY forma um grupo por setor e COUNT(*) conta as linhas de cada um. O HAVING filtra os grupos depois da contagem, mantendo só os setores com mais de cinco funcionários."),
+    ce(BD, "Índices", CESPE, 2025,
+       "Criar um índice em uma coluna sempre torna mais rápidas tanto as consultas quanto as operações de inserção e de atualização da tabela.",
+       False,
+       "Errado. O índice acelera buscas e ordenações pela coluna, mas cada inserção, atualização ou exclusão também precisa atualizar o índice, o que deixa essas operações mais lentas e ocupa espaço."),
+    me(SEG, "LGPD", FCC, 2026,
+       "Segundo a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), é exemplo de dado pessoal sensível o dado",
+       ["referente à saúde do titular.", "do nome completo do titular.", "do endereço de e-mail do titular.",
+        "do número de CPF do titular.", "do número de telefone do titular."],
+       "Dado sensível (art. 5º, II) é o que trata de origem racial ou étnica, convicção religiosa, opinião política, filiação sindical ou a organização religiosa, filosófica ou política, saúde, vida sexual, dado genético ou biométrico. Nome, e-mail, CPF e telefone são dados pessoais comuns."),
+    ce(SEG, "LGPD", CESPE, 2026,
+       "Na LGPD, o encarregado é a pessoa indicada pelo controlador e pelo operador para atuar como canal de comunicação entre o controlador, os titulares dos dados e a Autoridade Nacional de Proteção de Dados (ANPD).",
+       True,
+       "Certo. É a definição do art. 5º, VIII, da LGPD (redação dada pela Lei nº 13.853/2019). O encarregado é muitas vezes chamado de DPO (Data Protection Officer)."),
+]
+
+
+LOTES = {"2": LOTE_2, "3": LOTE_3, "4": LOTE_4, "5": LOTE_5, "6": LOTE_6, "7": LOTE_7, "8": LOTE_8, "9": LOTE_9, "10": LOTE_10}
 
 
 def sql(texto):
