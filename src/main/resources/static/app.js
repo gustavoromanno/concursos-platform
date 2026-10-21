@@ -1994,6 +1994,46 @@ function recorte(texto, limite) {
     return t.length > limite ? t.slice(0, limite).trimEnd() + '…' : t;
 }
 
+// Meta diaria em destaque (topo do Inicio): anel, seletor de meta, botao e barra.
+const OPCOES_META = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100];
+function cartaoMetaDiaria(eng, recarregar) {
+    const meta = eng.metaDiaria || 0;
+    const feitas = eng.respondidasHoje || 0;
+    const pct = meta ? Math.min(100, (feitas / meta) * 100) : 0;
+    const faltam = Math.max(0, meta - feitas);
+    const opcoes = [...new Set([...OPCOES_META, meta])].filter(n => n > 0).sort((a, b) => a - b);
+    const card = criar(`
+        <div class="card meta-destaque ${faltam === 0 ? 'batida' : ''}">
+            <div class="meta-destaque-topo">
+                ${anelProgresso(pct, 58)}
+                <div class="meta-destaque-info">
+                    <span class="rotulo">META DIÁRIA</span>
+                    <label class="meta-seletor">
+                        <strong>${feitas}</strong> <span class="barra-meta">/</span>
+                        <select aria-label="Questões por dia">${opcoes.map(n =>
+                            `<option value="${n}" ${n === meta ? 'selected' : ''}>${n}</option>`).join('')}</select>
+                        <span class="sub">questões</span>
+                    </label>
+                    <span class="sub">${faltam === 0
+                        ? 'Meta batida hoje. Bom trabalho! 🎯'
+                        : `Faltam ${faltam} ${faltam === 1 ? 'questão' : 'questões'} para bater a meta`}</span>
+                </div>
+                <button class="primario">${faltam === 0 ? 'Continuar' : 'Resolver'} →</button>
+            </div>
+            <div class="meta-destaque-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}">
+                <span style="width:${pct}%"></span>
+            </div>
+        </div>`);
+    card.querySelector('select').onchange = async (ev) => {
+        try {
+            await api('/engajamento/meta', { method: 'PUT', body: JSON.stringify({ questoesPorDia: Number(ev.target.value) }) });
+            recarregar();
+        } catch (err) { alert(err.message); }
+    };
+    card.querySelector('button').onclick = () => abrir('questoes');
+    return card;
+}
+
 async function carregarInicio() {
     const alvo = $('#painel-inicio');
     alvo.innerHTML = '<div class="vazio">Carregando…</div>';
@@ -2022,6 +2062,7 @@ async function carregarInicio() {
                 </div>
             </div>
         `);
+        if (eng) alvo.appendChild(cartaoMetaDiaria(eng, carregarInicio));
         const objetivo = await cartaoObjetivo();
         if (objetivo) alvo.appendChild(objetivo);
 
