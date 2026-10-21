@@ -1942,3 +1942,30 @@ main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
 #topo .nav-mais-menu button { width: 100%; justify-content: flex-start; padding: 9px 12px; }
 #topo .nav-mais-menu button span:not(.selo) { display: inline !important; }
 .nav-mais-divisor { height: 1px; margin: 4px 6px; background: rgba(255, 255, 255, .10); }
+
+/* ---------- meta diaria em destaque (Inicio) ---------- */
+.meta-destaque { padding: 18px 22px 16px; margin-bottom: 18px; }
+.meta-destaque-topo { display: flex; align-items: center; gap: 18px; }
+.meta-destaque-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.meta-seletor {
+    display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+    padding: 5px 10px; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie);
+    font-size: 17px;
+}
+.meta-seletor strong { font-size: 18px; color: var(--texto); }
+.meta-seletor > * { line-height: 1; margin: 0; }
+.meta-seletor .barra-meta { color: var(--suave); }
+.meta-seletor select {
+    width: auto; padding: 2px 4px; border: none; background: transparent;
+    font: inherit; font-weight: 600; color: var(--primario); cursor: pointer;
+}
+.meta-seletor .sub { font-size: 13px; }
+.meta-destaque .primario { flex: 0 0 auto; width: auto; padding-left: 26px; padding-right: 26px; }
+.meta-destaque-topo > svg { flex: 0 0 auto; }
+.meta-destaque-barra { margin-top: 14px; height: 6px; border-radius: 6px; background: var(--trilho); overflow: hidden; }
+.meta-destaque-barra span { display: block; height: 100%; border-radius: 6px; background: var(--primario); transition: width .4s ease; }
+.meta-destaque.batida .meta-destaque-barra span { background: var(--dourado); }
+@media (max-width: 560px) {
+    .meta-destaque-topo { flex-wrap: wrap; }
+    .meta-destaque .primario { width: 100%; }
+}
