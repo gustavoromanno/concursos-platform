@@ -394,10 +394,37 @@ $('#v-disciplina').onchange = () => atualizarAssuntos('#v-disciplina', '#v-assun
 
 // ---------- navegacao ----------
 
-document.querySelectorAll('#topo nav button').forEach(btn => {
+document.querySelectorAll('#topo nav button[data-tela]').forEach(btn => {
     btn.title = btn.textContent.trim();
     btn.onclick = () => abrir(btn.dataset.tela);
 });
+
+// Menu "Mais" do topo (computador): itens secundarios num menu suspenso.
+const MENU_MAIS = $('#nav-mais-menu');
+function fecharNavMais() {
+    MENU_MAIS.classList.add('hidden');
+    $('#btn-nav-mais').setAttribute('aria-expanded', 'false');
+}
+$('#btn-nav-mais').onclick = (e) => {
+    e.stopPropagation();
+    const abrirAgora = MENU_MAIS.classList.contains('hidden');
+    MENU_MAIS.classList.toggle('hidden', !abrirAgora);
+    $('#btn-nav-mais').setAttribute('aria-expanded', String(abrirAgora));
+};
+document.addEventListener('click', (e) => { if (!e.target.closest('.nav-mais')) fecharNavMais(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharNavMais(); });
+// Pendencias da revisao (que fica dentro do "Mais") aparecem como um ponto no botao.
+(function pontoRevisaoNoMais() {
+    const selo = $('#selo-revisao');
+    if (!selo) return;
+    const sinc = () => document.querySelector('#btn-nav-mais .ponto-mais')
+        .classList.toggle('hidden', selo.classList.contains('hidden'));
+    new MutationObserver(sinc).observe(selo, { attributes: true, childList: true });
+    sinc();
+})();
+// A marca no topo leva ao Inicio.
+$('#marca-topo').onclick = () => abrir('inicio');
+$('#marca-topo').onkeydown = (e) => { if (e.key === 'Enter') abrir('inicio'); };
 
 // ---------- menu do celular: barra embaixo + "Mais" ----------
 // Os botoes sao copiados do menu do topo, para os dois ficarem sempre iguais.
@@ -438,7 +465,7 @@ function botaoMovel(tela, icone, rotulo) {
 function abrirMenuMais() {
     const grade = document.querySelector('#menu-mais .menu-mais-grade');
     grade.innerHTML = '';
-    document.querySelectorAll('#topo nav button').forEach(origem => {
+    document.querySelectorAll('#topo nav button[data-tela]').forEach(origem => {
         if (ATALHOS_MOVEL.includes(origem.dataset.tela) || origem.classList.contains('hidden')) return;
         const b = botaoMovel(origem.dataset.tela, origem.querySelector('svg').outerHTML, origem.querySelector('span').textContent);
         b.classList.toggle('ativo', origem.classList.contains('ativo'));
@@ -458,8 +485,10 @@ document.querySelector('#menu-mais .menu-mais-fundo').onclick = fecharMenuMais;
 
 function abrir(tela) {
     document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-    document.querySelectorAll('#topo nav button').forEach(b =>
+    document.querySelectorAll('#topo nav button[data-tela]').forEach(b =>
         b.classList.toggle('ativo', b.dataset.tela === tela));
+    $('#btn-nav-mais').classList.toggle('ativo', !!MENU_MAIS.querySelector(`button[data-tela="${tela}"]`));
+    fecharNavMais();
     document.querySelectorAll('#barra-movel button').forEach(b =>
         b.classList.toggle('ativo', b.dataset.tela === tela || (b.dataset.tela === 'mais' && !ATALHOS_MOVEL.includes(tela))));
     fecharMenuMais();
@@ -486,7 +515,7 @@ function abrir(tela) {
 // ---------- minha conta ----------
 
 function atualizarUsuarioTopo(nome) {
-    $('#usuario-topo').textContent = nome;
+    $('#usuario-topo').textContent = nome.split(' ')[0];   // so o primeiro nome cabe no topo
     const partes = (nome || '').trim().split(/\s+/).filter(Boolean);
     const iniciais = partes.length > 1
         ? partes[0][0] + partes[partes.length - 1][0]

@@ -1317,8 +1317,8 @@ main:has(#tela-login:not(.hidden)) {
 
 #topo .selo { margin-left: 2px; }
 
-/* Telas medias: so icones no menu (o rotulo vira dica ao passar o mouse). */
-@media (max-width: 1280px) {
+/* Telas estreitas: so icones no menu (o rotulo vira dica ao passar o mouse). */
+@media (max-width: 1100px) {
     #topo nav button span:not(.selo) { display: none; }
     #topo nav button { padding: 9px 11px; }
 }
@@ -1916,3 +1916,29 @@ main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
 /* Resposta enviada: a alternativa escolhida pulsa ate o resultado chegar. */
 .alternativa.conferindo { border-color: var(--dourado); border-width: 2px; animation: conferindo 0.9s ease-in-out infinite; }
 @keyframes conferindo { 50% { box-shadow: 0 0 0 4px rgba(192, 143, 60, .18); } }
+
+/* ---------- menu "Mais" do topo (computador) ---------- */
+#topo .marca { cursor: pointer; }
+#topo nav { overflow: visible; }
+.nav-mais { position: relative; flex-shrink: 0; }
+#topo nav .btn-nav-mais {
+    display: inline-flex; align-items: center; gap: 5px; position: relative;
+    padding: 8px 12px; border: none; border-radius: var(--raio-p);
+    background: transparent; color: var(--barra-texto); font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap;
+}
+#topo nav .btn-nav-mais:hover, #topo nav .btn-nav-mais[aria-expanded="true"] { background: var(--barra-ativo); color: #fff; }
+#topo nav .btn-nav-mais.ativo { background: var(--barra-ativo); color: #fff; font-weight: 500; }
+#topo nav .btn-nav-mais > span:first-child { display: inline !important; }
+.btn-nav-mais .seta-mais { width: 15px; height: 15px; transition: transform .15s; }
+.btn-nav-mais[aria-expanded="true"] .seta-mais { transform: rotate(180deg); }
+.ponto-mais { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--dourado); }
+.nav-mais-menu {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 210px;
+    display: flex; flex-direction: column; gap: 2px; padding: 6px;
+    background: var(--barra); border: 1px solid rgba(255, 255, 255, .08); border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
+}
+.nav-mais-menu.hidden { display: none; }
+#topo .nav-mais-menu button { width: 100%; justify-content: flex-start; padding: 9px 12px; }
+#topo .nav-mais-menu button span:not(.selo) { display: inline !important; }
+.nav-mais-divisor { height: 1px; margin: 4px 6px; background: rgba(255, 255, 255, .10); }
