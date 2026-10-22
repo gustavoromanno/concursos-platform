@@ -1,0 +1,71 @@
+-- Terceiro lote de videoaulas: 59 videos publicos do YouTube, um ou dois por assunto
+-- que ainda nao tinha video (prioridade para os assuntos com mais questoes).
+-- Ids e titulos conferidos nos resultados de busca; o site so incorpora o player
+-- (e o modal tem "Abrir no YouTube" para videos que nao tocam embutidos).
+-- Cada linha so entra se o assunto existir e o video ainda nao estiver cadastrado.
+INSERT INTO videoaula (titulo, youtube_id, canal, duracao_minutos, disciplina_id, assunto_id, criado_em)
+SELECT v.titulo, v.youtube_id, v.canal, NULL, d.id, a.id, NOW()
+FROM (VALUES
+    ('O que é RAID 0, 1, 5 e 10? Guia sobre redundância em discos', 'iq_moExtBnk', NULL, 'Arquitetura de Computadores', 'Armazenamento e RAID'),
+    ('Sistemas de numeração e conversões de bases', 'DJYIndxhcKc', NULL, 'Arquitetura de Computadores', 'Sistemas de numeração'),
+    ('Modelo relacional - Aula 04 - Bancos de Dados', '2FXgrH4h5q4', NULL, 'Banco de Dados', 'Modelo relacional'),
+    ('Normalização de dados em bancos de dados (1FN, 2FN, 3FN)', 'TOFZQ5wm1UI', NULL, 'Banco de Dados', 'Normalização'),
+    ('Transações em banco de dados - conceito ACID, COMMIT, ROLLBACK e SAVEPOINT', 'iFmL8Ys46Z0', NULL, 'Banco de Dados', 'Transações'),
+    ('Índices: árvore B e B+ - Bancos de Dados', 'o35vXlToB9M', NULL, 'Banco de Dados', 'Índices'),
+    ('BC te Explica #129 - Como funciona o Open Finance', 'XE9Qo9_0P24', 'Banco Central do Brasil', 'Conhecimentos Bancários', 'Open Finance'),
+    ('Tesouro Prefixado (LTN e NTN-F) - curso Banco do Brasil, aula 26', 'i7YU_Tub8t0', NULL, 'Conhecimentos Bancários', 'Títulos públicos'),
+    ('Lei 14.133/21: cláusulas exorbitantes nos contratos administrativos', 'm7x7iGICRK4', NULL, 'Direito Administrativo', 'Contratos administrativos'),
+    ('Controle de constitucionalidade - Parte 01', '22Q4VCTiJ44', NULL, 'Direito Constitucional', 'Controle de constitucionalidade'),
+    ('Direitos sociais (CF/88, arts. 6º a 11)', 'LlEKrSk0LFw', NULL, 'Direito Constitucional', 'Direitos sociais'),
+    ('Organização político-administrativa - Direito Constitucional', 'HAEznaytlCw', 'Prof. Gustavo Americano', 'Direito Constitucional', 'Organização do Estado'),
+    ('Noções de Economia: balanço de pagamentos', 'JB0njJ4Cjxs', 'Michelle Miltons', 'Economia', 'Balanço de pagamentos'),
+    ('Macroeconomia, aula 1.2: PIB nas contas nacionais', 'IMidyc6tAwE', NULL, 'Economia', 'Contas nacionais'),
+    ('Tipos de desemprego: friccional, cíclico, estrutural e sazonal', 'pzapnkZGs5A', NULL, 'Economia', 'Desemprego'),
+    ('Falhas de mercado: externalidades, bens públicos e assimetria de informação', 'a3nN_qW-u2c', NULL, 'Economia', 'Falhas de mercado'),
+    ('Inflação: conceito, tipos e principais índices de preços do Brasil', 'T_X14nfjkW8', NULL, 'Economia', 'Inflação'),
+    ('Macroeconomia - Modelo IS-LM #1', 'jpAtYTirLSg', NULL, 'Economia', 'Modelo IS-LM'),
+    ('Moeda, meios de pagamento e agregados monetários', 'av6Jgj1WDFI', NULL, 'Economia', 'Moeda'),
+    ('Como o governo atua na economia: política fiscal e política monetária', 'QycS1zLM1Gs', NULL, 'Economia', 'Política fiscal'),
+    ('Política monetária expansiva e restritiva: entenda a diferença', 'bnNn6fyBP_I', NULL, 'Economia', 'Política monetária'),
+    ('Processos e modelos de processo de software', 'WYmWKUcBjyk', NULL, 'Engenharia de Software', 'Processos de software'),
+    ('Requisitos funcionais e requisitos não funcionais', '2m_Nlqtr4qA', NULL, 'Engenharia de Software', 'Requisitos'),
+    ('Testes de caixa preta, branca e cinza', 'Bp4yX12t9lo', NULL, 'Engenharia de Software', 'Testes de software'),
+    ('Curso de UML - O que são diagramas de casos de uso', 'K-BaRfFx0mA', NULL, 'Engenharia de Software', 'UML'),
+    ('Estatística - Aula 15 - Medidas de dispersão: variância, desvio-padrão e coeficiente de variação', '7K2jw0IgUxM', NULL, 'Estatística', 'Medidas de dispersão'),
+    ('Estatística - Aula 2 - Medidas de tendência central', 'MRfr1h7c8bM', NULL, 'Estatística', 'Medidas de tendência central'),
+    ('Probabilidade condicional (probabilidade e estatística para o Banco do Brasil)', 'fNTm_u4OkXQ', NULL, 'Estatística', 'Probabilidade'),
+    ('Anáfora x catáfora', 'iIQU2sb8GZU', 'Professor Noslen', 'Língua Portuguesa', 'Coesão referencial'),
+    ('Coesão textual e interpretação de textos - maratona de questões FCC', 'YVt0IJT268o', 'Focus Concursos', 'Língua Portuguesa', 'Coesão textual'),
+    ('Pronomes relativos, funções do "que" e do "se" e regência - questões FCC', 'yDlIQEKrDqs', 'Focus Concursos', 'Língua Portuguesa', 'Emprego de pronomes relativos'),
+    ('Formação de palavras: derivação e composição (português para concurso)', 'Xw74aXTBaoY', NULL, 'Língua Portuguesa', 'Formação de palavras'),
+    ('Transitividade verbal - esse assunto cai em todas as provas', 'at77zoXlLb0', NULL, 'Língua Portuguesa', 'Predicação verbal'),
+    ('Cebraspe - aula de Português - reescrita de frase', 'ujcuC7AYs1Q', NULL, 'Língua Portuguesa', 'Reescrita de frases'),
+    ('Sujeito, predicado e funções sintáticas - maratona de questões FCC', 'cD3gOJyA3nM', 'Focus Concursos', 'Língua Portuguesa', 'Sintaxe'),
+    ('Tipos textuais', 'ibwf_X3498c', 'Professor Noslen', 'Língua Portuguesa', 'Tipologia textual'),
+    ('Conjunção: coordenativas ou subordinativas?', 'C1MjafABdS4', NULL, 'Língua Portuguesa', 'Uso de conjunções'),
+    ('Matemática financeira e análise de investimentos - VPL e TIR', 'KpQd0dsn-SM', NULL, 'Matemática Financeira', 'Análise de investimentos'),
+    ('Taxa real, taxa aparente e taxa de inflação', '1ZhRYHDVGAU', NULL, 'Matemática Financeira', 'Taxa real e inflação'),
+    ('Explorador de Arquivos do Windows - Windows 10 para concursos (aula 03)', 'q6__lQcBa78', NULL, 'Noções de Informática', 'Arquivos e pastas'),
+    ('Introdução a algoritmos - Curso de Algoritmos #01', '8mei6uVttho', 'Curso em Vídeo', 'Programação', 'Algoritmos'),
+    ('Introdução a fila, pilha, lista e árvore', 'q2m_mX0f_-w', NULL, 'Programação', 'Estruturas de dados'),
+    ('Curso POO Teoria #01a - O que é Programação Orientada a Objetos', 'KlIL63MeyMY', 'Curso em Vídeo', 'Programação', 'Orientação a objetos'),
+    ('Operações com conjuntos: raciocínio lógico para concursos', 'VD8sRm8n4KA', 'Focus Concursos', 'Raciocínio Lógico', 'Conjuntos'),
+    ('Raciocínio Lógico - Aula 5 - Argumentação lógica (silogismos)', 'i26VKRCyi9o', 'Prof. Gui', 'Raciocínio Lógico', 'Lógica de argumentação'),
+    ('Sequências de números, figuras, letras e palavras - Parte 1', '-CKyLMxOF8o', NULL, 'Raciocínio Lógico', 'Sequências'),
+    ('Dispositivos de rede: hub, switch, portas, VLAN, firewall e proxy', 'y2hHvqEGL8E', NULL, 'Redes de Computadores', 'Equipamentos e VLAN'),
+    ('Protocolos da camada de transporte: TCP e UDP (informática para concursos)', 'DhqdUFt-g0k', NULL, 'Redes de Computadores', 'Protocolos de transporte'),
+    ('Informática para concursos: backup completo, incremental e diferencial', 'S7B8H_CuOvU', NULL, 'Segurança da Informação', 'Backup'),
+    ('Segurança da informação: fundamentos, conceitos e mecanismos de segurança', 'sFcVAa8HmnU', NULL, 'Segurança da Informação', 'Controle de acesso'),
+    ('Lei Geral de Proteção de Dados - LGPD (13.709/18)', 'hnx-wS3i1TY', 'Professor Luciano Franco', 'Segurança da Informação', 'LGPD'),
+    ('Noções de vírus, worms, phishing e pragas virtuais', '9HKUGrwvdxE', NULL, 'Segurança da Informação', 'Malwares e ataques'),
+    ('Como o sistema operacional gerencia a memória (paginação e memória virtual)', '19WBGJ1gLzQ', NULL, 'Sistemas Operacionais', 'Gerenciamento de memória'),
+    ('Sistemas Operacionais - gerenciamento de processos e escalonamento', 'n55HaefZqT8', NULL, 'Sistemas Operacionais', 'Gerenciamento de processos'),
+    ('Estrutura de diretórios no Linux para concursos', '6tJgkB4mXXQ', NULL, 'Sistemas Operacionais', 'Linux: estrutura de diretórios'),
+    ('Permissões de arquivos e diretórios no Linux com chmod', 'TILkz2QwDos', NULL, 'Sistemas Operacionais', 'Linux: permissões'),
+    ('Gerenciar processos no Linux: comandos kill e ps aux', 'hKmppegytLI', NULL, 'Sistemas Operacionais', 'Linux: processos'),
+    ('Sistemas de arquivos NTFS, EXT4, FAT32 e exFAT', 'n3xZK8IsCt4', NULL, 'Sistemas Operacionais', 'Windows: sistemas de arquivos'),
+    ('Decreto 6.029/2007 - Sistema de Gestão da Ética do Poder Executivo (questões)', 'fPmWtB3h5Fc', NULL, 'Ética no Serviço Público', 'Comissões de Ética')
+) AS v(titulo, youtube_id, canal, disciplina, assunto)
+JOIN disciplina d ON d.nome = v.disciplina
+JOIN assunto a ON a.disciplina_id = d.id AND a.nome = v.assunto
+WHERE NOT EXISTS (SELECT 1 FROM videoaula x WHERE x.youtube_id = v.youtube_id);
