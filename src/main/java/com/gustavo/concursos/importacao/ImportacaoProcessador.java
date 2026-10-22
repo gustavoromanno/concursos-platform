@@ -41,7 +41,8 @@ public class ImportacaoProcessador {
     private static final Logger log = LoggerFactory.getLogger(ImportacaoProcessador.class);
 
     static final int QUESTOES_POR_EXTRACAO = 25;
-    static final int BASES_POR_GERACAO = 5;
+    // 10 originais por chamada: metade das chamadas de antes (cada chamada conta na cota diaria da IA).
+    static final int BASES_POR_GERACAO = 10;
 
     private static final String SISTEMA = """
             Voce e um especialista em concursos publicos brasileiros e trabalha para uma
@@ -323,7 +324,7 @@ public class ImportacaoProcessador {
             JsonNode d = chamar(imp, new PedidoFerramenta(
                     SISTEMA,
                     List.of(IaCliente.texto(pedidoDeGeracao(imp, lote))),
-                    "criar_questoes_ineditas", "Registra as questoes ineditas criadas.", esquema, 12000));
+                    "criar_questoes_ineditas", "Registra as questoes ineditas criadas.", esquema, 24000));
 
             for (JsonNode q : d.path("questoes")) {
                 QuestaoBase base = porNumero.get(q.path("base_numero").asInt(-1));
