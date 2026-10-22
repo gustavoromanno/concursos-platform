@@ -70,4 +70,19 @@ class GeminiIaClienteTest {
         assertThatThrownBy(() -> semChave.chamar(pedido()))
                 .isInstanceOf(IaException.class).hasMessageContaining("GEMINI_API_KEY");
     }
+
+    @Test
+    void distingueCotaDiariaDeLimitePorMinuto() {
+        String diaria = """
+                {"error":{"code":429,"message":"You exceeded your current quota","status":"RESOURCE_EXHAUSTED",
+                  "details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[
+                    {"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests",
+                     "quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]},
+                   {"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"41s"}]}}""";
+        String porMinuto = diaria.replace("PerDay", "PerMinute");
+        assertThat(cliente.cotaDiariaEsgotada(diaria)).isTrue();
+        assertThat(cliente.cotaDiariaEsgotada(porMinuto)).isFalse();
+        assertThat(cliente.cotaDiariaEsgotada("{\"error\":{\"code\":429}}")).isFalse();
+        assertThat(cliente.cotaDiariaEsgotada("nao e json")).isFalse();
+    }
 }
