@@ -478,6 +478,18 @@
   </section>
 
   <section id="tela-videoaulas" class="hidden">
+    <div class="card so-admin hidden" id="card-busca-yt">
+      <h2>Buscar no YouTube</h2>
+      <p class="sub">Escolha um assunto (os sem vídeo aparecem primeiro), busque e adicione os vídeos bons à biblioteca.</p>
+      <div class="busca-yt-form">
+        <label>Assunto<select id="yt-assunto"><option value="">Carregando…</option></select></label>
+        <label>Termo da busca<input id="yt-termo" type="text" maxlength="150" placeholder="gerado a partir do assunto"></label>
+        <button id="btn-yt-buscar" class="primario">Buscar</button>
+      </div>
+      <p id="yt-erro" class="erro"></p>
+      <div id="yt-resultados" class="grade-videos"></div>
+    </div>
+
     <div class="card">
       <h2>Recomendado para você</h2>
       <p class="sub">Videoaulas dos assuntos em que você mais erra.</p>
@@ -487,7 +499,7 @@
     <div class="card">
       <div class="topo-secao">
         <h2>Biblioteca</h2>
-        <button id="btn-abrir-cadastro" class="link">+ Adicionar videoaula</button>
+        <button id="btn-abrir-cadastro" class="link so-admin hidden">+ Adicionar videoaula</button>
       </div>
 
       <div id="form-video" class="hidden bloco-form">
@@ -1029,6 +1041,7 @@
     <button id="fechar-video" class="fechar">&times;</button>
     <div id="player"></div>
     <p id="titulo-video" class="titulo-video"></p>
+    <a id="link-youtube" class="link-youtube" href="#" target="_blank" rel="noopener">Abrir no YouTube ↗</a>
   </div>
 </div>
 
