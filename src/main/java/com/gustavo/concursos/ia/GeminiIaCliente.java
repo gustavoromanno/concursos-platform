@@ -99,7 +99,8 @@ public class GeminiIaCliente implements IaCliente {
                 return interpretar(resposta.body(), pedido.nomeFerramenta());
             } catch (Sobrecarga e) {
                 if (i + 1 >= modelos.size()) throw e;
-                log.warn("Modelo {} sobrecarregado; tentando o reserva {}.", m, modelos.get(i + 1));
+                log.warn("Modelo {} {}; tentando o reserva {}.", m,
+                        e instanceof CotaDiaria ? "sem cota diaria" : "sobrecarregado", modelos.get(i + 1));
             }
         }
     }
@@ -109,6 +110,36 @@ public class GeminiIaCliente implements IaCliente {
         Sobrecarga(String mensagem) {
             super(mensagem);
         }
+    }
+
+    // Cota do dia acabou: so volta quando o dia virar no horario do Pacifico.
+    static class CotaDiaria extends Sobrecarga {
+        CotaDiaria(String mensagem) {
+            super(mensagem);
+        }
+    }
+
+    static final String MENSAGEM_COTA_DIARIA = "A cota diária da API do Gemini acabou (o plano gratuito permite "
+            + "poucas chamadas por dia). Ela renova à meia-noite do horário do Pacífico (04:00 ou 05:00 em Brasília); "
+            + "depois disso use \"Continuar de onde parou\". Para não depender desse limite, ative o faturamento "
+            + "da chave no Google AI Studio.";
+
+    /**
+     * O 429 do Gemini traz em error.details as cotas estouradas (QuotaFailure), com ids como
+     * "GenerateRequestsPerDayPerProjectPerModel-FreeTier". Limite por minuto ("PerMinute")
+     * passa sozinho e segue a repeticao normal.
+     */
+    boolean cotaDiariaEsgotada(String corpo) {
+        try {
+            for (JsonNode detalhe : json.readTree(corpo).path("error").path("details")) {
+                for (JsonNode v : detalhe.path("violations")) {
+                    if (v.path("quotaId").asString("").contains("PerDay")) return true;
+                }
+            }
+        } catch (JacksonException e) {
+            return false;
+        }
+        return false;
     }
 
     Map<String, Object> montarCorpo(PedidoFerramenta pedido) {
@@ -159,6 +190,11 @@ public class GeminiIaCliente implements IaCliente {
             int status = resposta.statusCode();
             if (status >= 200 && status < 300) return resposta;
 
+            // Cota DIARIA esgotada (ex.: plano gratuito, 20 chamadas/dia por modelo): repetir
+            // nao adianta ate o dia virar. Para na hora e deixa o modelo reserva tentar.
+            if (status == 429 && cotaDiariaEsgotada(resposta.body())) {
+                throw new CotaDiaria(MENSAGEM_COTA_DIARIA);
+            }
             if (TRANSITORIOS.contains(status)) {
                 if (tentativa < TENTATIVAS) {
                     log.warn("API do Gemini respondeu {} (tentativa {}/{}); repetindo.", status, tentativa, TENTATIVAS);
