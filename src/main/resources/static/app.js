@@ -1309,7 +1309,7 @@ async function finalizarSimulado() {
 function cardVideo(v) {
     const card = criar(`
         <div class="card-video">
-            <img src="${escapar(v.thumbnail)}" alt="">
+            <img src="${escapar(v.thumbnail)}" alt="" loading="lazy" decoding="async">
             <div class="info-video">
                 <strong>${escapar(v.titulo)}</strong>
                 <span class="sub">${escapar(v.disciplina)}${v.assunto ? ' · ' + escapar(v.assunto) : ''}${v.canal ? ' · ' + escapar(v.canal) : ''}${v.duracaoMinutos ? ' · ' + v.duracaoMinutos + 'min' : ''}</span>
@@ -1365,7 +1365,29 @@ $('#btn-salvar-video').onclick = async () => {
     }
 };
 
-$('#vf-disciplina').onchange = carregarVideoaulas;
+$('#vf-disciplina').onchange = () => {
+    atualizarAssuntos('#vf-disciplina', '#vf-assunto', 'Todos');
+    $('#vf-assunto').disabled = !$('#vf-disciplina').value;
+    carregarVideoaulas();
+};
+$('#vf-assunto').onchange = carregarVideoaulas;
+
+// A biblioteca tem mais de mil videos: mostra aos poucos.
+const VIDEOS_POR_PAGINA = 24;
+let videosBiblioteca = [];
+let videosMostrados = 0;
+
+function mostrarMaisVideos() {
+    const lista = $('#lista-videos');
+    videosBiblioteca.slice(videosMostrados, videosMostrados + VIDEOS_POR_PAGINA)
+        .forEach(v => lista.appendChild(cardVideo(v)));
+    videosMostrados = Math.min(videosBiblioteca.length, videosMostrados + VIDEOS_POR_PAGINA);
+    $('#btn-mais-videos').classList.toggle('hidden', videosMostrados >= videosBiblioteca.length);
+    $('#contagem-videos').textContent = videosBiblioteca.length
+        ? `${videosMostrados} de ${videosBiblioteca.length} ${videosBiblioteca.length === 1 ? 'videoaula' : 'videoaulas'}` : '';
+}
+
+$('#btn-mais-videos').onclick = mostrarMaisVideos;
 
 // ---------- busca no YouTube (admin) ----------
 
@@ -1477,15 +1499,20 @@ async function carregarVideoaulas() {
 
         const params = new URLSearchParams();
         const disciplinaId = $('#vf-disciplina').value;
+        const assuntoId = $('#vf-assunto').value;
         if (disciplinaId) params.set('disciplinaId', disciplinaId);
+        if (assuntoId) params.set('assuntoId', assuntoId);
 
-        const videos = await api('/videoaulas?' + params);
+        videosBiblioteca = await api('/videoaulas?' + params);
+        videosMostrados = 0;
         lista.innerHTML = '';
-        if (!videos.length) {
-            lista.appendChild(criar('<div class="vazio">Nenhuma videoaula cadastrada ainda.</div>'));
+        if (!videosBiblioteca.length) {
+            lista.appendChild(criar('<div class="vazio">Nenhuma videoaula para esse filtro.</div>'));
+            $('#btn-mais-videos').classList.add('hidden');
+            $('#contagem-videos').textContent = '';
             return;
         }
-        videos.forEach(v => lista.appendChild(cardVideo(v)));
+        mostrarMaisVideos();
     } catch (e) {
         lista.innerHTML = `<div class="vazio">${escapar(e.message)}</div>`;
     }
@@ -2739,7 +2766,7 @@ async function carregarDashboard() {
             videos.forEach(v => {
                 const item = criar(`
                     <div class="item-video">
-                        <img src="${escapar(v.thumbnail)}" alt="">
+                        <img src="${escapar(v.thumbnail)}" alt="" loading="lazy" decoding="async">
                         <div>
                             <strong>${escapar(v.titulo)}</strong>
                             <span class="sub">${escapar(v.disciplina)}${v.assunto ? ' · ' + escapar(v.assunto) : ''}</span>
