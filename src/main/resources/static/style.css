@@ -1969,3 +1969,13 @@ main:has(#tela-teoria:not(.hidden)) { max-width: 1180px; }
     .meta-destaque-topo { flex-wrap: wrap; }
     .meta-destaque .primario { width: 100%; }
 }
+
+/* Busca de videoaulas no YouTube (admin) */
+.busca-yt-form { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto; gap: 12px; align-items: end; }
+.busca-yt-form button { width: auto; }
+.resultado-yt { cursor: default; }
+.acoes-yt { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-top: 8px; }
+.acoes-yt button { width: auto; flex: 0 0 auto; padding: 6px 12px; }
+.acoes-yt button:disabled { opacity: .6; cursor: default; }
+.link-youtube { display: inline-block; margin-top: 8px; font-size: 14px; color: #fff; opacity: .85; }
+@media (max-width: 720px) { .busca-yt-form { grid-template-columns: 1fr; } }

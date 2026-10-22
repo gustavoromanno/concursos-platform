@@ -1327,6 +1327,8 @@ function abrirVideo(v) {
         frameborder="0" allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
         allowfullscreen></iframe>`;
     $('#titulo-video').textContent = v.titulo;
+    // Alguns videos nao deixam tocar fora do YouTube: o link e a saida.
+    $('#link-youtube').href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(v.youtubeId);
     $('#modal-video').classList.remove('hidden');
 }
 
@@ -1365,7 +1367,101 @@ $('#btn-salvar-video').onclick = async () => {
 
 $('#vf-disciplina').onchange = carregarVideoaulas;
 
+// ---------- busca no YouTube (admin) ----------
+
+let coberturaVideos = [];
+
+async function carregarCoberturaVideos() {
+    const sel = $('#yt-assunto');
+    try {
+        coberturaVideos = await api('/admin/videoaulas/cobertura');
+        // Assuntos sem video primeiro; depois os com mais questoes.
+        const ordenados = [...coberturaVideos].sort((a, b) =>
+            (a.videos > 0) - (b.videos > 0) || b.questoes - a.questoes);
+        const atual = sel.value;
+        sel.innerHTML = ordenados.map(c => `<option value="${c.assuntoId}">${escapar(c.disciplina)} · ${escapar(c.assunto)}
+            (${c.questoes} quest., ${c.videos} ${c.videos === 1 ? 'vídeo' : 'vídeos'})</option>`).join('');
+        if (atual && coberturaVideos.some(c => String(c.assuntoId) === atual)) sel.value = atual;
+        else preencherTermoYt();
+    } catch (e) {
+        sel.innerHTML = '';
+        $('#yt-erro').textContent = e.message;
+    }
+}
+
+function preencherTermoYt() {
+    const c = coberturaVideos.find(x => String(x.assuntoId) === $('#yt-assunto').value);
+    $('#yt-termo').value = c ? `${c.assunto} ${c.disciplina} aula concurso` : '';
+}
+
+$('#yt-assunto').onchange = preencherTermoYt;
+
+$('#btn-yt-buscar').onclick = async () => {
+    const alvo = $('#yt-resultados');
+    const assuntoId = $('#yt-assunto').value;
+    $('#yt-erro').textContent = '';
+    if (!assuntoId) return;
+    alvo.innerHTML = '<div class="vazio">Buscando…</div>';
+    try {
+        const params = new URLSearchParams({ assuntoId, termo: $('#yt-termo').value.trim() });
+        const r = await api('/admin/videoaulas/buscar?' + params);
+        alvo.innerHTML = '';
+        if (!r.videos.length) {
+            alvo.appendChild(criar('<div class="vazio">Nada encontrado. Tente outro termo.</div>'));
+            return;
+        }
+        const assunto = coberturaVideos.find(x => String(x.assuntoId) === assuntoId);
+        r.videos.forEach(v => alvo.appendChild(cardResultadoYt(v, assunto)));
+    } catch (e) {
+        alvo.innerHTML = '';
+        $('#yt-erro').textContent = e.message;
+    }
+};
+
+function cardResultadoYt(v, assunto) {
+    const card = criar(`
+        <div class="card-video resultado-yt">
+            <img src="${escapar(v.miniatura)}" alt="" loading="lazy">
+            <div class="info-video">
+                <strong>${escapar(v.titulo)}</strong>
+                <span class="sub">${escapar(v.canal)}${v.duracaoMinutos ? ' · ' + v.duracaoMinutos + 'min' : ''}</span>
+                <div class="acoes-yt">
+                    <button class="link ver">Ver</button>
+                    <button class="primario adicionar">${v.jaCadastrado ? 'Já na biblioteca' : 'Adicionar'}</button>
+                </div>
+            </div>
+        </div>
+    `);
+    const botao = card.querySelector('.adicionar');
+    botao.disabled = v.jaCadastrado;
+    card.querySelector('.ver').onclick = () => abrirVideo(v);
+    botao.onclick = async () => {
+        botao.disabled = true;
+        try {
+            await api('/videoaulas', {
+                method: 'POST',
+                body: JSON.stringify({
+                    titulo: v.titulo.slice(0, 200),
+                    urlOuId: v.youtubeId,
+                    canal: v.canal ? v.canal.slice(0, 120) : null,
+                    duracaoMinutos: v.duracaoMinutos,
+                    disciplinaId: assunto.disciplinaId,
+                    assuntoId: assunto.assuntoId
+                })
+            });
+            botao.textContent = 'Adicionado ✓';
+            carregarVideoaulas();
+        } catch (e) {
+            botao.disabled = false;
+            $('#yt-erro').textContent = e.message;
+        }
+    };
+    return card;
+}
+
 async function carregarVideoaulas() {
+    if (perfilUsuario?.papel === 'ADMIN') carregarCoberturaVideos();
+
     const sugestoes = $('#sugestoes-video');
     const lista = $('#lista-videos');
     sugestoes.innerHTML = '';
@@ -1376,7 +1472,7 @@ async function carregarVideoaulas() {
         if (recomendados.length) {
             recomendados.forEach(v => sugestoes.appendChild(cardVideo(v)));
         } else {
-            sugestoes.appendChild(criar('<div class="vazio">Responda algumas questões e cadastre videoaulas para receber recomendações.</div>'));
+            sugestoes.appendChild(criar('<div class="vazio">Responda algumas questões para receber videoaulas dos assuntos em que você mais erra.</div>'));
         }
 
         const params = new URLSearchParams();
