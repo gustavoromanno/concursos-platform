@@ -1,13 +1,15 @@
 <div align="center">
 
-# 📚 Concursos Platform
+# 📚 Romano Concursos
 
-**Banco de questões para concursos públicos — filtrar, resolver, revisar no tempo certo e acompanhar a evolução.**
+**Banco de questões para concursos públicos — filtrar, resolver, estudar a teoria, assistir à videoaula, revisar no tempo certo e acompanhar a evolução.**
+
+[romanoconcursos.com.br](https://romanoconcursos.com.br)
 
 [![CI](https://github.com/gustavoromanno/concursos-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavoromanno/concursos-platform/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F)
-![Testes](https://img.shields.io/badge/testes-136-2ea44f)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)
+![Testes](https://img.shields.io/badge/testes-197-2ea44f)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791)
 ![Deploy](https://img.shields.io/badge/deploy-Render-46E3B7)
 
@@ -38,7 +40,7 @@ A ideia nasceu de uma necessidade real: estudo para concurso e uso esse tipo de 
 
 O projeto cobre o ciclo completo de um produto real: modelagem e migrations, API REST com autenticação, regras de negócio testadas, interface web instalável como app, pagamentos, e-mails transacionais, painel administrativo, integração contínua e deploy automatizado.
 
-**Em números:** 151 questões autorais em 10 disciplinas · 30 migrations · 136 testes automatizados · deploy só com o CI verde.
+**Em números:** 276 questões autorais em 18 disciplinas · 22 resumos de teoria · 1.109 videoaulas em 184 assuntos · migrations V1…V52 · 197 testes automatizados · deploy só com o CI verde.
 
 ---
 
@@ -60,32 +62,34 @@ O projeto cobre o ciclo completo de um produto real: modelagem e migrations, API
 |---|---|
 | Simulado cronometrado | Sorteio por disciplina e banca, correção só no final, resultado por disciplina, encerramento automático quando o tempo acaba |
 | Revisão espaçada | Algoritmo SM-2: intervalos de 1 → 6 → 16 → 45 → 126 dias; um erro traz a questão de volta no dia seguinte |
-| Organização | Cadernos (listas próprias), marcadores e videoaulas sugeridas pelos assuntos com mais erros |
+| Teoria por assunto | Resumo de cada assunto (alguns gratuitos, o restante no Pro), acessível da questão e do índice de teoria |
+| Videoaulas | Biblioteca com mais de mil aulas do YouTube (pelo menos 6 por assunto), filtro por disciplina e assunto, sugestões pelos assuntos com mais erros e logo após errar uma questão |
+| Organização | Cadernos (listas próprias) e marcadores |
 
 ### 📈 Desempenho
 | Recurso | Detalhe |
 |---|---|
 | Painel | Evolução no tempo, desempenho por disciplina e por assunto, radar de competências |
-| Engajamento | Ofensiva (dias seguidos batendo a meta), meta diária editável e mapa de estudo |
+| Engajamento | Ofensiva (dias seguidos batendo a meta), meta diária editável direto na tela inicial e mapa de estudo |
 | Objetivo de estudo | O usuário escolhe concurso e cargo; progresso e classificação dos assuntos — **dominado · atenção · revisar · vai cair** — são calculados cruzando o histórico com o conteúdo programático |
 
 ### 🏛️ Concursos
 Catálogo com cronograma de etapas, cargos (vagas e salário), conteúdo programático e provas anteriores resolvíveis na numeração original.
 
 ### 📥 Importação de provas antigas (admin)
-O administrador envia o PDF de uma prova e do gabarito de um concurso anterior. Em segundo plano, a API da Anthropic (Claude):
+O administrador envia o PDF de uma prova e do gabarito de um concurso anterior. Em segundo plano, a IA (Google Gemini por padrão; Anthropic Claude como alternativa, trocando `IA_PROVEDOR`):
 
 1. identifica o concurso, a banca e o cargo e os cadastra (ex.: *Bacen 2013 · Analista*);
 2. extrai as questões e cruza com o gabarito — essas **originais ficam privadas**, só como referência;
 3. gera questões **inéditas** no mesmo assunto, formato e estilo da banca.
 
-As inéditas passam por um validador automático (formato, gabarito único, explicação, e bloqueio de texto parecido demais com a original) e depois por uma **fila de revisão**: só o que o admin aprova é publicado, ligado ao concurso e ao cargo de origem — e aparece nos filtros **Concurso**, **Cargo** e **Origem**.
+A importação pode ser retomada de onde parou (sem ler a prova de novo) e reconhece quando a cota diária da API acabou, em vez de ficar repetindo a chamada. As inéditas passam por um validador automático (formato, gabarito único, explicação, e bloqueio de texto parecido demais com a original) e depois por uma **fila de revisão**: só o que o admin aprova é publicado, ligado ao concurso e ao cargo de origem — e aparece nos filtros **Concurso**, **Cargo** e **Origem**.
 
-### 💳 Plano Pro (pré-pago)
-Gratuito: banco de questões autorais, filtros, correção com explicação, cadernos, marcadores, meta, ofensiva e simulados com limite mensal.
-Pro (30, 90 ou 365 dias, via **Stripe Checkout** com cartão, boleto e Pix): questões inéditas das provas, simulados ilimitados, revisão espaçada, anotações, objetivo de estudo e painel completo.
+### 💳 Plano Pro
+Gratuito: banco de questões autorais, filtros, correção com explicação, cadernos, marcadores, meta, ofensiva, videoaulas e simulados com limite mensal.
+Pro: questões inéditas das provas, teoria completa, simulados ilimitados, revisão espaçada, anotações, objetivo de estudo e painel completo.
 
-Sem cobrança recorrente: os dias se somam a cada compra. A liberação acontece pelo **webhook** do Stripe, com assinatura verificada e cada evento processado uma única vez; reembolsos (direito de arrependimento de 7 dias) devolvem os dias. Recursos Pro respondem **402** para quem não é Pro, e o frontend oferece os planos.
+Duas formas de pagar, ambas via **Stripe**: **pré-pago** (30, 90 ou 365 dias, com cartão, boleto e Pix — os dias se somam a cada compra) e **assinatura mensal recorrente** no cartão, que o próprio aluno cancela ou reativa na conta. A liberação acontece pelo **webhook** do Stripe, com assinatura verificada e cada evento processado uma única vez; reembolsos (direito de arrependimento de 7 dias) devolvem os dias. Recursos Pro respondem **402** para quem não é Pro, e o frontend oferece os planos.
 
 ### 👤 Conta
 Foto, dados pessoais, força do perfil, resumo de uso, troca de senha, assinatura e histórico de pagamentos, e **zona de perigo**: zerar dados por categoria ou excluir a conta (os registros de pagamento ficam, sem vínculo, por obrigação fiscal).
@@ -108,11 +112,14 @@ E-mail diário às 8h, só para quem ativou, é Pro e tem revisões vencendo no 
 ### 💾 Filtros salvos
 Combinações de filtros guardadas com um nome e aplicadas com um clique.
 
+### 🎬 Curadoria de videoaulas (admin)
+Busca no YouTube pela API oficial (YouTube Data API v3) direto da tela de Videoaulas: o admin escolhe o assunto (os que têm menos vídeos aparecem primeiro), vê os resultados com miniatura, canal e duração e adiciona com um clique; vídeos já cadastrados vêm marcados. O player tem "Abrir no YouTube" para vídeos que o canal não deixa incorporar.
+
 ### 📱 App instalável (PWA)
 Pode ser instalado no celular e no computador direto do navegador (manifest, ícones e service worker). Os arquivos da interface abrem mesmo sem internet; os dados sempre vêm do servidor. É a base para publicar nas lojas depois.
 
 ### 🎨 Interface
-Menu superior com ícones, modo claro e noturno, layout responsivo — HTML, CSS e JavaScript puros, sem framework nem etapa de build.
+Menu superior com os itens principais e um menu "Mais" com o restante, barra inferior de atalhos no celular, modo claro e noturno, layout responsivo — HTML, CSS e JavaScript puros, sem framework nem etapa de build.
 
 ---
 
@@ -129,7 +136,11 @@ flowchart LR
         SV --> R
     end
     R --> DB[(PostgreSQL<br/>Neon)]
-    FW[Flyway] -->|migrations V1…V30| DB
+    FW[Flyway] -->|migrations V1…V52| DB
+    S -->|IA| G[Gemini / Claude]
+    S -->|pagamentos| ST[Stripe]
+    S -->|e-mail| RS[Resend]
+    S -->|busca de vídeos| YT[YouTube Data API]
 ```
 
 ```
@@ -137,8 +148,9 @@ src/main/java/com/gustavo/concursos
 ├── controller      # endpoints REST
 ├── service         # regras de negócio (SM-2, ofensiva, objetivo)
 ├── importacao      # importação de provas, geração com IA e fila de revisão
-├── ia              # cliente da API da Anthropic
-├── pro             # plano Pro: acesso (402), planos, pagamentos e webhook do Stripe
+├── ia              # clientes de IA (Gemini e Anthropic) atrás de uma interface comum
+├── youtube         # busca de videoaulas no YouTube (admin)
+├── pro             # plano Pro: acesso (402), planos, pagamentos, assinatura e webhook do Stripe
 ├── specification   # filtros dinâmicos de questões
 ├── repository      # Spring Data JPA + consultas nativas
 ├── entity          # modelo JPA
@@ -146,10 +158,12 @@ src/main/java/com/gustavo/concursos
 └── security        # JWT, filtro de autenticação, SecurityConfig
 
 src/main/resources
-├── db/migration    # V1 a V30 (Flyway)
+├── db/migration    # V1 a V52 (Flyway)
 └── static          # frontend (index.html, app.js, style.css)
 
 scripts/gerar_questoes.py   # gera migrations de lotes de questões
+scripts/gerar_teoria.py     # gera migrations de resumos de teoria
+scripts/verificar-frontend.js  # carrega o site num navegador simulado (usado no CI)
 ```
 
 ### Fluxo de entrega
@@ -164,7 +178,7 @@ flowchart LR
     R --> FW[Flyway aplica<br/>migrations novas]
 ```
 
-Em desenvolvimento, a aplicação local aponta para um **branch separado do banco** no Neon, isolado dos dados de produção.
+Em desenvolvimento, a aplicação local aponta para um **branch separado do banco** no Neon, isolado dos dados de produção. Um workflow manual (`migrar-banco.yml`) copia o banco inteiro para outro PostgreSQL com `pg_dump`/`pg_restore` e confere a contagem de cada tabela — usado para levar o banco para a mesma região do servidor.
 
 ---
 
@@ -192,6 +206,9 @@ erDiagram
     IMPORTACAO_PROVA ||--o{ QUESTAO_BASE : extrai
     IMPORTACAO_PROVA ||--o{ QUESTAO_RASCUNHO : gera
     QUESTAO ||--o{ REPORTE_QUESTAO : recebe
+    ASSUNTO ||--o| RESUMO_ASSUNTO : explica
+    ASSUNTO |o--o{ VIDEOAULA : ilustra
+    USUARIO ||--o{ ASSINATURA : assina
 ```
 
 A **resposta** liga usuário, questão e alternativa escolhida, com data e hora. É a base de todas as estatísticas: acerto por disciplina, evolução, ofensiva, revisão e objetivo.
@@ -212,6 +229,8 @@ Questões Certo/Errado usam a mesma tabela de alternativas (duas linhas, "Certo"
 
 **N+1 sob controle.** `@EntityGraph` na listagem e `default_batch_fetch_size` para as coleções, com `open-in-view` desligado e transações explícitas.
 
+**Latência medida em idas ao banco.** Responder uma questão é o caminho mais usado, então ele faz só duas idas ao banco: uma leitura com tudo (alternativas, plano da pessoa e agenda de revisão) e uma escrita em lote (resposta + revisão SM-2). O usuário autenticado fica 30 s em cache no filtro JWT.
+
 **Segurança.** Sessão stateless com JWT e senhas com BCrypt. A API distingue **401** (não autenticado) de **403** (autenticado sem permissão), e o frontend reage a cada um de forma diferente. Cadastro de conteúdo é restrito ao papel ADMIN. Credenciais vivem só em variáveis de ambiente, e um scanner de secrets no pre-commit já barrou um commit com senha.
 
 **Conteúdo autoral.** As questões são escritas no estilo das bancas, nunca copiadas de provas, que são protegidas por direito autoral. O gabarito de cada lote é distribuído entre as letras para não viciar a resposta.
@@ -221,6 +240,8 @@ Questões Certo/Errado usam a mesma tabela de alternativas (duas linhas, "Certo"
 **Pagamento que não se confia no navegador.** O Pro só é liberado pelo webhook do Stripe, com assinatura HMAC verificada, janela anti-replay e cada evento processado uma única vez. Reembolso devolve os dias. O registro do pagamento sobrevive à exclusão da conta (obrigação fiscal), sem vínculo com a pessoa.
 
 **Tokens de e-mail só como hash.** Links de confirmação e de redefinição de senha são de uso único, com validade curta, e o banco guarda apenas o SHA-256. As respostas não revelam quais e-mails estão cadastrados.
+
+**IA trocável.** A importação conversa com uma interface `IaCliente`; Gemini e Claude são implementações escolhidas por configuração, com repetição em erros temporários, modelo reserva e parada imediata quando a cota do dia acaba.
 
 **IA com trava de direito autoral.** Provas antigas servem só de referência: as originais ficam privadas, e as inéditas geradas passam por um validador (formato, gabarito único, e bloqueio por semelhança com o texto original) e por revisão humana antes de publicar.
 
@@ -249,10 +270,12 @@ Os testes rodam contra **H2 em memória**, sem banco externo, e são executados 
 | `AnotacaoTest` | Salvar, ler e apagar; filtro "minhas anotações"; anotação invisível para outros usuários |
 | `PerfilTest` | Troca de nome; troca de senha com login real usando a senha nova; senha atual errada não altera nada |
 | `ValidadorQuestaoGeradaTest` | Formato, gabarito único, Certo/Errado normalizado e bloqueio de cópia da original |
-| `ImportacaoTest` | Fluxo completo com IA simulada: extração, geração, originais nunca públicas, revisão e filtros |
+| `ImportacaoTest` · `GeminiIaClienteTest` | Fluxo completo com IA simulada (extração, geração, originais nunca públicas, revisão e filtros); tradução para o formato do Gemini e detecção de cota diária |
+| `RespostaTest` | Resposta em duas idas ao banco: resultado, gravação e agenda de revisão criada e atualizada |
+| `TeoriaTest` · `BuscaVideoaulaTest` | Resumos livres e Pro, edição só do admin; busca no YouTube só para admin, termo pelo assunto e vídeos já cadastrados marcados |
 | `CadastroTest` · `ConfirmacaoEmailTest` | E-mail sem diferença de caixa, mensagens claras, confirmação por link de uso único, bloqueio após senhas erradas |
 | `RedefinicaoSenhaTest` | Link de uso único, resposta igual para e-mail inexistente, limite por hora |
-| `AssinaturaWebhookTest` · `PlanoProTest` | Assinatura do Stripe, cartão e boleto, evento repetido, reembolso, limites do plano gratuito (402) |
+| `AssinaturaWebhookTest` · `AssinaturaRecorrenteTest` · `PlanoProTest` | Assinatura do webhook do Stripe, cartão e boleto, evento repetido, reembolso, assinatura mensal (renovação, cancelamento, falha) e limites do plano gratuito (402) |
 | `PerfilDadosTest` | Dados pessoais, foto, zerar dados por categoria e excluir conta preservando o registro fiscal |
 | `CampanhaEmailTest` · `LembreteRevisaoTest` | Envio só para quem consentiu, descadastro funcionando, lembrete só para quem ativou e tem revisão |
 | `AdminPainelTest` · `AdminQuestaoEditorTest` · `ReporteQuestaoTest` | Painel restrito ao admin, correção de questões e fila de erros reportados |
@@ -277,9 +300,11 @@ Todas as rotas exigem `Authorization: Bearer <token>`, exceto `/auth/**`, `/heal
 | Desempenho | `GET /estatisticas` · `GET /estatisticas/assuntos` · `GET /estatisticas/evolucao` |
 | Engajamento | `GET /engajamento` · `PUT /engajamento/meta` · `GET /engajamento/mapa` |
 | Objetivo | `GET/PUT/DELETE /objetivo` |
-| Organização | `/cadernos` · `/marcadores` · `/videoaulas` |
+| Teoria | `GET /teoria` · `GET /teoria/{assuntoId}` · `PUT/DELETE /admin/teoria/{assuntoId}` |
+| Videoaulas | `GET /videoaulas` · `GET /videoaulas/sugestoes` · `GET /videoaulas/questao/{id}` · `GET /admin/videoaulas/cobertura` · `GET /admin/videoaulas/buscar` |
+| Organização | `/cadernos` · `/marcadores` |
 | Conta | `GET/PUT /perfil` · `PUT /perfil/senha` · `GET /perfil/completo` · `PUT /perfil/dados` · `PUT/DELETE /perfil/foto` · `DELETE /perfil/dados-estudo/{categoria}` · `POST /perfil/excluir-conta` |
-| Plano Pro | `GET /planos` · `POST /pagamentos/checkout` · `GET /pagamentos` · `POST /pagamentos/webhook` (Stripe) |
+| Plano Pro | `GET /planos` · `POST /pagamentos/checkout` · `GET /pagamentos` · `GET /pagamentos/assinatura` · `POST /pagamentos/assinatura/cancelar` · `POST /pagamentos/assinatura/reativar` · `POST /pagamentos/webhook` (Stripe) |
 | Concursos | `GET /concursos` · `GET /concursos/{id}` · `GET /provas/{id}` |
 | Aluno | `POST /questoes/{id}/reportes` · `GET/POST /solicitacoes` · `GET/POST/DELETE /filtros` · `PUT /perfil/marketing` · `PUT /perfil/lembrete` |
 | Público | `GET /publico/numeros` · `GET /publico/config` · `GET /publico/descadastro` |
@@ -304,8 +329,11 @@ DB_URL       = jdbc:postgresql://host/banco?sslmode=require
 DB_USERNAME  = usuario
 DB_PASSWORD  = senha
 JWT_SECRET   = string-aleatoria-com-no-minimo-64-caracteres
-ANTHROPIC_API_KEY = chave-da-api   # opcional: só a importação de provas usa
+GEMINI_API_KEY = chave-da-api   # opcional: importação de provas (IA_PROVEDOR=gemini, o padrão)
+ANTHROPIC_API_KEY = chave-da-api   # opcional: se IA_PROVEDOR=anthropic
+YOUTUBE_API_KEY = chave-da-api   # opcional: busca de videoaulas no admin
 STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / APP_URL_BASE   # opcionais: pagamentos do plano Pro
+PRO_RECORRENTE_ATIVO = true   # opcional: oferece a assinatura mensal recorrente
 RESEND_API_KEY / EMAIL_REMETENTE   # opcionais: e-mail de redefinição de senha
 APP_NOME = Nome da Marca   # opcional: nome exibido no site, e-mails e checkout
 EXIGIR_CONFIRMACAO_EMAIL = false   # só em desenvolvimento, sem Resend
@@ -319,10 +347,11 @@ mvn spring-boot:run
 
 O Flyway cria o schema e carrega o conteúdo inicial na primeira execução. Acesse `http://localhost:8080`.
 
-3. Para gerar um novo lote de questões:
+3. Para gerar um novo lote de questões ou de teoria:
 
 ```bash
 python scripts/gerar_questoes.py <lote> src/main/resources/db/migration/V<n>__lote_questoes_<lote>.sql
+python scripts/gerar_teoria.py <lote> src/main/resources/db/migration/V<n>__teoria_lote_<lote>.sql
 ```
 
 ---
@@ -332,10 +361,12 @@ python scripts/gerar_questoes.py <lote> src/main/resources/db/migration/V<n>__lo
 - [x] Anotações pessoais e dificuldade calculada pela comunidade
 - [x] Plano Pro com Stripe, e-mails com Resend, painel administrativo
 - [x] App instalável (PWA), confirmação de e-mail e limite de login
-- [ ] Catálogo de concursos a partir dos editais oficiais, com link da fonte
-- [ ] Primeiras provas importadas (Bacen) e novos lotes de questões
-- [ ] Definição da marca e publicação nas lojas de apps
-- [ ] Migração para Spring Boot 4
+- [x] Migração para Spring Boot 4
+- [x] Marca definida (Romano Concursos) e domínio próprio
+- [x] Teoria por assunto, assinatura recorrente e biblioteca de videoaulas
+- [ ] Primeiras provas importadas (Bacen, TRT) e novos lotes de questões
+- [ ] Questões para os assuntos novos (AFO, Contabilidade, Direito Penal, Civil e outros)
+- [ ] Publicação nas lojas de apps
 
 ---
 
